@@ -1,6 +1,6 @@
 {
     "name": "Terrix.Runtime",
-    "rootNamespace": "",
+    "rootNamespace": "Terrix",
     "references": [
         "GUID:403d8ee4abf1e694089c3e8d3edff032"
     ],
