@@ -1,0 +1,20 @@
+{
+    "name": "CustomUtilities.Tests",
+    "rootNamespace": "CustomUtilities.Tests",
+    "references": [
+        "GUID:403d8ee4abf1e694089c3e8d3edff032"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
