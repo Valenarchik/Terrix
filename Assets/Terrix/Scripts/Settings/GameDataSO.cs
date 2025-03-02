@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Terrix.Settings
 {
-    [CreateAssetMenu(menuName = "Game settings/Game stats")]
+    [CreateAssetMenu(menuName = "Game settings/Game data")]
     public class GameDataSO : ScriptableObject
     {
         [NamedArray("HexType")] public List<HexDataSerializable> HexStats;

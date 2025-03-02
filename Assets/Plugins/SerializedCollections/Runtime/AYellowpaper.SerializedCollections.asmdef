@@ -1,10 +1,6 @@
 {
-    "name": "Terrix.Runtime",
-    "rootNamespace": "Terrix",
-    "references": [
-        "GUID:403d8ee4abf1e694089c3e8d3edff032",
-        "GUID:d525ad6bd40672747bde77962f1c401e"
-    ],
+    "name": "AYellowpaper.SerializedCollections",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
