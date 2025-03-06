@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CustomUtilities.Attributes;
 using Terrix.DTO;
-using Terrix.HexMap;
+using Terrix.Map;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 

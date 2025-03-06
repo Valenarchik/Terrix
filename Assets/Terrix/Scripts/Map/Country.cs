@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Terrix.DTO;
-using Terrix.Model.Entities;
+using Terrix.Entities;
 using Terrix.Settings;
 
-namespace Terrix.Model.Map
+namespace Terrix.Map
 {
     public class Country: Territory
     {

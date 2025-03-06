@@ -1,4 +1,4 @@
-﻿namespace Terrix.Model.Map
+﻿namespace Terrix.Map
 {
     public class Attack
     {

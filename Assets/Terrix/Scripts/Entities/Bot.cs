@@ -1,4 +1,4 @@
-﻿namespace Terrix.Model.Entities
+﻿namespace Terrix.Entities
 {
     /// <summary>
     /// ИИ который может управлять игроком

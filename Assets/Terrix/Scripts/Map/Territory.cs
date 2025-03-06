@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Terrix.Model.Entities;
+using Terrix.Entities;
 
-namespace Terrix.Model.Map
+namespace Terrix.Map
 {
     public class Territory
     {

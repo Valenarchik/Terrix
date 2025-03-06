@@ -4,12 +4,11 @@ using System.Linq;
 using CustomUtilities.Attributes;
 using CustomUtilities.Extensions;
 using Terrix.DTO;
-using Terrix.Model;
 using Terrix.Settings;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace Terrix.HexMap
+namespace Terrix.Map
 {
     public class HexMapGenerator : MonoBehaviour
     {
@@ -46,7 +45,13 @@ namespace Terrix.HexMap
         [SerializeField] private Tilemap tilemap;
         [SerializeField] private HexMapGeneratorSettingsSO initialSettingsSo;
 
+        private IGameDataProvider gameDataProvider;
         private Settings settings;
+
+        private void Awake()
+        {
+            gameDataProvider = new GameDataProvider();
+        }
 
         private void Start()
         {
@@ -74,41 +79,49 @@ namespace Terrix.HexMap
             ValidateSettings(settings);
             this.settings = AssignSettings(settings);
 
-            var tileData = GenerateTileChangeData();
+            GenerateData(out var tileData, out var map);
             tilemap.SetTiles(tileData, true);
 
-            return default;
+            return map;
         }
 
-        private TileChangeData[] GenerateTileChangeData()
+        private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,] map)
         {
-            var width = settings.Texture2D.width;
-            var height = settings.Texture2D.height;
+            var gameData = gameDataProvider.Get();
+            var texture2DWidth = settings.Texture2D.width;
+            var texture2DHeight = settings.Texture2D.height;
 
             var pixels = settings.Texture2D.GetPixels();
-            var changeData = new TileChangeData[width * height];
+            tileChangeData = new TileChangeData[texture2DWidth * texture2DHeight];
 
-            for (var y = 0; y < height; y++)
+            var mapSize = settings.Transpose
+                ? new Vector2Int(texture2DHeight, texture2DWidth)
+                : new Vector2Int(texture2DWidth, texture2DHeight);
+
+            map = new Hex[mapSize.x, mapSize.y];
+
+            for (var y = 0; y < texture2DHeight; y++)
             {
-                for (var x = 0; x < width; x++)
+                for (var x = 0; x < texture2DWidth; x++)
                 {
-                    var i = y * width + x;
+                    var i = y * texture2DWidth + x;
                     var color = pixels[i];
                     var pixelHeight = color.CalculateBrightness();
                     var data = FindData(pixelHeight);
-                    var tile = data.Tile;
+                    var position = settings.Transpose ? new Vector2Int(y, x) : new Vector2Int(x, y);
 
-                    changeData[i] = new TileChangeData
+                    tileChangeData[i] = new TileChangeData
                     {
-                        position = settings.Transpose ? new Vector3Int(y, x) : new Vector3Int(x, y),
-                        tile = tile,
+                        position = new Vector3Int(position.x, position.y),
+                        tile = data.Tile,
                         color = Color.white,
                         transform = Matrix4x4.identity
                     };
+
+                    var hex = new Hex(gameData.CellsStats[data.HexType], position, mapSize);
+                    map[hex.Position.x, hex.Position.y] = hex;
                 }
             }
-
-            return changeData;
         }
 
         private Settings.HexData FindData(float pixelHeight)
@@ -127,7 +140,7 @@ namespace Terrix.HexMap
         {
             if (!settings.Texture2D.isReadable)
             {
-                throw new Exception("Текстура недоспупня для чтения!");
+                throw new Exception("Текстура недоступна для чтения!");
             }
         }
 

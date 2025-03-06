@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Terrix.Model.Map;
+using Terrix.Map;
 
-namespace Terrix.Model.Entities
+namespace Terrix.Entities
 {
     public class Player
     {
