@@ -1,0 +1,18 @@
+{
+    "name": "Terrix.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:d4369e61dd79fa94e8bde344f1c8551b"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
