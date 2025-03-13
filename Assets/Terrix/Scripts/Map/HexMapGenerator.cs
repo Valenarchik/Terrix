@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using CustomUtilities.Attributes;
 using CustomUtilities.Extensions;
@@ -12,57 +13,16 @@ namespace Terrix.Map
 {
     public class HexMapGenerator : MonoBehaviour
     {
-        public class Settings
-        {
-            public Texture2D Texture2D { get; set; }
-            public bool Transpose { get; set; }
-            public int ChunkSize { get; set; }
-            public List<HexData> HexDatas { get; set; }
-
-            public Settings(Texture2D texture2D, bool transpose, int chunkSize, List<HexData> hexDatas)
-            {
-                Texture2D = texture2D;
-                Transpose = transpose;
-                ChunkSize = chunkSize;
-                HexDatas = hexDatas;
-            }
-
-            public class HexData
-            {
-                public HexType HexType { get; set; }
-                public float Height { get; set; }
-                public Tile Tile { get; set; }
-
-                public HexData(HexType hexType, float height, Tile tile)
-                {
-                    HexType = hexType;
-                    Height = height;
-                    Tile = tile;
-                }
-            }
-        }
-
         [SerializeField] private Tilemap tilemap;
         [SerializeField] private HexMapGeneratorSettingsSO initialSettingsSo;
 
-        private IGameDataProvider gameDataProvider;
+        private IGameDataProvider gameDataProvider = new GameDataProvider();
         private Settings settings;
 
-        private void Awake()
-        {
-            gameDataProvider = new GameDataProvider();
-        }
-
-        private void Start()
-        {
-            if (initialSettingsSo != null)
-            {
-                GenerateMap(initialSettingsSo.Get());
-            }
-        }
+        [MaybeNull] public HexMap ActualMap { get; private set; }
 
         [EditorButton]
-        private void ManualUpdate()
+        private void UpdateMap()
         {
             if (initialSettingsSo != null)
             {
@@ -74,15 +34,23 @@ namespace Terrix.Map
             }
         }
 
-        public Hex[,] GenerateMap(Settings settings)
+        [EditorButton]
+        private void ClearMap()
         {
-            ValidateSettings(settings);
-            this.settings = AssignSettings(settings);
+            ActualMap = null;
+            tilemap.ClearAllTiles();
+        }
+
+        public HexMap GenerateMap(Settings initSettings)
+        {
+            ValidateSettings(initSettings);
+            this.settings = AssignSettings(initSettings);
 
             GenerateData(out var tileData, out var map);
             tilemap.SetTiles(tileData, true);
 
-            return map;
+            ActualMap = new HexMap(map);
+            return ActualMap;
         }
 
         private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,] map)
@@ -149,6 +117,36 @@ namespace Terrix.Map
             settings.HexDatas = settings.HexDatas.OrderBy(data => data.Height).ToList();
             settings.HexDatas[^1].Height = 1;
             return settings;
+        }
+
+        public class Settings
+        {
+            public Texture2D Texture2D { get; set; }
+            public bool Transpose { get; set; }
+            public int ChunkSize { get; set; }
+            public List<HexData> HexDatas { get; set; }
+
+            public Settings(Texture2D texture2D, bool transpose, int chunkSize, List<HexData> hexDatas)
+            {
+                Texture2D = texture2D;
+                Transpose = transpose;
+                ChunkSize = chunkSize;
+                HexDatas = hexDatas;
+            }
+
+            public class HexData
+            {
+                public HexType HexType { get; set; }
+                public float Height { get; set; }
+                public Tile Tile { get; set; }
+
+                public HexData(HexType hexType, float height, Tile tile)
+                {
+                    HexType = hexType;
+                    Height = height;
+                    Tile = tile;
+                }
+            }
         }
     }
 }

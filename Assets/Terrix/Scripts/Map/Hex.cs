@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Terrix.Map
 {
-    public class Hex
+    public struct Hex
     {
         [NotNull] public HexData Data { get; private set; }
         public HexType HexType => Data.HexType;
@@ -26,30 +26,10 @@ namespace Terrix.Map
         {
             Data = data;
             Position = position;
-
-            NeighboursPositions = Position.y % 2 == 0
-                ? new[]
-                {
-                    Position + new Vector2Int(-1, 0),
-                    Position + new Vector2Int(-1, 1),
-                    Position + new Vector2Int(0, 1),
-                    Position + new Vector2Int(1, 0),
-                    Position + new Vector2Int(0, -1),
-                    Position + new Vector2Int(-1, -1)
-                }
-                : new[]
-                {
-                    Position + new Vector2Int(-1, 0),
-                    Position + new Vector2Int(0, 1),
-                    Position + new Vector2Int(1, 1),
-                    Position + new Vector2Int(1, 0),
-                    Position + new Vector2Int(1, -1),
-                    Position + new Vector2Int(0, -1)
-                };
+            NeighboursPositions = MapUtilities.GetHexNeighborsPositions(position, mapSize);
             
-            NeighboursPositions = NeighboursPositions
-                .Where(p => p.x >= 0 && p.x < mapSize.x && p.y >= 0 && p.y < mapSize.y)
-                .ToArray();
+            OwnerChanged = null;
+            Owner = null;
         }
 
         public override string ToString()
