@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using CustomUtilities.Attributes;
 using CustomUtilities.Extensions;
@@ -19,11 +18,13 @@ namespace Terrix.Map
         private IGameDataProvider gameDataProvider = new GameDataProvider();
         private Settings settings;
 
-        [MaybeNull] public HexMap ActualMap { get; private set; }
+        public HexMapGeneratorSettingsSO DefaultSettingsSo => initialSettingsSo;
 
         [EditorButton]
         private void UpdateMap()
         {
+            ClearMap();
+            
             if (initialSettingsSo != null)
             {
                 GenerateMap(initialSettingsSo.Get());
@@ -37,10 +38,12 @@ namespace Terrix.Map
         [EditorButton]
         private void ClearMap()
         {
-            ActualMap = null;
+            
             tilemap.ClearAllTiles();
         }
 
+        // Разделить ответсвенность по созданию модели и визуализации карты?
+        // + можно будет разделить ответственность, модель создается на сервере, а визуал на криенте.
         public HexMap GenerateMap(Settings initSettings)
         {
             ValidateSettings(initSettings);
@@ -49,8 +52,7 @@ namespace Terrix.Map
             GenerateData(out var tileData, out var map);
             tilemap.SetTiles(tileData, true);
 
-            ActualMap = new HexMap(map);
-            return ActualMap;
+            return new HexMap(map);
         }
 
         private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,] map)
@@ -123,14 +125,12 @@ namespace Terrix.Map
         {
             public Texture2D Texture2D { get; set; }
             public bool Transpose { get; set; }
-            public int ChunkSize { get; set; }
             public List<HexData> HexDatas { get; set; }
 
-            public Settings(Texture2D texture2D, bool transpose, int chunkSize, List<HexData> hexDatas)
+            public Settings(Texture2D texture2D, bool transpose, List<HexData> hexDatas)
             {
                 Texture2D = texture2D;
                 Transpose = transpose;
-                ChunkSize = chunkSize;
                 HexDatas = hexDatas;
             }
 

@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Settings;
+using UnityEngine;
 
 namespace Terrix.Map
 {
@@ -35,12 +36,15 @@ namespace Terrix.Map
         
         public void CollectIncome()
         {
-            var cellsStats = gameDataProvider.Get().CellsStats;
-                
+            var gameData = gameDataProvider.Get();
+            var cellsStats = gameData.CellsStats;
+            
             foreach (var (cellType, count) in cellsByTypeCount)
             {
                 Population += cellsStats[cellType].Income * count;
             }
+            
+            Population = Mathf.Clamp(Population, 0,TotalCellsCount * gameData.MaxDensePopulation);
         }
 
         public void AddCells(IEnumerable<Hex> cells)

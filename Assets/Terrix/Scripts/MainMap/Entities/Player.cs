@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Terrix.DTO;
 using Terrix.Map;
 
 namespace Terrix.Entities
 {
     public class Player
     {
+        public PlayerType PlayerType { get; }
         [MaybeNull] public Country Country { get; private set; }
     }
 }

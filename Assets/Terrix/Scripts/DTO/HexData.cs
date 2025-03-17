@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Terrix.DTO
+﻿namespace Terrix.DTO
 {
     public class HexData
     {

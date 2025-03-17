@@ -14,7 +14,6 @@ namespace Terrix.Settings
     {
         public Texture2D Texture2D;
         public bool Transpose = true;
-        public int ChunkSize;
         [NamedArray(nameof(HexData.HexType))] public List<HexData> HexDatas;
 
         [Serializable]
@@ -27,7 +26,7 @@ namespace Terrix.Settings
 
         public HexMapGenerator.Settings Get()
         {
-            return new HexMapGenerator.Settings(Texture2D, Transpose, ChunkSize, GetHexData());
+            return new HexMapGenerator.Settings(Texture2D, Transpose, GetHexData());
         }
 
         private List<HexMapGenerator.Settings.HexData> GetHexData()

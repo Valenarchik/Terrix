@@ -10,14 +10,14 @@ namespace Terrix.Controllers
         [SerializeField] private Tilemap mapTilemap;
         [SerializeField] private new Camera camera;
 
-        [Header("Settings")] [SerializeField] private float cameraSpeed = 10;
+        [Header("Settings")] 
+        [SerializeField] private float cameraSpeed = 10;
         [SerializeField] private float zoomValueOnCameraSpeedModifier = 0.25f;
         [SerializeField] private float zoomSpeed = 1000;
         [SerializeField] private float zoomValueOnZoomSpeedModifier = 0.25f;
 
-        [Header("Boundaries")] [SerializeField]
-        private float minZoomValue = 5;
-
+        [Header("Boundaries")] 
+        [SerializeField] private float minZoomValue = 5;
         [SerializeField] private float maxZoomValue = 100;
 
         private Vector2 cameraMoveDirection;
