@@ -7,6 +7,13 @@ namespace Terrix.Entities
     public class Player
     {
         public PlayerType PlayerType { get; }
-        [MaybeNull] public Country Country { get; private set; }
+        [MaybeNull] public Country Country { get; set; }
+        
+        public Player(PlayerType playerType)
+        {
+            PlayerType = playerType;
+        }
+        
+        
     }
 }

@@ -5,7 +5,14 @@ using Terrix.DTO;
 
 namespace Terrix.Game.GameRules
 {
-    public class PhaseManager
+    public interface IPhaseManager
+    {
+        GamePhaseType CurrentPhase { get; }
+        event Action PhaseChanged;
+        void NextPhase();
+    }
+
+    public class PhaseManager : IPhaseManager
     {
         private static readonly List<GamePhaseType> DefaultPhaseOrder = new()
         {
@@ -23,9 +30,9 @@ namespace Terrix.Game.GameRules
 
         public PhaseManager(IEnumerable<GamePhaseType> phaseOrder = null)
         {
-            phaseOrder = phaseOrder != null ? phaseOrder.ToList() : DefaultPhaseOrder;
+            this.phaseOrder = phaseOrder != null ? phaseOrder.ToList() : DefaultPhaseOrder;
 
-            if (!phaseOrder.Any())
+            if (!this.phaseOrder.Any())
             {
                 throw new Exception("PhaseOrder не может быть пустым");
             }

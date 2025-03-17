@@ -5,7 +5,11 @@ using Terrix.Entities;
 
 namespace Terrix.Game.GameRules
 {
-    public abstract class GameReferee: ITickHandler
+    public interface IGameReferee: ITickHandler
+    {
+    }
+
+    public abstract class GameReferee: IGameReferee
     {
         protected List<Player> Players;
 
