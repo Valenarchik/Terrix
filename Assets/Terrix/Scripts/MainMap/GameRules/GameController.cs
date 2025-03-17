@@ -12,7 +12,7 @@ namespace Terrix.Game.GameRules
     {
         [Header("References")] 
         [SerializeField] private HexMapGenerator mapGenerator;
-        [SerializeField] private TickGenerator tickGenerator;
+        [SerializeField] private TickGenerator tickGenerator;//Synch vanya
         
         private IGameDataProvider gameDataProvider = new GameDataProvider();
         
