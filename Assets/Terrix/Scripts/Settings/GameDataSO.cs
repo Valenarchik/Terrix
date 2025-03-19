@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AYellowpaper.SerializedCollections;
 using CustomUtilities.Attributes;
 using Terrix.DTO;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace Terrix.Settings
 {
@@ -15,9 +17,10 @@ namespace Terrix.Settings
         public float TickDurationInSeconds = 0.1f;
         public float MaxDensePopulation;
         public float TimeForChooseFirstCountryPositionInSeconds = 30;
+        [SerializedDictionary] public SerializedDictionary<HexType, Tile> HexTiles;
 
         private GameData gameData;
-        
+
         public GameData Get()
         {
             return gameData;
@@ -25,7 +28,6 @@ namespace Terrix.Settings
 
         public void OnBeforeSerialize()
         {
-            
         }
 
         public void OnAfterDeserialize()
@@ -35,7 +37,8 @@ namespace Terrix.Settings
                 BaseCostOfNeutralLends,
                 TickDurationInSeconds,
                 MaxDensePopulation,
-                TimeSpan.FromSeconds(TimeForChooseFirstCountryPositionInSeconds));
+                TimeSpan.FromSeconds(TimeForChooseFirstCountryPositionInSeconds),
+                HexTiles);
         }
     }
 }

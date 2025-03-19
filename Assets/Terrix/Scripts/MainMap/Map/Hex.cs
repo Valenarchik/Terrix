@@ -31,6 +31,15 @@ namespace Terrix.Map
             OwnerChanged = null;
             Owner = null;
         }
+        public Hex([NotNull] HexData data, Vector2Int position, Vector2Int[] neighboursPositions, Player owner)
+        {
+            Data = data;
+            Position = position;
+            NeighboursPositions = neighboursPositions;
+            
+            OwnerChanged = null;
+            Owner = owner;
+        }
 
         public override string ToString()
         {

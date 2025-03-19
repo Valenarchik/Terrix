@@ -1,27 +1,29 @@
-﻿using UnityEngine;
+﻿using FishNet.Object;
+using Terrix.Game.GameRules;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 
 namespace Terrix.Controllers
 {
-    public class MainMapCameraController : MonoBehaviour
+    public class MainMapCameraController : NetworkBehaviour
     {
-        [Header("References")] 
+        [Header("References")]
         [SerializeField] private Tilemap mapTilemap;
         [SerializeField] private new Camera camera;
 
-        [Header("Settings")] 
+        [Header("Settings")]
         [SerializeField] private float cameraSpeed = 10;
         [SerializeField] private float zoomValueOnCameraSpeedModifier = 0.25f;
         [SerializeField] private float zoomSpeed = 1000;
         [SerializeField] private float zoomValueOnZoomSpeedModifier = 0.25f;
 
-        [Header("Boundaries")] 
+        [Header("Boundaries")]
         [SerializeField] private float minZoomValue = 5;
         [SerializeField] private float maxZoomValue = 100;
 
         private Vector2 cameraMoveDirection;
-        
+
         private float zoomDirection;
 
         private Vector3 origin;
@@ -45,7 +47,7 @@ namespace Terrix.Controllers
         {
             zoomDirection = context.ReadValue<float>();
         }
-        
+
         public void OnDragCamera(InputAction.CallbackContext context)
         {
             var mousePosition = context.ReadValue<Vector2>();
@@ -59,9 +61,23 @@ namespace Terrix.Controllers
             drag = !context.canceled;
         }
 
-        private void Start()
+        // private void Start()
+        // {
+        //     GameEvents.Instance.OnGameReady(OnSceneReady);
+        // }
+
+        public override void OnStartClient()
         {
-            MainMapEvents.Instance.CheckSceneReady(OnSceneReady);
+            base.OnStartClient();
+            GameEvents.Instance.StartGame();
+            GameEvents.Instance.OnGameReady(OnSceneReady);
+        }
+
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+            Debug.Log("OnServerStarted");
+            enabled = false;
         }
 
         private void OnSceneReady()
@@ -84,6 +100,7 @@ namespace Terrix.Controllers
             {
                 MoveCamera();
             }
+
             ZoomCamera();
         }
 
@@ -94,7 +111,7 @@ namespace Terrix.Controllers
             var newPosition = origin - difference;
 
             newPosition = AssignCameraPosition(newPosition);
-            
+
             cameraTransform.position = newPosition;
         }
 
@@ -105,7 +122,8 @@ namespace Terrix.Controllers
             var cameraSpeedModifier = ZoomValue * zoomValueOnCameraSpeedModifier;
             cameraSpeedModifier = cameraSpeedModifier == 0 ? 1 : cameraSpeedModifier;
 
-            var offset = Time.deltaTime * cameraSpeed * cameraSpeedModifier * new Vector3(cameraMoveDirection.x, cameraMoveDirection.y);
+            var offset = Time.deltaTime * cameraSpeed * cameraSpeedModifier *
+                         new Vector3(cameraMoveDirection.x, cameraMoveDirection.y);
             var newPosition = cameraTransform.position + offset;
 
             newPosition = AssignCameraPosition(newPosition);
@@ -126,7 +144,7 @@ namespace Terrix.Controllers
         private Bounds CalculateBounds()
         {
             var minPos = mapTilemap.GetCellCenterWorld(Vector3Int.zero);
-            var maxPos = mapTilemap.GetCellCenterWorld(mapTilemap.size - new Vector3Int(1,1,1));
+            var maxPos = mapTilemap.GetCellCenterWorld(mapTilemap.size - new Vector3Int(1, 1, 1));
 
             var bounds = new Bounds();
             bounds.SetMinMax(minPos, maxPos);
