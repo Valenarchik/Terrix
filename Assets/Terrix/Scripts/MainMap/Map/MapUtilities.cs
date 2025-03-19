@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace Terrix.Map
 {
@@ -35,6 +36,13 @@ namespace Terrix.Map
             return neighboursPositions
                 .Where(p => AvailablePosition(p, mapSize))
                 .ToArray();
+        }
+
+        public static Vector2Int GetHexPosition(Vector2 screenPosition, Camera camera, Tilemap tilemap)
+        {
+            var worldPosition = camera.ScreenToWorldPoint(screenPosition);
+            worldPosition.z = 0;
+            return (Vector2Int) tilemap.WorldToCell(worldPosition);
         }
     }
 }

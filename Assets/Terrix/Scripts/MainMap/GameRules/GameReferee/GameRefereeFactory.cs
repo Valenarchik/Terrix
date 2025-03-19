@@ -5,7 +5,12 @@ using Terrix.Entities;
 
 namespace Terrix.Game.GameRules
 {
-    public class GameRefereeFactory
+    public interface IGameRefereeFactory
+    {
+        GameReferee Create(IEnumerable<Player> players);
+    }
+
+    public class GameRefereeFactory : IGameRefereeFactory
     {
         private readonly GameReferee.Settings settings;
         public GameRefereeFactory(GameReferee.Settings settings)

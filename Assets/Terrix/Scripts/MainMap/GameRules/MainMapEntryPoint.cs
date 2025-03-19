@@ -12,11 +12,15 @@ using UnityEngine;
 
 namespace Terrix.Game.GameRules
 {
-    public class GameController : NetworkBehaviour
+    public class MainMapEntryPoint : NetworkBehaviour
     {
         [Header("References")]
         [SerializeField] private HexMapGenerator mapGenerator;
         [SerializeField] private TickGenerator tickGenerator;
+
+        private IGameDataProvider gameDataProvider;
+        private IPlayersFactory playersFactory;
+        private IGameRefereeFactory gameRefereeFactory;
         [SerializeField] private Lobby lobby;
         [SerializeField] private HexMapGenerator hexMapGenerator;
         [SerializeField] private MainMapCameraController cameraController;
@@ -45,7 +49,8 @@ namespace Terrix.Game.GameRules
             Debug.Log("Server started");
             var settings = new Settings(
                 mapGenerator.DefaultSettingsSo.Get(),
-                new GameReferee.Settings(GameModeType.FFA)
+                new GameReferee.Settings(GameModeType.FFA),
+                new PlayersAndBots(1, 0)
             );
             Generate_OnServer(settings); //
         }
@@ -77,25 +82,18 @@ namespace Terrix.Game.GameRules
 
         private IEnumerator GamePipeline(Settings settings)
         {
-            var gameData = gameDataProvider.Get();
-            // GameEvents.CreateInstance();
-            // AttackInvoker = new AttackInvoker();
-            // PhaseManager = new PhaseManager();
-            // GameReferee = new GameRefereeFactory(settings.GameModeSettings).Create(null);
-            //
-            // // Создание карты
-            // Map = mapGenerator.GenerateMap(settings.MapSettings);
-
             // Ивент о начале игры
-            GameEvents.Instance.StartGame();
-
+            MainMap.Events.StartGame();
+            
             // Выбор изначальной позиции
-
+            MainMap.PhaseManager.NextPhase();
+            var gameData = gameDataProvider.Get();
             yield return new WaitForSeconds(gameData.TimeForChooseFirstCountryPosition.Seconds);
         }
 
         private void Generate_OnServer(Settings settings)
         {
+            // TODO убрать
             // GameEvents.CreateInstance(); //
             AttackInvoker = new AttackInvoker();
             PhaseManager = new PhaseManager();
@@ -103,29 +101,36 @@ namespace Terrix.Game.GameRules
 
             // Создание карты
             Map = mapGenerator.GenerateMap(settings.MapSettings);
+            ResolveDependencies(settings)
         }
 
-        // protected override void OnDestroyInternal()
-        // {
-        //     GameEvents.ReleaseInstance();
-        // }
+        private void ResolveDependencies(Settings settings)
+        {
+            gameDataProvider = new GameDataProvider();
+            playersFactory = new PlayersFactory(gameDataProvider);
+            gameRefereeFactory = new GameRefereeFactory(settings.GameModeSettings);
+
+            MainMap.Events = new GameEvents();
+            MainMap.AttackInvoker = new AttackInvoker();
+            MainMap.PhaseManager = new PhaseManager();
+            MainMap.Referee = gameRefereeFactory.Create(playersFactory.CreatePlayers(settings.PlayersCount));
+        }
 
 
         public class Settings
         {
             public HexMapGenerator.Settings MapSettings { get; }
             public GameReferee.Settings GameModeSettings { get; }
+            public PlayersAndBots PlayersCount { get; }
 
             public Settings(
                 HexMapGenerator.Settings mapSettings,
-                GameReferee.Settings gameModeSettings)
+                GameReferee.Settings gameModeSettings,
+                PlayersAndBots playersCount)
             {
-                MapSettings = mapSettings ??
-                              throw new NullReferenceException(
-                                  $"{nameof(GameController)}.{nameof(Settings)}.{nameof(MapSettings)}");
-                GameModeSettings = gameModeSettings ??
-                                   throw new NullReferenceException(
-                                       $"{nameof(GameController)}.{nameof(Settings)}.{nameof(GameModeSettings)}");
+                MapSettings = mapSettings ?? throw new NullReferenceException($"{nameof(MainMapEntryPoint)}.{nameof(Settings)}.{nameof(MapSettings)}");
+                GameModeSettings = gameModeSettings ?? throw new NullReferenceException($"{nameof(MainMapEntryPoint)}.{nameof(Settings)}.{nameof(GameModeSettings)}");
+                PlayersCount = playersCount;
             }
         }
     }

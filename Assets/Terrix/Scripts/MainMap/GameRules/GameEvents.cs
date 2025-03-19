@@ -1,9 +1,9 @@
 ﻿using System;
-using CustomUtilities.DataStructures;
+
 
 namespace Terrix.Game.GameRules
 {
-    public class GameEvents : Singleton<GameEvents>
+    public class GameEvents
     {
         private bool gameIsReady;
         private Action onGameReady;

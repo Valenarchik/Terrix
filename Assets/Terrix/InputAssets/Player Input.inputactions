@@ -33,7 +33,25 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Drag Borders",
+                    "name": "Chose Country Position",
+                    "type": "Button",
+                    "id": "5d7991aa-b855-418a-8cc1-07085567a596",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "MultiTap",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Point",
+                    "type": "Value",
+                    "id": "88c21b48-36b3-4f6f-9cbb-f577c6412730",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Drag Country Borders",
                     "type": "Value",
                     "id": "165c4418-f756-4ec9-852f-9758e4496ec4",
                     "expectedControlType": "Vector2",
@@ -181,7 +199,7 @@
                     "path": "<Mouse>/scroll/up",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Mouse and keyboard",
                     "action": "Zoom Camera",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -292,7 +310,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Drag Borders",
+                    "action": "Drag Country Borders",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -303,7 +321,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Mouse and keyboard",
-                    "action": "Drag Borders",
+                    "action": "Drag Country Borders",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -314,9 +332,31 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Mouse and keyboard",
-                    "action": "Drag Borders",
+                    "action": "Drag Country Borders",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "7e6cb325-4e91-4cea-b17a-89ba6a4c922e",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Mouse and keyboard",
+                    "action": "Chose Country Position",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "47d64bd8-2203-46fe-a273-28870a947d7e",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Mouse and keyboard",
+                    "action": "Point",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },
@@ -346,7 +386,7 @@
                     "name": "Cancel",
                     "type": "Button",
                     "id": "4a09742f-428e-4107-89f5-3615f7362171",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false

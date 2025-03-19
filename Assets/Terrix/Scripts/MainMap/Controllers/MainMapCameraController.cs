@@ -1,4 +1,4 @@
-﻿using FishNet.Object;
+using FishNet.Object;
 using Terrix.Game.GameRules;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -30,7 +30,10 @@ namespace Terrix.Controllers
         private Vector3 difference;
         private bool drag;
 
-        private bool enable;
+        public bool Enable { get; set; }
+        public bool EnableDrag { get; set; } = true;
+        public bool EnableZoom { get; set; } = true;
+        public bool EnableMove { get; set; } = true;
 
         private float ZoomValue
         {
@@ -70,7 +73,9 @@ namespace Terrix.Controllers
         {
             base.OnStartClient();
             GameEvents.Instance.StartGame();
-            GameEvents.Instance.OnGameReady(OnSceneReady);
+            GameEvents.Instance.OnGameReady(OnGameReady);
+            //TODO
+            // MainMap.Events.OnGameReady(OnGameReady);
         }
 
         public override void OnStartServer()
@@ -80,14 +85,14 @@ namespace Terrix.Controllers
             enabled = false;
         }
 
-        private void OnSceneReady()
+        private void OnGameReady()
         {
-            enable = true;
+            Enable = true;
         }
 
         private void Update()
         {
-            if (!enable)
+            if (!Enable)
             {
                 return;
             }
@@ -106,6 +111,11 @@ namespace Terrix.Controllers
 
         private void DragCamera()
         {
+            if (!EnableDrag)
+            {
+                return;
+            }
+            
             var cameraTransform = camera.transform;
 
             var newPosition = origin - difference;
@@ -117,6 +127,11 @@ namespace Terrix.Controllers
 
         private void MoveCamera()
         {
+            if (!EnableMove)
+            {
+                return;
+            }
+            
             var cameraTransform = camera.transform;
 
             var cameraSpeedModifier = ZoomValue * zoomValueOnCameraSpeedModifier;
@@ -129,6 +144,24 @@ namespace Terrix.Controllers
             newPosition = AssignCameraPosition(newPosition);
 
             cameraTransform.position = newPosition;
+        }
+        
+        private void ZoomCamera()
+        {
+            if (!EnableZoom)
+            {
+                return;
+            }
+            
+            var zoomSpeedModifier = ZoomValue * zoomValueOnZoomSpeedModifier;
+            zoomSpeedModifier = zoomSpeedModifier == 0 ? 1 : zoomSpeedModifier;
+
+            var offset = Time.deltaTime * zoomSpeed * zoomSpeedModifier * zoomDirection;
+            var newZoomValue = ZoomValue + offset;
+
+            newZoomValue = AssignZoom(newZoomValue);
+
+            ZoomValue = newZoomValue;
         }
 
         private Vector3 AssignCameraPosition(Vector3 cameraPosition)
@@ -152,36 +185,10 @@ namespace Terrix.Controllers
             return bounds;
         }
 
-        private void ZoomCamera()
-        {
-            var zoomSpeedModifier = ZoomValue * zoomValueOnZoomSpeedModifier;
-            zoomSpeedModifier = zoomSpeedModifier == 0 ? 1 : zoomSpeedModifier;
-
-            var offset = Time.deltaTime * zoomSpeed * zoomSpeedModifier * zoomDirection;
-            var newZoomValue = ZoomValue + offset;
-
-            newZoomValue = AssignZoom(newZoomValue);
-
-            ZoomValue = newZoomValue;
-        }
-
         private float AssignZoom(float zoomValue)
         {
             zoomValue = Mathf.Clamp(zoomValue, minZoomValue, maxZoomValue);
             return zoomValue;
-        }
-
-        private void OnDrawGizmos()
-        {
-            if (Application.isPlaying)
-            {
-                var bounds = CalculateBounds();
-                Gizmos.color = Color.red;
-                Gizmos.DrawLine(bounds.min, bounds.min + new Vector3(bounds.size.x, 0, 0));
-                Gizmos.DrawLine(bounds.min, bounds.min + new Vector3(0, bounds.size.y, 0));
-                Gizmos.DrawLine(bounds.max, bounds.max - new Vector3(bounds.size.x, 0, 0));
-                Gizmos.DrawLine(bounds.max, bounds.max - new Vector3(0, bounds.size.y, 0));
-            }
         }
     }
 }

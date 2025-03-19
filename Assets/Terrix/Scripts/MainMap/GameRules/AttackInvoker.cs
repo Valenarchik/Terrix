@@ -1,6 +1,10 @@
 ﻿namespace Terrix.Game.GameRules
 {
-    public class AttackInvoker: ITickHandler
+    public interface IAttackInvoker : ITickHandler
+    {
+    }
+
+    public class AttackInvoker: IAttackInvoker
     {
         public void HandleTick()
         {
