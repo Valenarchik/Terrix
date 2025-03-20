@@ -88,7 +88,7 @@ namespace Terrix.Map
                         transform = Matrix4x4.identity
                     };
 
-                    var hex = new Hex(gameData.CellsStats[data.HexType], position, mapSize);
+                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position, mapSize);
                     map[hex.Position.x, hex.Position.y] = hex;
                 }
             }
