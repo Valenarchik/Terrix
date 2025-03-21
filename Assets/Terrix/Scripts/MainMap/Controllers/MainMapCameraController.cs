@@ -74,6 +74,13 @@ namespace Terrix.Controllers
             base.OnStartClient();
             MainMap.Events.OnGameReady(OnGameReady); //иногда вызывае  ошибку
         }
+        public void Init_OnServer()
+        {
+        }
+        public void Init_OnClient()
+        {
+            MainMap.Events.OnGameReady(OnGameReady);
+        }
 
         public override void OnStartServer()
         {

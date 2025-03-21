@@ -1,0 +1,198 @@
+using System;
+using System.Collections.Generic;
+using FishNet.Connection;
+using FishNet.Managing.Scened;
+using FishNet.Object;
+using FishNet.Transporting;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace Terrix.Networking
+{
+    public class Lobby : NetworkBehaviour
+    {
+        public int Id { get; private set; }
+        public Scene Scene { get; private set; }
+        // public List<NetworkObject> Players { get; private set; }
+        public List<NetworkConnection> Players { get; private set; }
+        public int PlayersMaxCount { get; private set; }
+        public int PlayersCurrentCount => Players.Count;
+
+        public LobbyStateMachine LobbyStateMachine { get; private set; }
+        public event Action OnPlayersChanged;
+        public event Action<string> OnStateChanged;
+        public event Action<float> OnTimerChanged;
+
+        private void Update()
+        {
+            if (LobbyStateMachine is null)
+            {
+                return;
+            }
+
+            if (IsServerInitialized)
+            {
+                LobbyStateMachine.CurrentState.Update();
+                float time;
+                if (LobbyStateMachine.CurrentState == LobbyStateMachine.LobbySearchingState)
+                {
+                    time = LobbyStateMachine.LobbySearchingState.TimeToStopTimer;
+                }
+                else if (LobbyStateMachine.CurrentState == LobbyStateMachine.LobbyStartingState)
+                {
+                    time = LobbyStateMachine.LobbyStartingState.TimeToStopTimer;
+                }
+                else
+                {
+                    time = 0;
+                }
+
+                UpdateTimer_ToObserver(time);
+            }
+        }
+
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+            NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
+            Id = LobbyManager.Instance.GetFreeId();
+
+            Scene = gameObject.scene;
+            Players = new List<NetworkConnection>();
+            PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
+            LobbyStateMachine = new LobbyStateMachine();
+            LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
+            LobbyManager.Instance.AddLobby(Id, this);
+        }
+
+        private void LobbyStateMachineOnStateChanged_OnServer(LobbyState state)
+        {
+            UpdateStateName_ToObserver(state.ToString());
+        }
+
+        [ObserversRpc]
+        private void UpdateStateName_ToObserver(string lobbyStateName)
+        {
+            OnStateChanged?.Invoke(lobbyStateName);
+        }
+
+        private void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
+            RemoteConnectionStateArgs args)
+        {
+            switch (args.ConnectionState)
+            {
+                case RemoteConnectionState.Stopped:
+                    Players.Remove(conn);
+                    if (Players.Count == 0)
+                    {
+                        LobbyManager.Instance.RemoveLobby(Id);
+                    }
+                    UpdatePlayers_ToObserver(Players);
+                    break;
+                case RemoteConnectionState.Started:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+            Scene = gameObject.scene;
+            var player = NetworkManager.ClientManager.Connection;
+            // PlayerManager.Instance.SetPlayer(player);
+            AddPlayer_ToServer(player);
+        }
+
+
+        [ServerRpc(RequireOwnership = false)]
+        void AddPlayer_ToServer(NetworkConnection newPlayer)
+        {
+            Players.Add(newPlayer);
+            if (Players.Count == PlayersMaxCount)
+            {
+                LobbyStateMachine.ChangeState(LobbyStateMachine.LobbyStartingState);
+            }
+
+            // SetInfo_ToObserver(Id, PlayersMaxCount);
+            SetInfo_ToTarget(newPlayer, Id, PlayersMaxCount);
+            UpdatePlayers_ToObserver(Players);
+            UpdateStateName_ToObserver(LobbyStateMachine.CurrentState.ToString());
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        void RemovePlayer_ToServer(NetworkConnection player)
+        {
+            Players.Remove(player);
+            var sld = new SceneLoadData(new[] { Scenes.MenuScene });
+            SceneManager.LoadConnectionScenes(player, sld);
+            // SetInfo_ToObserver(Id, PlayersMaxCount);
+            UpdatePlayers_ToObserver(Players);
+        }
+
+        // [ObserversRpc]
+        // void SetInfo_ToObserver(int id, int playersMaxCount)
+        // {
+        //     Id = id;
+        //     PlayersMaxCount = playersMaxCount;
+        //     Debug.Log("Set Info");
+        // }
+
+        [TargetRpc]
+        void SetInfo_ToTarget(NetworkConnection connection, int id, int playersMaxCount)
+        {
+            Id = id;
+            PlayersMaxCount = playersMaxCount;
+            Debug.Log("Set Target");
+        }
+
+        [ObserversRpc]
+        void UpdatePlayers_ToObserver(List<NetworkConnection> players)
+        {
+            Players = players;
+            OnPlayersChanged?.Invoke();
+        }
+
+        [ObserversRpc]
+        void UpdateTimer_ToObserver(float timerTime)
+        {
+            OnTimerChanged?.Invoke(timerTime);
+        }
+
+        public bool IsAvailableForJoin() => LobbyStateMachine.CurrentState == LobbyStateMachine.LobbySearchingState;
+
+        public void EndGame()
+        {
+            EndGame_ToServer();
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        void EndGame_ToServer()
+        {
+            LobbyStateMachine.ChangeState(LobbyStateMachine.LobbyEndedState);
+            EndGame_ToObserver();
+        }
+
+        [ObserversRpc]
+        void EndGame_ToObserver()
+        {
+            // endGameButton.gameObject.SetActive(false);
+            // leaveLobbyButton.gameObject.SetActive(true);
+        }
+
+
+        public void LeaveLobby()
+        {
+            Unsubscribe_ToServer();
+            RemovePlayer_ToServer(NetworkManager.ClientManager.Connection);
+            UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(Scenes.GameScene);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        void Unsubscribe_ToServer()
+        {
+            NetworkManager.ServerManager.OnRemoteConnectionState -= ServerManagerOnRemoteConnectionState_OnServer;
+        }
+    }
+}

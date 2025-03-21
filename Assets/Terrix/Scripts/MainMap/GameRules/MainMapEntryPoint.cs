@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using Terrix.Controllers;
@@ -45,10 +44,23 @@ namespace Terrix.Game.GameRules
         }
 
 
-        public override void OnStartServer()
+        // public override void OnStartServer()
+        // {
+        //     base.OnStartServer();
+        //     // Debug.Log("Server started");
+        //     var settings = new Settings(
+        //         mapGenerator.DefaultSettingsSo.Get(),
+        //         new GameReferee.Settings(GameModeType.FFA),
+        //         new PlayersAndBots(1, 0)
+        //     );
+        //
+        //     // Generate_OnServer(settings); //
+        //     ResolveDependencies_OnServer(settings);
+        //     lobby.LobbyStateMachine.OnStateChanged += LobbyStateMachineOnOnStateChanged;
+        // }
+
+        public void Init_OnServer()
         {
-            base.OnStartServer();
-            // Debug.Log("Server started");
             var settings = new Settings(
                 mapGenerator.DefaultSettingsSo.Get(),
                 new GameReferee.Settings(GameModeType.FFA),
@@ -79,6 +91,13 @@ namespace Terrix.Game.GameRules
             // Debug.Log("MainMapEntryPoint Client");
         }
 
+        public void Init_OnClient()
+        {
+            ResolveDependencies_OnClient();
+            UpdateClients_ToServer(ClientManager.Connection);
+            MainMap.Events.StartGame();
+        }
+
         [ServerRpc(RequireOwnership = false)]
         void UpdateClients_ToServer(NetworkConnection connection)
         {
@@ -87,12 +106,12 @@ namespace Terrix.Game.GameRules
             UpdateMap_ToTarget(connection, MainMap.Map);
         }
 
-        // [ObserversRpc]
-        // void UpdateMap_ToObserver(HexMap map)
-        // {
-        //     MainMap.Map = map;
-        //     mapGenerator.UpdateMap(map);
-        // }
+        [ObserversRpc]
+        void UpdateMap_ToObserver(HexMap map)
+        {
+            MainMap.Map = map;
+            mapGenerator.UpdateMap(map);
+        }
 
         [TargetRpc]
         void UpdateMap_ToTarget(NetworkConnection connection, HexMap map)
