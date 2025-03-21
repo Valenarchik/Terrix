@@ -5,7 +5,7 @@ namespace Terrix.Networking
 {
     public class LobbyStartingState : LobbyState
     {
-        private float Timer = 5f;
+        private float Timer = 35f;
         public float TimeToStopTimer { get; private set; }
 
         public override void Enter()

@@ -12,6 +12,7 @@ namespace Terrix.Map
     public class Country: Territory
     {
         private readonly IGameDataProvider gameDataProvider;
+        public IGameDataProvider GameDataProvider => gameDataProvider;
         /// <summary>
         /// Храню информацию о территориях в сжатом формате
         /// </summary>

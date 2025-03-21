@@ -10,7 +10,7 @@ namespace Terrix.Networking
         public LobbyPlayingState LobbyPlayingState { get; private set; }
         public LobbyEndedState LobbyEndedState { get; private set; }
         public LobbyState CurrentState { get; private set; }
-        public event Action OnStateChanged;
+        public event Action<LobbyState> OnStateChanged;
 
         public LobbyStateMachine()
         {
@@ -27,7 +27,7 @@ namespace Terrix.Networking
             CurrentState.Exit();
             CurrentState = newState;
             CurrentState.Enter();
-            OnStateChanged?.Invoke();
+            OnStateChanged?.Invoke(CurrentState);
         }
     }
 }

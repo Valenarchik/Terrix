@@ -1,5 +1,6 @@
 using System;
 using CustomUtilities.Attributes;
+using FishNet.Object;
 using Terrix.DTO;
 using Terrix.Game.GameRules;
 using UnityEngine;
@@ -8,7 +9,7 @@ using UnityEngine.Tilemaps;
 
 namespace Terrix.Controllers.Country
 {
-    public partial class CountryController : MonoBehaviour
+    public partial class CountryController : NetworkBehaviour
     {
         [SerializeField] private new Camera camera;
         [SerializeField] private Tilemap tilemap;
@@ -37,7 +38,17 @@ namespace Terrix.Controllers.Country
             stateMachine.CurrentState.OnDragBorders(context);
         }
 
-        private void Start()
+        // private void Start()
+        // {
+        //     stateMachine = new CountryControllerStateMachine();
+        //     idleState = new IdleState(this, CountryControllerStateType.Idle);
+        //     chooseFirstCountryPositionState = new ChooseFirstCountryPositionState(this, CountryControllerStateType.ChooseCountry);
+        //     stateMachine.Initialize(idleState);
+        //     
+        //     MainMap.Events.OnGameReady(OnGameReady);
+        // }
+
+        public override void OnStartClient()
         {
             stateMachine = new CountryControllerStateMachine();
             idleState = new IdleState(this, CountryControllerStateType.Idle);
@@ -61,6 +72,7 @@ namespace Terrix.Controllers.Country
         private void ActualizePhase(GamePhaseType phaseType)
         {
             currentPhase = phaseType;
+            Debug.Log(currentPhase);
             switch (phaseType)
             {
                 case GamePhaseType.Uninitialized:

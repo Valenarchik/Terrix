@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Linq;
 using FishNet.Serializing;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Map;
+using Terrix.Settings;
 using UnityEngine;
 
 namespace Terrix.Networking
@@ -53,6 +53,68 @@ namespace Terrix.Networking
                 reader.ReadBoolean());
         }
 
+        public static void WriteCountry(this Writer writer, Country value)
+        {
+            writer.Write(value.GameDataProvider);
+            writer.Write(value.Owner);
+        }
+
+        public static Country ReadCountry(this Reader reader)
+        {
+            return new Country(reader.Read<IGameDataProvider>(), reader.Read<Player>());
+        }
+
+        public static void WriteIGameDataProvider(this Writer writer, IGameDataProvider value)
+        {
+            if (value is GameDataProvider gameDataProvider)
+            {
+                writer.WriteUInt8Unpacked(1);
+                writer.Write(gameDataProvider);
+            }
+        }
+        
+        public static IGameDataProvider ReadIGameDataProvider(this Reader reader)
+        {
+            var classType = reader.ReadUInt8Unpacked();
+            if (classType == 1)
+            {
+                return reader.Read<GameDataProvider>();
+            }
+        
+            return default;
+        }
+
+        public static void WritePlayer(this Writer writer, Player value)
+        {
+            var isInitialized = value is not null;
+            writer.WriteBoolean(isInitialized);
+            if (isInitialized)
+            {
+                writer.Write(value.PlayerType);
+                writer.Write(value.Country);
+            }
+        }
+
+        public static Player ReadPlayer(this Reader reader)
+        {
+            if (!reader.ReadBoolean())
+            {
+                return null;
+            }
+
+            return new Player(reader.Read<PlayerType>(), reader.Read<Country>());
+        }
+        public static void WriteActionBool(this Writer writer, Country value)
+        {
+            writer.Write(value.GameDataProvider);
+            writer.Write(value.Owner);
+        }
+
+        public static Country ReadActionBool(this Reader reader)
+        {
+            return new Country(reader.Read<IGameDataProvider>(), reader.Read<Player>());
+        }
+
         public static T[,] ToMatrix<T>(this T[] array, int width, int height)
         {
             if (array.Length != width * height)
@@ -71,6 +133,5 @@ namespace Terrix.Networking
 
             return matrix;
         }
-
     }
 }

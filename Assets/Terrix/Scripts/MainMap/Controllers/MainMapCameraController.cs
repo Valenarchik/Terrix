@@ -72,17 +72,14 @@ namespace Terrix.Controllers
         public override void OnStartClient()
         {
             base.OnStartClient();
-            GameEvents.Instance.StartGame();
-            GameEvents.Instance.OnGameReady(OnGameReady);
-            //TODO
-            // MainMap.Events.OnGameReady(OnGameReady);
+            MainMap.Events.OnGameReady(OnGameReady); //иногда вызывае  ошибку
         }
 
         public override void OnStartServer()
         {
             base.OnStartServer();
-            Debug.Log("OnServerStarted");
-            enabled = false;
+            // Debug.Log("OnServerStarted");
+            // enabled = false;
         }
 
         private void OnGameReady()
@@ -115,7 +112,7 @@ namespace Terrix.Controllers
             {
                 return;
             }
-            
+
             var cameraTransform = camera.transform;
 
             var newPosition = origin - difference;
@@ -131,7 +128,7 @@ namespace Terrix.Controllers
             {
                 return;
             }
-            
+
             var cameraTransform = camera.transform;
 
             var cameraSpeedModifier = ZoomValue * zoomValueOnCameraSpeedModifier;
@@ -145,14 +142,14 @@ namespace Terrix.Controllers
 
             cameraTransform.position = newPosition;
         }
-        
+
         private void ZoomCamera()
         {
             if (!EnableZoom)
             {
                 return;
             }
-            
+
             var zoomSpeedModifier = ZoomValue * zoomValueOnZoomSpeedModifier;
             zoomSpeedModifier = zoomSpeedModifier == 0 ? 1 : zoomSpeedModifier;
 
