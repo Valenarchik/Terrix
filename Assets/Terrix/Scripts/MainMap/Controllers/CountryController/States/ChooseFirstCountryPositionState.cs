@@ -16,14 +16,14 @@ namespace Terrix.Controllers.Country
             {
             }
 
-            public override void OnChooseCountryPosition(InputAction.CallbackContext context)
+            public override void OnChooseCountryPosition(InputAction.CallbackContext context, MainMap mainMap)
             {
                 if (context.phase == InputActionPhase.Performed)
                 {
                     var cellPosition = MapUtilities.GetHexPosition(pointPosition,
                         CountryController.camera,
                         CountryController.tilemap);
-                    var hex = MainMap.Map[cellPosition];
+                    var hex = mainMap.Map[cellPosition];
                 }
             }
 

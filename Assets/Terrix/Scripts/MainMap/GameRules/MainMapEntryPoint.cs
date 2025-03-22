@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using Terrix.Controllers;
@@ -17,21 +18,14 @@ namespace Terrix.Game.GameRules
         [Header("References")]
         [SerializeField] private HexMapGenerator mapGenerator;
         [SerializeField] private TickGenerator tickGenerator;
+        [SerializeField] private MainMap mainMap;
+        [SerializeField] private Lobby lobby;
+        [SerializeField] private MainMapCameraController cameraController;
 
         private IGameDataProvider gameDataProvider;
         private IPlayersFactory playersFactory;
         private IGameRefereeFactory gameRefereeFactory;
-        [SerializeField] private Lobby lobby;
-        // [SerializeField] private HexMapGenerator hexMapGenerator;
-        [SerializeField] private MainMapCameraController cameraController;
 
-        // private IGameDataProvider gameDataProvider = new GameDataProvider();
-
-        // public HexMap Map { get; private set; }
-        // public GameReferee GameReferee { get; private set; }
-        // public PhaseManager PhaseManager { get; private set; }
-        //
-        // public AttackInvoker AttackInvoker { get; private set; }
 
         private void Start()
         {
@@ -42,23 +36,6 @@ namespace Terrix.Game.GameRules
             // );
             // StartGamePipeline(settings);
         }
-
-
-        // public override void OnStartServer()
-        // {
-        //     base.OnStartServer();
-        //     // Debug.Log("Server started");
-        //     var settings = new Settings(
-        //         mapGenerator.DefaultSettingsSo.Get(),
-        //         new GameReferee.Settings(GameModeType.FFA),
-        //         new PlayersAndBots(1, 0)
-        //     );
-        //
-        //     // Generate_OnServer(settings); //
-        //     ResolveDependencies_OnServer(settings);
-        //     lobby.LobbyStateMachine.OnStateChanged += LobbyStateMachineOnOnStateChanged;
-        // }
-
         public void Init_OnServer()
         {
             var settings = new Settings(
@@ -80,43 +57,24 @@ namespace Terrix.Game.GameRules
             }
         }
 
-        public override void OnStartClient()
-        {
-            base.OnStartClient();
-            // GameEvents.CreateInstance(); //
-            ResolveDependencies_OnClient();
-            UpdateClients_ToServer(ClientManager.Connection);
-            MainMap.Events.StartGame();
-            // StartGamePipeline();
-            // Debug.Log("MainMapEntryPoint Client");
-        }
 
         public void Init_OnClient()
         {
             ResolveDependencies_OnClient();
             UpdateClients_ToServer(ClientManager.Connection);
-            MainMap.Events.StartGame();
+            mainMap.Events.StartGame();
         }
 
         [ServerRpc(RequireOwnership = false)]
         void UpdateClients_ToServer(NetworkConnection connection)
         {
-            // ResolveDependencies_OnClient(MainMap.Map);
-            // UpdateMap_ToObserver(MainMap.Map);
-            UpdateMap_ToTarget(connection, MainMap.Map);
-        }
-
-        [ObserversRpc]
-        void UpdateMap_ToObserver(HexMap map)
-        {
-            MainMap.Map = map;
-            mapGenerator.UpdateMap(map);
+            UpdateMap_ToTarget(connection, mainMap.Map);
         }
 
         [TargetRpc]
         void UpdateMap_ToTarget(NetworkConnection connection, HexMap map)
         {
-            MainMap.Map = map;
+            mainMap.Map = map;
             mapGenerator.UpdateMap(map);
             Debug.Log("Main map Target");
         }
@@ -129,7 +87,7 @@ namespace Terrix.Game.GameRules
 
         private IEnumerator GamePipeline()
         {
-            MainMap.PhaseManager.NextPhase();
+            mainMap.PhaseManager.NextPhase();
             var gameData = gameDataProvider.Get();
             yield return new WaitForSeconds(gameData.TimeForChooseFirstCountryPosition.Seconds);
         }
@@ -139,18 +97,17 @@ namespace Terrix.Game.GameRules
             gameDataProvider = new GameDataProvider();
             playersFactory = new PlayersFactory(gameDataProvider);
             gameRefereeFactory = new GameRefereeFactory(settings.GameModeSettings);
-
-            MainMap.Map = mapGenerator.GenerateMap(settings.MapSettings);
-            MainMap.Referee = gameRefereeFactory.Create(playersFactory.CreatePlayers(settings.PlayersCount));
+            mainMap.Map = mapGenerator.GenerateMap(settings.MapSettings);
+            mainMap.Referee = gameRefereeFactory.Create(playersFactory.CreatePlayers(settings.PlayersCount));
         }
 
         private void ResolveDependencies_OnClient()
         {
             gameDataProvider = new GameDataProvider();
 
-            MainMap.Events = new GameEvents();
-            MainMap.AttackInvoker = new AttackInvoker();
-            MainMap.PhaseManager = new PhaseManager();
+            mainMap.Events = new GameEvents();
+            mainMap.AttackInvoker = new AttackInvoker();
+            mainMap.PhaseManager = new PhaseManager();
         }
 
 

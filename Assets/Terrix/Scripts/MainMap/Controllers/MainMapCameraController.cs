@@ -1,4 +1,3 @@
-using FishNet.Object;
 using Terrix.Game.GameRules;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,11 +5,12 @@ using UnityEngine.Tilemaps;
 
 namespace Terrix.Controllers
 {
-    public class MainMapCameraController : NetworkBehaviour
+    public class MainMapCameraController : MonoBehaviour
     {
         [Header("References")]
         [SerializeField] private Tilemap mapTilemap;
         [SerializeField] private new Camera camera;
+        [SerializeField] private MainMap mainMap;
 
         [Header("Settings")]
         [SerializeField] private float cameraSpeed = 10;
@@ -64,29 +64,13 @@ namespace Terrix.Controllers
             drag = !context.canceled;
         }
 
-        // private void Start()
-        // {
-        //     GameEvents.Instance.OnGameReady(OnSceneReady);
-        // }
 
-        public override void OnStartClient()
-        {
-            base.OnStartClient();
-            MainMap.Events.OnGameReady(OnGameReady); //иногда вызывае  ошибку
-        }
         public void Init_OnServer()
         {
         }
         public void Init_OnClient()
         {
-            MainMap.Events.OnGameReady(OnGameReady);
-        }
-
-        public override void OnStartServer()
-        {
-            base.OnStartServer();
-            // Debug.Log("OnServerStarted");
-            // enabled = false;
+            mainMap.Events.OnGameReady(OnGameReady);
         }
 
         private void OnGameReady()

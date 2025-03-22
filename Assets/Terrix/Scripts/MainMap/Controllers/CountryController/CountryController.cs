@@ -1,6 +1,5 @@
 using System;
 using CustomUtilities.Attributes;
-using FishNet.Object;
 using Terrix.DTO;
 using Terrix.Game.GameRules;
 using UnityEngine;
@@ -9,11 +8,13 @@ using UnityEngine.Tilemaps;
 
 namespace Terrix.Controllers.Country
 {
-    public partial class CountryController : NetworkBehaviour
+    public partial class CountryController : MonoBehaviour
     {
         [SerializeField] private new Camera camera;
         [SerializeField] private Tilemap tilemap;
         [SerializeField] private MainMapCameraController cameraController;
+        [SerializeField] private MainMap mainMap;
+        
 
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
@@ -25,48 +26,43 @@ namespace Terrix.Controllers.Country
 
         public void OnChooseCountryPosition(InputAction.CallbackContext context)
         {
-            stateMachine.CurrentState.OnChooseCountryPosition(context);
+            stateMachine.CurrentState.OnChooseCountryPosition(context, mainMap);
         }
 
         public void OnPoint(InputAction.CallbackContext context)
         {
             stateMachine.CurrentState.OnPoint(context);
         }
-        
+
         public void OnDragBorders(InputAction.CallbackContext context)
         {
             stateMachine.CurrentState.OnDragBorders(context);
         }
 
-        // private void Start()
-        // {
-        //     stateMachine = new CountryControllerStateMachine();
-        //     idleState = new IdleState(this, CountryControllerStateType.Idle);
-        //     chooseFirstCountryPositionState = new ChooseFirstCountryPositionState(this, CountryControllerStateType.ChooseCountry);
-        //     stateMachine.Initialize(idleState);
-        //     
-        //     MainMap.Events.OnGameReady(OnGameReady);
-        // }
+        public void Init_OnServer()
+        {
+        }
 
-        public override void OnStartClient()
+        public void Init_OnClient()
         {
             stateMachine = new CountryControllerStateMachine();
             idleState = new IdleState(this, CountryControllerStateType.Idle);
-            chooseFirstCountryPositionState = new ChooseFirstCountryPositionState(this, CountryControllerStateType.ChooseCountry);
+            chooseFirstCountryPositionState =
+                new ChooseFirstCountryPositionState(this, CountryControllerStateType.ChooseCountry);
             stateMachine.Initialize(idleState);
-            
-            MainMap.Events.OnGameReady(OnGameReady);
+
+            mainMap.Events.OnGameReady(OnGameReady);
         }
 
         private void OnGameReady()
         {
-            MainMap.PhaseManager.PhaseChanged += OnPhaseChanged;
-            ActualizePhase(MainMap.PhaseManager.CurrentPhase);
+            mainMap.PhaseManager.PhaseChanged += OnPhaseChanged;
+            ActualizePhase(mainMap.PhaseManager.CurrentPhase);
         }
 
         private void OnPhaseChanged()
         {
-            ActualizePhase(MainMap.PhaseManager.CurrentPhase);
+            ActualizePhase(mainMap.PhaseManager.CurrentPhase);
         }
 
         private void ActualizePhase(GamePhaseType phaseType)

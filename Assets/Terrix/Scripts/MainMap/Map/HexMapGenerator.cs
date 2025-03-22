@@ -185,6 +185,12 @@ namespace Terrix.Map
 
         private Settings.HexData FindData(float pixelHeight)
         {
+            if (pixelHeight > 1)
+            {
+                Debug.Log(pixelHeight);
+            }
+
+            pixelHeight = Mathf.Clamp01(pixelHeight);
             var nearestValue = settings.HexDatas
                 .Select((data, i) => (data, i))
                 .OrderBy(data => Math.Abs(data.data.Height - pixelHeight))
