@@ -7,25 +7,30 @@ namespace Terrix.Map
     // [UseGlobalCustomSerializer]
     public class HexMap
     {
-        public Hex[,] Hexes { get; }
-        public Vector2Int Size { get; }
+        public Hex[,,] Hexes { get; }
+        public Vector3Int Size { get; }
 
-        public Hex this[int x, int y]
+        public Hex this[int x, int y, int z]
         {
-            get => Hexes[x, y];
-            set => Hexes[x, y] = value;
-        }
-        
-        public Hex this[Vector2Int pos]
-        {
-            get => Hexes[pos.x, pos.y];
-            set => Hexes[pos.x, pos.y] = value;
+            get => Hexes[x, y, z];
+            set => Hexes[x, y, z] = value;
         }
 
-        public HexMap(Hex[,] hexes)
+        public Hex this[Vector3Int pos]
+        {
+            get => Hexes[pos.x, pos.y, pos.z];
+            set => Hexes[pos.x, pos.y, pos.z] = value;
+        }
+
+        public bool HasHex(Vector3Int pos)
+        {
+            return pos.x >= 0 && pos.y >= 0 && pos.z >= 0 && pos.x < Size.x && pos.y < Size.y && pos.z < Size.z;
+        }
+
+        public HexMap(Hex[,,] hexes)
         {
             Hexes = hexes;
-            Size = new Vector2Int(hexes.GetLength(0), hexes.GetLength(1));
+            Size = new Vector3Int(hexes.GetLength(0), hexes.GetLength(1), hexes.GetLength(2));
         }
 
         public HexMap(Hex[,] hexes, Vector2Int size)

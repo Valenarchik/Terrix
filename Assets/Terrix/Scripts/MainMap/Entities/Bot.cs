@@ -8,7 +8,7 @@ namespace Terrix.Entities
     /// </summary>
     public class Bot: Player
     {
-        public Bot(PlayerType playerType) : base(playerType)
+        public Bot(int id, PlayerType playerType) : base(id, playerType)
         {
         }
     }

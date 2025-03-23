@@ -1,34 +1,39 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
 using Terrix.DTO;
-using Terrix.Entities;
 using UnityEngine;
 
 namespace Terrix.Map
 {
-    public struct Hex
+    public class Hex: IEquatable<Hex>
     {
-        [NotNull] public HexData Data { get; private set; }
-        public HexType HexType => Data.HexType;
-        public float Income => Data.Income;
-        public float Resist => Data.Resist;
-        public bool CanCapture => Data.CanCapture;
-        public bool IsSeeTile => Data.IsSeeTile;
-
-        public Vector2Int Position { get; private set; }
-        public Vector2Int[] NeighboursPositions { get; }
-        [MaybeNull] public Player Owner { get; private set; }
-
-        public Action<Hex> OwnerChanged;
-
-        public Hex([NotNull] HexData data, Vector2Int position, Vector2Int mapSize)
+        public HexType HexType { get; }
+        public Vector3Int Position { get; }
+        public Vector3Int[] NeighboursPositions { get; }
+        public int? PlayerId { get; set; }
+        
+        public Hex(HexType hexType, Vector3Int position)
         {
-            Data = data;
+            HexType = hexType;
             Position = position;
-            NeighboursPositions = MapUtilities.GetHexNeighborsPositions(position, mapSize);
-            
-            OwnerChanged = null;
-            Owner = null;
+            NeighboursPositions = MapUtilities.GetHexNeighborsPositions(position);
+            PlayerId = null;
+        }
+
+        public IEnumerable<Hex> GetNeighbours(HexMap hexMap)
+        {
+            foreach (var pos in NeighboursPositions)
+            {
+                if (hexMap.HasHex(pos))
+                {
+                    yield return hexMap[pos];
+                }
+            }
+        }
+
+        public HexData GetHexData(GameData gameData)
+        {
+            return gameData.CellsStats[HexType];
         }
         public Hex([NotNull] HexData data, Vector2Int position, Vector2Int[] neighboursPositions, Player owner)
         {
@@ -42,7 +47,22 @@ namespace Terrix.Map
 
         public override string ToString()
         {
-            return $"Hex_{Position.x}_{Position.y}";
+            return $"Hex_{HexType}_{Position.x}_{Position.y}_{Position.z}";
+        }
+
+        public bool Equals(Hex other)
+        {
+            return other != null && Position.Equals(other.Position);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Hex other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return Position.GetHashCode();
         }
     }
 }

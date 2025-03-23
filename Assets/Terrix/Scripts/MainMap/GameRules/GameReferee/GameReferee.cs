@@ -11,13 +11,13 @@ namespace Terrix.Game.GameRules
 
     public abstract class GameReferee: IGameReferee
     {
-        protected List<Player> Players;
+        protected readonly List<Player> players;
 
         protected GameReferee(IEnumerable<Player> players)
         {
-            Players = players.Where(player => player is not null).ToList();
+            this.players = players.Where(player => player is not null).ToList();
         }
-        
+
         public abstract void HandleTick();
         
         

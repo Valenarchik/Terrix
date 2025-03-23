@@ -10,7 +10,6 @@ namespace Terrix.Controllers
         [Header("References")]
         [SerializeField] private Tilemap mapTilemap;
         [SerializeField] private new Camera camera;
-        [SerializeField] private MainMap mainMap;
 
         [Header("Settings")]
         [SerializeField] private float cameraSpeed = 10;
@@ -29,6 +28,8 @@ namespace Terrix.Controllers
         private Vector3 origin;
         private Vector3 difference;
         private bool drag;
+        
+        private GameEvents gameEvents;
 
         public bool Enable { get; set; }
         public bool EnableDrag { get; set; } = true;
@@ -63,15 +64,19 @@ namespace Terrix.Controllers
 
             drag = !context.canceled;
         }
-
-
+        //TODO переделать
+        public void Initialize(GameEvents gameEvents)
+        {
+            this.gameEvents = gameEvents;
+        }
         public void Init_OnServer()
         {
         }
         public void Init_OnClient()
         {
-            mainMap.Events.OnGameReady(OnGameReady);
+           gameEvents.OnGameReady(OnGameReady);
         }
+        
 
         private void OnGameReady()
         {

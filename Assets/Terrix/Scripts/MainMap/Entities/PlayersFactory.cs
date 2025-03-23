@@ -27,11 +27,11 @@ namespace Terrix.Entities
             {
                 if (i < playersCount.Players)
                 {
-                    players[i] = new Player(PlayerType.Player);
+                    players[i] = new Player(i, PlayerType.Player);
                 }
                 else
                 {
-                    players[i] = new Bot(PlayerType.Bot);
+                    players[i] = new Bot(i, PlayerType.Bot);
                 }
                 players[i].Country = new Country(gameDataProvider, players[i]);
                 i++;
