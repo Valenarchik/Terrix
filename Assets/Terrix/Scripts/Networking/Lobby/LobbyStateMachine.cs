@@ -12,9 +12,9 @@ namespace Terrix.Networking
         public LobbyState CurrentState { get; private set; }
         public event Action<LobbyState> OnStateChanged;
 
-        public LobbyStateMachine()
+        public LobbyStateMachine(bool isCustom = false)
         {
-            LobbySearchingState = new LobbySearchingState(this);
+            LobbySearchingState = isCustom ?new LobbySearchingState(this) : new LobbyTimerSearchingState(this);
             LobbyStartingState = new LobbyStartingState(this);
             LobbyPlayingState = new LobbyPlayingState(this);
             LobbyEndedState = new LobbyEndedState(this);

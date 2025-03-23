@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using FishNet;
-using FishNet.Connection;
+﻿using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using UnityEngine;
@@ -21,7 +19,7 @@ public class BootstrapNetworkManager : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void CreateOrJoinLobby_ToServer(NetworkConnection player)
+    private void CreateOrJoinDefaultLobby_ToServer(NetworkConnection player)
     {
         if (LobbyManager.Instance.TryGetAvailableLobby(out var availableLobby))
         {
@@ -33,19 +31,39 @@ public class BootstrapNetworkManager : NetworkBehaviour
         }
     }
 
-    public void CreateOrJoinLobby_OnClient()
+    [ServerRpc(RequireOwnership = false)]
+    private void CreateCustomLobby_ToServer(NetworkConnection player)
+    {
+        CreateNewGame(player, Terrix.Networking.Scenes.CustomGameScene);
+    }
+
+    public void CreateOrJoinDefaultLobby_OnClient()
     {
         var player = NetworkManager.ClientManager.Connection;
-        CreateOrJoinLobby_ToServer(player);
+        CreateOrJoinDefaultLobby_ToServer(player);
         CloseScenesOld(new[] { Terrix.Networking.Scenes.MenuScene });
     }
 
-    public void JoinLobby(int id, string[] scenesToClose)
+    public void CreateCustomLobby_OnClient()
     {
-        Debug.Log(scenesToClose.Length);
         var player = NetworkManager.ClientManager.Connection;
-        JoinGameServer(player, id);
-        CloseScenesOld(scenesToClose);
+        CreateCustomLobby_ToServer(player);
+        CloseScenesOld(new[] { Terrix.Networking.Scenes.MenuScene });
+    }
+
+    public void TryJoinCustomLobby(int id)
+    {
+        var player = NetworkManager.ClientManager.Connection;
+        // var isSucceed = TryJoinGame_ToServer(player, id);
+        // if (TryJoinGame_ToServer(player, id, out var isRob))
+        // {
+        //     CloseScenesOld(new[] { Terrix.Networking.Scenes.MenuScene });
+        //     return true;
+        // }
+        //
+        // return false;
+        TryJoinGame_ToServer(player, id);
+        CloseScenesOld(new[] { Terrix.Networking.Scenes.MenuScene });
     }
 
 
@@ -56,11 +74,15 @@ public class BootstrapNetworkManager : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    void JoinGameServer(NetworkConnection player, int id)
+    private void TryJoinGame_ToServer(NetworkConnection player, int id)
     {
-        var scene = LobbyManager.Instance.GetSceneById(id);
-        Debug.Log(scene.name);
+        // Scene scene;
+        if (!LobbyManager.Instance.TryGetCustomLobbyById(id, out var scene))
+        {
+        }
+
         JoinGame(player, scene);
+        // return true;
     }
 
     private void CloseScenesOld(string[] scenesToClose)

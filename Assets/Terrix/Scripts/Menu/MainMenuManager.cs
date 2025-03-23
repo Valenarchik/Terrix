@@ -1,48 +1,23 @@
-﻿using CustomUtilities.DataStructures;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class MainMenuManager : MonoBehaviour
 {
-
-    [SerializeField] private GameObject menuScreen, lobbyScreen;
     [SerializeField] private TMP_InputField lobbyInput;
-    [SerializeField] private TextMeshProUGUI lobbyTitle, lobbyIDText;
-    [SerializeField] private Button startGameButton;
+    [SerializeField] private TextMeshProUGUI errorMessage;
 
-    // private void Start()
-    // {
-    //     OpenMainMenu();
-    // }
-
-    public void CreateLobby()
+    public void CreateCustomLobby()
     {
-        // BootstrapManager.CreateLobby();
-        StartNewGame();
+        BootstrapNetworkManager.Instance.CreateCustomLobby_OnClient();
     }
 
-    public void StartGame()
+    public void JoinCustomLobby()
     {
-        // BootstrapManager.CreateLobby();
-        StartNewGame();
+        BootstrapNetworkManager.Instance.TryJoinCustomLobby(int.Parse(lobbyInput.text));
     }
 
-    public void OpenMainMenu()
+    public void StartDefaultGame()
     {
-        CloseAllScreens();
-        menuScreen.SetActive(true);
-    }
-    
-    void CloseAllScreens()
-    {
-        menuScreen.SetActive(false);
-        lobbyScreen.SetActive(false);
-    }
-    
-
-    public void StartNewGame()
-    {
-        BootstrapNetworkManager.Instance.CreateOrJoinLobby_OnClient();
+        BootstrapNetworkManager.Instance.CreateOrJoinDefaultLobby_OnClient();
     }
 }

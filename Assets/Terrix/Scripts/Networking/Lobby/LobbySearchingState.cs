@@ -1,9 +1,15 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Terrix.Networking
 {
     public class LobbySearchingState : LobbyState
+    {
+        public LobbySearchingState(LobbyStateMachine stateMachine) : base(stateMachine)
+        {
+        }
+    }
+
+    public class LobbyTimerSearchingState : LobbySearchingState
     {
         private float Timer = 60f;
         public float TimeToStopTimer { get; private set; }
@@ -22,7 +28,7 @@ namespace Terrix.Networking
             }
         }
 
-        public LobbySearchingState(LobbyStateMachine stateMachine) : base(stateMachine)
+        public LobbyTimerSearchingState(LobbyStateMachine stateMachine) : base(stateMachine)
         {
         }
     }

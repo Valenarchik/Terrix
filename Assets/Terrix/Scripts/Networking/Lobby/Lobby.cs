@@ -4,7 +4,6 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Terrix.Networking
@@ -35,9 +34,9 @@ namespace Terrix.Networking
             {
                 LobbyStateMachine.CurrentState.Update();
                 float time;
-                if (LobbyStateMachine.CurrentState == LobbyStateMachine.LobbySearchingState)
+                if (LobbyStateMachine.CurrentState is LobbyTimerSearchingState timerSearchingState)
                 {
-                    time = LobbyStateMachine.LobbySearchingState.TimeToStopTimer;
+                    time = timerSearchingState.TimeToStopTimer;
                 }
                 else if (LobbyStateMachine.CurrentState == LobbyStateMachine.LobbyStartingState)
                 {
@@ -64,15 +63,21 @@ namespace Terrix.Networking
         {
             base.OnStartServer();
             NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
-            Id = LobbyManager.Instance.GetFreeId();
-        
+            Id = GetFreeId();
+
             Scene = gameObject.scene;
             Players = new List<NetworkConnection>();
             PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
-            LobbyStateMachine = new LobbyStateMachine();
+            LobbyStateMachine = CreateStateMachine();
             LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
-            LobbyManager.Instance.AddLobby(Id, this);
+            AddLobbyToLobbyManager();
         }
+
+        protected virtual int GetFreeId() => LobbyManager.Instance.GetFreeId();
+
+        protected virtual LobbyStateMachine CreateStateMachine() => new LobbyStateMachine();
+        protected virtual void AddLobbyToLobbyManager() => LobbyManager.Instance.AddDefaultLobby(Id, this);
+
         public override void OnStartClient()
         {
             base.OnStartClient();
@@ -81,18 +86,18 @@ namespace Terrix.Networking
             AddPlayer_ToServer(player);
         }
 
-        private void LobbyStateMachineOnStateChanged_OnServer(LobbyState state)
+        protected void LobbyStateMachineOnStateChanged_OnServer(LobbyState state)
         {
             UpdateStateName_ToObserver(state.ToString());
         }
 
         [ObserversRpc]
-        private void UpdateStateName_ToObserver(string lobbyStateName)
+        protected void UpdateStateName_ToObserver(string lobbyStateName)
         {
             OnStateChanged?.Invoke(lobbyStateName);
         }
 
-        private void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
+        protected void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
             RemoteConnectionStateArgs args)
         {
             switch (args.ConnectionState)
@@ -101,8 +106,9 @@ namespace Terrix.Networking
                     Players.Remove(conn);
                     if (Players.Count == 0)
                     {
-                        LobbyManager.Instance.RemoveLobby(Id);
+                        LobbyManager.Instance.RemoveDefaultLobby(Id);
                     }
+
                     UpdatePlayers_ToObserver(Players);
                     break;
                 case RemoteConnectionState.Started:
@@ -114,7 +120,7 @@ namespace Terrix.Networking
 
 
         [ServerRpc(RequireOwnership = false)]
-        void AddPlayer_ToServer(NetworkConnection newPlayer)
+        protected virtual void AddPlayer_ToServer(NetworkConnection newPlayer)
         {
             Players.Add(newPlayer);
             if (Players.Count == PlayersMaxCount)
@@ -139,7 +145,7 @@ namespace Terrix.Networking
         }
 
         [TargetRpc]
-        void SetInfo_ToTarget(NetworkConnection connection, int id, int playersMaxCount)
+        protected void SetInfo_ToTarget(NetworkConnection connection, int id, int playersMaxCount)
         {
             Id = id;
             PlayersMaxCount = playersMaxCount;
@@ -147,14 +153,14 @@ namespace Terrix.Networking
         }
 
         [ObserversRpc]
-        void UpdatePlayers_ToObserver(List<NetworkConnection> players)
+        protected void UpdatePlayers_ToObserver(List<NetworkConnection> players)
         {
             Players = players;
             OnPlayersChanged?.Invoke();
         }
 
         [ObserversRpc]
-        void UpdateTimer_ToObserver(float timerTime)
+        protected void UpdateTimer_ToObserver(float timerTime)
         {
             OnTimerChanged?.Invoke(timerTime);
         }

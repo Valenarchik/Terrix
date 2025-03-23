@@ -1,20 +1,18 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using FishNet;
-using FishNet.Managing.Scened;
 using FishNet.Object;
-using Terrix.Game.GameRules;
 using Terrix.Networking;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Random = UnityEngine.Random;
 
 public class LobbyManager : NetworkBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     [SerializeField] private int playersMaxCount;
     public int PlayersMaxCount => playersMaxCount;
-    private Dictionary<int, Lobby> _lobbies = new();
+    private Dictionary<int, Lobby> defaultLobbies = new();
+    private Dictionary<int, CustomLobby> customLobbies = new();
     public static LobbyManager Instance { get; private set; }
 
     private void Awake() => Instance = this;
@@ -39,7 +37,7 @@ public class LobbyManager : NetworkBehaviour
     // }
     public bool TryGetAvailableLobby(out Lobby availableLobby)
     {
-        foreach (var lobby in _lobbies.Values)
+        foreach (var lobby in defaultLobbies.Values)
         {
             if (lobby.IsAvailableForJoin())
             {
@@ -55,30 +53,53 @@ public class LobbyManager : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
-        UpdateLobbies_ToServer();
+        UpdateDefaultLobbies_ToServer();
     }
 
     [ObserversRpc]
-    void UpdateLobbies_ToObserver(Dictionary<int, Lobby> newLobbies)
+    private void UpdateDefaultLobbies_ToObserver(Dictionary<int, Lobby> newLobbies)
     {
-        _lobbies = newLobbies;
+        defaultLobbies = newLobbies;
     }
 
-    public void AddLobby(int id, Lobby lobby)
+    private void UpdateCustomLobbies_ToObserver(Dictionary<int, CustomLobby> newLobbies)
     {
-        _lobbies.Add(id, lobby);
-        UpdateLobbies_ToObserver(_lobbies);
+        customLobbies = newLobbies;
     }
-    public void RemoveLobby(int id)
+
+    public void AddDefaultLobby(int id, Lobby lobby)
     {
-        _lobbies.Remove(id);
-        UpdateLobbies_ToObserver(_lobbies);
+        defaultLobbies.Add(id, lobby);
+        UpdateDefaultLobbies_ToObserver(defaultLobbies);
+    }
+
+    public void AddCustomLobby(int id, CustomLobby lobby)
+    {
+        customLobbies.Add(id, lobby);
+        UpdateCustomLobbies_ToObserver(customLobbies);
+    }
+
+    public void RemoveDefaultLobby(int id)
+    {
+        defaultLobbies.Remove(id);
+        UpdateDefaultLobbies_ToObserver(defaultLobbies);
     }
 
     public int GetFreeId()
     {
         var id = GetLastId() + 1;
-        while (_lobbies.ContainsKey(id))
+        while (defaultLobbies.ContainsKey(id))
+        {
+            id++;
+        }
+
+        return id;
+    }
+
+    public int GetCustomFreeId()
+    {
+        var id = Random.Range(100000, 1000000);
+        while (customLobbies.ContainsKey(id))
         {
             id++;
         }
@@ -88,28 +109,37 @@ public class LobbyManager : NetworkBehaviour
 
     public int GetLastId()
     {
-        UpdateLobbies_ToServer();
-        if (!_lobbies.Any())
+        UpdateDefaultLobbies_ToServer();
+        if (!defaultLobbies.Any())
         {
             return 0;
         }
-        return _lobbies.Keys.Last();
+
+        return defaultLobbies.Keys.Last();
     }
 
-    public Scene GetSceneById(int id)
+    public bool TryGetCustomLobbyById(int id, out Scene scene)
     {
-        UpdateLobbies_ToServer();
-        if (_lobbies.ContainsKey(id))
+        UpdateCustomLobbies_ToServer();
+        if (customLobbies.TryGetValue(id, out var lobby))
         {
-            return _lobbies[id].gameObject.scene;
+            scene = lobby.gameObject.scene;
+            return true;
         }
 
-        throw new Exception("there is no such id");
+        scene = new Scene();
+        return false;
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void UpdateLobbies_ToServer()
+    private void UpdateDefaultLobbies_ToServer()
     {
-        UpdateLobbies_ToObserver(_lobbies);
+        UpdateDefaultLobbies_ToObserver(defaultLobbies);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void UpdateCustomLobbies_ToServer()
+    {
+        UpdateCustomLobbies_ToObserver(customLobbies);
     }
 }
