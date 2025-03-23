@@ -18,23 +18,23 @@ namespace Terrix.Map
         /// </summary>
         private readonly Dictionary<HexType, int> cellsByTypeCount;
 
-        private readonly HashSet<Hex> cellsSet;
+        private readonly HashSet<Hex> cellsSet = new();
 
-        public int ID { get; }
+        public int PlayerId => Owner.ID;
         public float Population { get; private set; }
         public int TotalCellsCount { get; private set; }
+        public Player Owner { get; private set; }
 
         public float DensePopulation => Population / TotalCellsCount;
         public override IReadOnlyCollection<Hex> Cells => cellsSet;
         public event Action<UpdateCellsData> OnCellsUpdate;
 
 
-        public Country(int id, [NotNull] IGameDataProvider gameDataProvider, [NotNull] Player owner) : base(
-            Enumerable.Empty<Hex>(),
-            owner)
+        public Country([NotNull] IGameDataProvider gameDataProvider, [NotNull] Player owner) : base(
+            Enumerable.Empty<Hex>())
         {
-            this.ID = id;
             this.gameDataProvider = gameDataProvider;
+            this.Owner = owner ?? throw new ArgumentNullException(nameof(owner));
 
             cellsByTypeCount = Enum.GetValues(typeof(HexType))
                 .OfType<HexType>()
@@ -54,78 +54,124 @@ namespace Terrix.Map
             Population = Mathf.Clamp(Population, 0, TotalCellsCount * gameData.MaxDensePopulation);
         }
 
+        public void ClearAndAdd(IEnumerable<Hex> addedHexesAfterClear)
+        {
+            RemoveAndAdd(cellsSet, addedHexesAfterClear);
+        }
+
+        public void RemoveAndAdd(IEnumerable<Hex> removedHexes, IEnumerable<Hex> addedHexes)
+        {
+            var removedSet = removedHexes.ToHashSet();
+            var addedSet = addedHexes.ToHashSet();
+
+            var changeData = new List<CellChangeData>(removedSet.Count + addedSet.Count);
+            changeData.AddRange(removedSet.Select(hex => new CellChangeData(hex, UpdateCellMode.Remove)));
+            changeData.AddRange(addedSet.Select(hex => new CellChangeData(hex, UpdateCellMode.Add)));
+
+            foreach (var cellChangeData in changeData)
+            {
+                cellChangeData.Hex.PlayerId = cellChangeData.Mode switch
+                {
+                    UpdateCellMode.Add => PlayerId,
+                    UpdateCellMode.Remove => null,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
+
+            var data = new UpdateCellsData(PlayerId, changeData.ToArray());
+
+            UpdateCells(data);
+        }
+
         public void UpdateCells([NotNull] UpdateCellsData data)
+        {
+            ValidateUpdateCellsData(data);
+
+            foreach (var updateData in data.ChangeData)
+            {
+                var cell = updateData.Hex;
+                switch (updateData.Mode)
+                {
+                    case UpdateCellMode.Add:
+                    {
+                        if (cellsSet.Add(cell))
+                        {
+                            cellsByTypeCount[cell.HexType]++;
+                            TotalCellsCount++;
+                        }
+                        break;
+                    }
+                    case UpdateCellMode.Remove:
+                    {
+                        if (cellsSet.Remove(cell))
+                        {
+                            cellsByTypeCount[cell.HexType]--;
+                            TotalCellsCount--;
+                        }
+                        break;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException();
+                    }
+                }
+            }
+
+            OnCellsUpdate?.Invoke(data);
+        }
+
+        private void ValidateUpdateCellsData(UpdateCellsData data)
         {
             if (data == null)
             {
                 throw new ArgumentNullException(nameof(data));
             }
 
-            if (data.CountryId != ID)
+            if (data.PlayerId != PlayerId)
             {
                 throw new InvalidOperationException($"{nameof(Country)}.{nameof(UpdateCells)} | Не верно указан id!");
             }
 
-            foreach (var cell in data.AddedCells)
+            foreach (var changeData in data.ChangeData)
             {
-                ValidateAddCell(cell);
-            }
-
-            foreach (var cell in data.RemovedCells)
-            {
-                ValidateRemoveCell(cell);
-            }
-
-            foreach (var cell in data.AddedCells)
-            {
-                cellsSet.Add(cell);
-                cellsByTypeCount[cell.HexType]++;
-                TotalCellsCount++;
-            }
-
-            foreach (var cell in data.RemovedCells)
-            {
-                cellsSet.Remove(cell);
-                cellsByTypeCount[cell.HexType]--;
-                TotalCellsCount--;
-            }
-            
-            OnCellsUpdate?.Invoke(data);
-        }
-
-        private void ValidateRemoveCell(Hex hex)
-        {
-            if (!cellsSet.Contains(hex))
-            {
-                throw new Exception("Данной клетки нет в этой стране.");
-            }
-        }
-
-        private void ValidateAddCell(Hex hex)
-        {
-            if (hex.Owner != Owner)
-            {
-                throw new Exception("Прежде чем добавлять клетки стране, назначте клеткам владельца.");
-            }
-
-            if (cellsSet.Contains(hex))
-            {
-                throw new Exception("Данная клетка уже добавлена.");
+                if (changeData.Mode == UpdateCellMode.Add)
+                {
+                    if (changeData.Hex.PlayerId != PlayerId)
+                    {
+                        throw new Exception("Прежде чем добавлять клетки стране, назначте клеткам владельца.");
+                    }
+                }
             }
         }
 
         public class UpdateCellsData
         {
-            public int CountryId { get; }
-            public Hex[] AddedCells { get; }
-            public Hex[] RemovedCells { get; }
+            public int PlayerId { get; }
+            public CellChangeData[] ChangeData { get; }
 
-            public UpdateCellsData(int countryId, [NotNull] Hex[] addedCells, [NotNull] Hex[] removedCells)
+            public UpdateCellsData(int playerId, [NotNull] CellChangeData[] changeData)
             {
-                CountryId = countryId;
-                AddedCells = addedCells ?? throw new ArgumentNullException(nameof(addedCells));
-                RemovedCells = removedCells ?? throw new ArgumentNullException(nameof(removedCells));
+                PlayerId = playerId;
+                ChangeData = changeData ?? throw new ArgumentNullException(nameof(changeData));
             }
+        }
+
+        public struct CellChangeData
+        {
+            public Hex Hex { get; set; }
+            public UpdateCellMode Mode { get; set; }
+
+            public CellChangeData(Hex hex, UpdateCellMode mode)
+            {
+                Hex = hex;
+                Mode = mode;
+            }
+        }
+
+        public enum UpdateCellMode
+        {
+            Add,
+            Remove
         }
     }
 }

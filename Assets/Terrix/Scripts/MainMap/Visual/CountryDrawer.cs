@@ -1,19 +1,20 @@
 ﻿using System;
 using JetBrains.Annotations;
 using CustomUtilities.Attributes;
+using Terrix.Map;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 namespace Terrix.Visual
 {
-    public class CountryDrawer: MonoBehaviour
+    public class CountryDrawer : MonoBehaviour
     {
         [SerializeField] private Tilemap zoneTilemap;
         [SerializeField] private Tile zoneTile;
-        
+
         [Header("Debug")]
-        [SerializeField, ReadOnlyInspector] private int countryId;
-        
+        [SerializeField, ReadOnlyInspector] private int playerId = int.MinValue;
+
         private Material zoneMaterial;
 
         public void Initialize([NotNull] Settings settings)
@@ -23,56 +24,56 @@ namespace Terrix.Visual
                 throw new ArgumentNullException(nameof(settings));
             }
 
-            gameObject.name = $"Country_{countryId}";
-            
-            this.countryId = settings.CountryId;
+            this.playerId = settings.PlayerId;
+            gameObject.name = $"Country_{playerId}";
+
             this.zoneMaterial = settings.ZoneMaterial;
 
             zoneTilemap.GetComponent<TilemapRenderer>().sharedMaterial = zoneMaterial;
         }
 
-        public void UpdateZone([NotNull] ZoneUpdateData data)
+        public void UpdateZone([NotNull] Country.UpdateCellsData data)
         {
             if (data == null)
             {
                 throw new ArgumentNullException(nameof(data));
             }
 
-            if (data.CountryId != countryId)
+            if (data.PlayerId != playerId)
             {
-                throw new InvalidOperationException($"{nameof(CountryDrawer)}.{nameof(UpdateZone)} | Не верно указан id!");
+                throw new InvalidOperationException(
+                    $"{nameof(CountryDrawer)}.{nameof(UpdateZone)} | Не верно указан id!");
             }
 
             var changeData = GenerateData(data);
             zoneTilemap.SetTiles(changeData, true);
         }
 
-        private TileChangeData[] GenerateData(ZoneUpdateData data)
+        private TileChangeData[] GenerateData(Country.UpdateCellsData data)
         {
-            var changeData = new TileChangeData[data.AddedTiles.Length + data.RemovedTiles.Length];
+            var changeData = new TileChangeData[data.ChangeData.Length];
 
             for (var i = 0; i < changeData.Length; i++)
             {
-                if (i < data.AddedTiles.Length)
+                var hex = data.ChangeData[i].Hex;
+                changeData[i] = data.ChangeData[i].Mode switch
                 {
-                    changeData[i] = new TileChangeData
+                    Country.UpdateCellMode.Add => new TileChangeData
                     {
-                        position = (Vector3Int) data.AddedTiles[i],
+                        position = hex.Position,
                         tile = zoneTile,
                         color = Color.white,
                         transform = Matrix4x4.identity
-                    };
-                }
-                else
-                {
-                    changeData[i] = new TileChangeData
+                    },
+                    Country.UpdateCellMode.Remove => new TileChangeData
                     {
-                        position = (Vector3Int) data.AddedTiles[i - data.AddedTiles.Length],
+                        position = hex.Position,
                         tile = null,
-                        color = Color.white,
+                        color = Color.white, 
                         transform = Matrix4x4.identity
-                    };
-                }
+                    },
+                    _ => throw new ArgumentOutOfRangeException()
+                };
             }
 
             return changeData;
@@ -80,21 +81,14 @@ namespace Terrix.Visual
 
         public class Settings
         {
-            public int CountryId { get;}
+            public int PlayerId { get; }
             public Material ZoneMaterial { get; }
-            
-            public Settings(int countryId, Material zoneMaterial)
+
+            public Settings(int playerId, Material zoneMaterial)
             {
-                CountryId = countryId;
+                PlayerId = playerId;
                 ZoneMaterial = zoneMaterial;
             }
-        }
-        
-        public class ZoneUpdateData
-        {
-            public int CountryId { get; set; }
-            public Vector2Int[] AddedTiles { get; set; } = Array.Empty<Vector2Int>();
-            public Vector2Int[] RemovedTiles { get; set; } = Array.Empty<Vector2Int>();
         }
     }
 }

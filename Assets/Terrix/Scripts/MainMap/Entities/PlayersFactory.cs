@@ -33,7 +33,7 @@ namespace Terrix.Entities
                 {
                     players[i] = new Bot(i, PlayerType.Bot);
                 }
-                players[i].Country = new Country(i, gameDataProvider, players[i]);
+                players[i].Country = new Country(gameDataProvider, players[i]);
                 i++;
             }
 

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Terrix.Map;
 using UnityEngine;
 
 namespace Terrix.Visual
 {
-    // На клиенте
+    // Только на клиенте
     public class AllCountriesDrawer: MonoBehaviour
     {
         [Header("Prefabs")]
@@ -35,12 +36,9 @@ namespace Terrix.Visual
             }
         }
 
-        public void UpdateZones(ZonesUpdateData data)
+        public void UpdateZone(Country.UpdateCellsData updateData)
         {
-            foreach (var updateData in data.Data)
-            {
-                drawersByIds[updateData.CountryId].UpdateZone(updateData);
-            }
+            drawersByIds[updateData.PlayerId].UpdateZone(updateData);
         }
         
         public class Settings
@@ -50,11 +48,6 @@ namespace Terrix.Visual
             {
                 Zones = zones;
             }
-        }
-
-        public class ZonesUpdateData
-        {
-            public CountryDrawer.ZoneUpdateData[] Data { get; set; } = Array.Empty<CountryDrawer.ZoneUpdateData>();
         }
     }
 }

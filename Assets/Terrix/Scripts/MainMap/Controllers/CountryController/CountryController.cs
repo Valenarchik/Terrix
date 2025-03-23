@@ -8,19 +8,36 @@ using UnityEngine.Tilemaps;
 
 namespace Terrix.Controllers.Country
 {
+    // только на клиенте
     public partial class CountryController : MonoBehaviour
     {
+        [Header("References")]
         [SerializeField] private new Camera camera;
         [SerializeField] private Tilemap tilemap;
         [SerializeField] private MainMapCameraController cameraController;
-
+        [SerializeField] private PlayerCommandsExecutor commandsExecutor;
+        
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
         [SerializeField, ReadOnlyInspector] private CountryControllerStateType controllerStateType;
+        [SerializeField, ReadOnlyInspector] private int playerId = int.MinValue;
 
         private CountryControllerStateMachine stateMachine;
         private IdleState idleState;
         private ChooseFirstCountryPositionState chooseFirstCountryPositionState;
+
+        private IPhaseManager phaseManager;
+        private GameEvents gameEvents;
+
+
+        public void Initialize(int playerId, IPhaseManager phaseManager, GameEvents gameEvents)
+        {
+            this.playerId = playerId;
+            gameObject.name = $"{nameof(CountryController)}_{playerId}";
+
+            this.phaseManager = phaseManager;
+            this.gameEvents = gameEvents;
+        }
 
         public void OnChooseCountryPosition(InputAction.CallbackContext context)
         {
@@ -44,18 +61,18 @@ namespace Terrix.Controllers.Country
             chooseFirstCountryPositionState = new ChooseFirstCountryPositionState(this, CountryControllerStateType.ChooseCountry);
             stateMachine.Initialize(idleState);
             
-            MainMap.Events.OnGameReady(OnGameReady);
+           gameEvents.OnGameReady(OnGameReady);
         }
 
         private void OnGameReady()
         {
-            MainMap.PhaseManager.PhaseChanged += OnPhaseChanged;
-            ActualizePhase(MainMap.PhaseManager.CurrentPhase);
+            phaseManager.PhaseChanged += OnPhaseChanged;
+            ActualizePhase(phaseManager.CurrentPhase);
         }
 
         private void OnPhaseChanged()
         {
-            ActualizePhase(MainMap.PhaseManager.CurrentPhase);
+            ActualizePhase(phaseManager.CurrentPhase);
         }
 
         private void ActualizePhase(GamePhaseType phaseType)
@@ -77,6 +94,15 @@ namespace Terrix.Controllers.Country
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(phaseType), phaseType, null);
+            }
+        }
+        
+        private void TryChooseInitCountryPosition(Vector3Int pos)
+        {
+            // клиент проводит проверку
+            if (commandsExecutor.CanChooseInitialCountryPosition(playerId, pos))
+            {
+                commandsExecutor.ChooseInitialCountryPosition(playerId, pos);
             }
         }
     }

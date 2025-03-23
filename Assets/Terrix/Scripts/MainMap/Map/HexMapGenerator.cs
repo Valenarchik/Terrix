@@ -55,7 +55,7 @@ namespace Terrix.Map
             return new HexMap(map);
         }
 
-        private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,] map)
+        private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,,] map)
         {
             var gameData = gameDataProvider.Get();
             var texture2DWidth = settings.Texture2D.width;
@@ -68,7 +68,7 @@ namespace Terrix.Map
                 ? new Vector2Int(texture2DHeight, texture2DWidth)
                 : new Vector2Int(texture2DWidth, texture2DHeight);
 
-            map = new Hex[mapSize.x, mapSize.y];
+            map = new Hex[mapSize.x, mapSize.y, 1];
 
             for (var y = 0; y < texture2DHeight; y++)
             {
@@ -78,7 +78,7 @@ namespace Terrix.Map
                     var color = pixels[i];
                     var pixelHeight = color.CalculateBrightness();
                     var data = FindData(pixelHeight);
-                    var position = settings.Transpose ? new Vector2Int(y, x) : new Vector2Int(x, y);
+                    var position = settings.Transpose ? new Vector3Int(y, x, 0) : new Vector3Int(x, y, 0);
 
                     tileChangeData[i] = new TileChangeData
                     {
@@ -88,8 +88,8 @@ namespace Terrix.Map
                         transform = Matrix4x4.identity
                     };
 
-                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position, mapSize);
-                    map[hex.Position.x, hex.Position.y] = hex;
+                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position);
+                    map[hex.Position.x, hex.Position.y, 0] = hex;
                 }
             }
         }

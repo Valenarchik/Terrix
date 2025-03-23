@@ -20,10 +20,14 @@ namespace Terrix.Controllers.Country
             {
                 if (context.phase == InputActionPhase.Performed)
                 {
-                    var cellPosition = MapUtilities.GetHexPosition(pointPosition,
+                    var cellPosition = MapUtilities.GetMousePosition(pointPosition,
                         CountryController.camera,
                         CountryController.tilemap);
-                    var hex = MainMap.Map[cellPosition];
+                    
+                    Debug.Log(cellPosition);
+                    
+                    //(cellPosition.x, cellPosition.y) = (cellPosition.y, cellPosition.x);
+                    CountryController.TryChooseInitCountryPosition(cellPosition);
                 }
             }
 
