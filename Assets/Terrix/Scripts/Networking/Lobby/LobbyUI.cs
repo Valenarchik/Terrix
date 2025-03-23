@@ -8,6 +8,7 @@ namespace Terrix.Networking
         [SerializeField] private TextMeshProUGUI playersCountText;
         [SerializeField] private TextMeshProUGUI lobbyStateText;
         [SerializeField] private TextMeshProUGUI timerText;
+        [SerializeField] private TextMeshProUGUI idText;
         [SerializeField] private Lobby lobby;
 
         private void Start()
@@ -26,6 +27,12 @@ namespace Terrix.Networking
             lobby.OnPlayersChanged += LobbyOnPlayersChanged;
             lobby.OnStateChanged += LobbyOnStateChanged;
             lobby.OnTimerChanged += LobbyOnTimerChanged;
+            lobby.OnStartInfoSet += SetLobbyId;
+        }
+
+        public void SetLobbyId()
+        {
+            idText.text = $"Lobby id: {lobby.Id}";
         }
 
         private void LobbyOnTimerChanged(float time)

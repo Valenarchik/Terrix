@@ -36,7 +36,8 @@ namespace Terrix.Game.GameRules
             // );
             // StartGamePipeline(settings);
         }
-        public void Init_OnServer()
+
+        public override void OnStartServer()
         {
             var settings = new Settings(
                 mapGenerator.DefaultSettingsSo.Get(),
@@ -44,7 +45,6 @@ namespace Terrix.Game.GameRules
                 new PlayersAndBots(1, 0)
             );
 
-            // Generate_OnServer(settings); //
             ResolveDependencies_OnServer(settings);
             lobby.LobbyStateMachine.OnStateChanged += LobbyStateMachineOnOnStateChanged;
         }
@@ -58,7 +58,7 @@ namespace Terrix.Game.GameRules
         }
 
 
-        public void Init_OnClient()
+        public override void OnStartClient()
         {
             ResolveDependencies_OnClient();
             UpdateClients_ToServer(ClientManager.Connection);

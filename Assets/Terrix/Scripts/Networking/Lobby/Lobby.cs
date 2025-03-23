@@ -19,6 +19,7 @@ namespace Terrix.Networking
         public int PlayersCurrentCount => Players.Count;
 
         public LobbyStateMachine LobbyStateMachine { get; private set; }
+        public event Action OnStartInfoSet;
         public event Action OnPlayersChanged;
         public event Action<string> OnStateChanged;
         public event Action<float> OnTimerChanged;
@@ -51,18 +52,33 @@ namespace Terrix.Networking
             }
         }
 
+        // public void Init_OnServer()
+        // {
+        //     LobbyStateMachine = new LobbyStateMachine();
+        //     LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
+        // }
+        // public void Init_OnClient()
+        // {
+        // }
         public override void OnStartServer()
         {
             base.OnStartServer();
             NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
             Id = LobbyManager.Instance.GetFreeId();
-
+        
             Scene = gameObject.scene;
             Players = new List<NetworkConnection>();
             PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
             LobbyStateMachine = new LobbyStateMachine();
             LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
             LobbyManager.Instance.AddLobby(Id, this);
+        }
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+            Scene = gameObject.scene;
+            var player = NetworkManager.ClientManager.Connection;
+            AddPlayer_ToServer(player);
         }
 
         private void LobbyStateMachineOnStateChanged_OnServer(LobbyState state)
@@ -96,15 +112,6 @@ namespace Terrix.Networking
             }
         }
 
-        public override void OnStartClient()
-        {
-            base.OnStartClient();
-            Scene = gameObject.scene;
-            var player = NetworkManager.ClientManager.Connection;
-            // PlayerManager.Instance.SetPlayer(player);
-            AddPlayer_ToServer(player);
-        }
-
 
         [ServerRpc(RequireOwnership = false)]
         void AddPlayer_ToServer(NetworkConnection newPlayer)
@@ -131,20 +138,12 @@ namespace Terrix.Networking
             UpdatePlayers_ToObserver(Players);
         }
 
-        // [ObserversRpc]
-        // void SetInfo_ToObserver(int id, int playersMaxCount)
-        // {
-        //     Id = id;
-        //     PlayersMaxCount = playersMaxCount;
-        //     Debug.Log("Set Info");
-        // }
-
         [TargetRpc]
         void SetInfo_ToTarget(NetworkConnection connection, int id, int playersMaxCount)
         {
             Id = id;
             PlayersMaxCount = playersMaxCount;
-            Debug.Log("Set Target");
+            OnStartInfoSet?.Invoke();
         }
 
         [ObserversRpc]

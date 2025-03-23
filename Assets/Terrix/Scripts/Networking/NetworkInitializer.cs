@@ -10,20 +10,23 @@ namespace Terrix
     public class NetworkInitializer : NetworkBehaviour
     {
         // Start is called once before the first execution of Update after the MonoBehaviour is created
-        [SerializeField] private MainMapEntryPoint mainMapEntryPoint;
+        // [SerializeField] private Lobby lobby;
+        // [SerializeField] private MainMapEntryPoint mainMapEntryPoint;
         [SerializeField] private MainMapCameraController mainMapCameraController;
         [SerializeField] private CountryController countryController;
 
         public override void OnStartServer()
         {
-            mainMapEntryPoint.Init_OnServer();
+            // lobby.Init_OnServer();
+            // mainMapEntryPoint.Init_OnServer();
             countryController.Init_OnServer();
             mainMapCameraController.Init_OnServer();
         }
 
         public override void OnStartClient()
         {
-            mainMapEntryPoint.Init_OnClient();
+            // lobby.Init_OnClient();
+            // mainMapEntryPoint.Init_OnClient();
             countryController.Init_OnClient();
             mainMapCameraController.Init_OnClient();
         }
