@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 
-namespace Terrix.Controllers.Country
+namespace Terrix.Controllers
 {
     // только на клиенте
     public partial class CountryController : MonoBehaviour

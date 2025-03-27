@@ -1,6 +1,6 @@
 ﻿using UnityEngine.InputSystem;
 
-namespace Terrix.Controllers.Country
+namespace Terrix.Controllers
 {
     public partial class CountryController
     {

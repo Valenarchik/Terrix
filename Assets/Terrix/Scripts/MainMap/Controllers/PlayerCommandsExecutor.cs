@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CustomUtilities.Extensions;
 using Terrix.DTO;
+using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
 using Terrix.Settings;
@@ -66,7 +68,7 @@ namespace Terrix.Controllers
             }
         }
 
-        // только на сервере
+        // [Server]
         public void ChooseInitialCountryPosition(int playerId, Vector3Int pos)
         {
             ValidateInitialization();
@@ -76,12 +78,16 @@ namespace Terrix.Controllers
             {
                 return;
             }
-
-            var gameData = gameDataProvider.Get();
-
+            
             var player = playerProvider.Find(playerId);
-            var country = player.Country;
+            ChooseInitialCountryPosition(player, pos);
+        }
 
+        // [Server]
+        private void ChooseInitialCountryPosition(Player player, Vector3Int pos)
+        {
+            var gameData = gameDataProvider.Get();
+            var country = player.Country;
             var hexes = new List<Hex>(1 + 6) {map[pos]};
             foreach (var hex in map[pos].GetNeighbours(map))
             {
@@ -92,6 +98,27 @@ namespace Terrix.Controllers
             }
             
             country.ClearAndAdd(hexes.ToArray());
+        }
+
+        // [Server]
+        public void ChooseRandomInitialCountryPosition(IEnumerable<Player> players, Action<Player, bool> onChoose = null)
+        {
+            ValidateInitialization();
+
+            foreach (var player in players)
+            {
+                var randomHex = map.CanCaptureHexes
+                    .Where(hex => hex.PlayerId == null && hex.GetNeighbours(map).All(neigh => neigh.PlayerId == null))
+                    .RandomElementOrDefault();
+                var success = randomHex is not null;
+                
+                if (success)
+                {
+                    ChooseInitialCountryPosition(player, randomHex.Position);
+                }
+                
+                onChoose?.Invoke(player, success);
+            }
         }
 
         private void ValidateInitialization()

@@ -15,7 +15,10 @@ namespace Terrix.Entities
             ID = id;
             PlayerType = playerType;
         }
-        
-        
+
+        public void Lose()
+        {
+            Country = null;
+        }
     }
 }
