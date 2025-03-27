@@ -1,10 +1,7 @@
-﻿using FishNet.CodeGenerating;
-using FishNet.Serializing;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Terrix.Map
 {
-    // [UseGlobalCustomSerializer]
     public class HexMap
     {
         public Hex[,,] Hexes { get; }
@@ -33,7 +30,7 @@ namespace Terrix.Map
             Size = new Vector3Int(hexes.GetLength(0), hexes.GetLength(1), hexes.GetLength(2));
         }
 
-        public HexMap(Hex[,] hexes, Vector2Int size)
+        public HexMap(Hex[,,] hexes, Vector3Int size)
         {
             Hexes = hexes;
             Size = size;

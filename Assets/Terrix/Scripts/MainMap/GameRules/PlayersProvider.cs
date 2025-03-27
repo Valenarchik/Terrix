@@ -14,6 +14,7 @@ namespace Terrix.Game.GameRules
     public class PlayersProvider : IPlayersProvider
     {
         private readonly List<Player> players;
+        public List<Player> Players => players;
 
         public Player[] GetAll() => players.ToArray();
         public Player Find(int id)

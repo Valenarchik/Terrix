@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using FishNet.Connection;
+using FishNet.Object;
 using Terrix.DTO;
 using Terrix.Game.GameRules;
 using Terrix.Map;
@@ -10,7 +13,8 @@ using UnityEngine;
 namespace Terrix.Controllers
 {
     // только на сервере
-    public class PlayerCommandsExecutor : MonoBehaviour
+    //На клиенте тоже, только пустышка нужна
+    public class PlayerCommandsExecutor : NetworkBehaviour
     {
         private HexMap map;
         private IPhaseManager phaseManager;
@@ -18,6 +22,8 @@ namespace Terrix.Controllers
         private IGameDataProvider gameDataProvider;
 
         private bool initialized;
+
+        private TaskCompletionSource<bool> tcs;
 
         public void Initialize(HexMap map,
             IPhaseManager phaseManager,
@@ -32,14 +38,33 @@ namespace Terrix.Controllers
             initialized = true;
         }
 
+
+        public async Task<bool> CanChooseInitialCountryPosition_OnClient(int playerId, Vector3Int pos)
+        {
+            tcs = new TaskCompletionSource<bool>();
+            CanChooseInitialCountryPosition_ToServer(ClientManager.Connection, playerId, pos);
+            var result = await tcs.Task;
+            return result;
+        }
+
+        [TargetRpc]
+        public void CanChooseInitialCountryPosition_ToTarget(NetworkConnection connection, bool result)
+        {
+            tcs.SetResult(result);
+        }
+
         // на сервере и на клиенте
-        public bool CanChooseInitialCountryPosition(int playerId, Vector3Int pos)
+        // пока только на сервере
+        [ServerRpc(RequireOwnership = false)]
+        public void CanChooseInitialCountryPosition_ToServer(NetworkConnection connection, int playerId, Vector3Int pos)
         {
             ValidateInitialization();
-            
+
             var gameData = gameDataProvider.Get();
 
-            return PlayerCheck() && PhaseCheck() && MapCheck();
+            var result = PlayerCheck() && PhaseCheck() && MapCheck();
+            CanChooseInitialCountryPosition_ToTarget(connection, result);
+
 
             bool PhaseCheck()
             {
@@ -67,22 +92,15 @@ namespace Terrix.Controllers
         }
 
         // только на сервере
+        [ServerRpc(RequireOwnership = false)]
         public void ChooseInitialCountryPosition(int playerId, Vector3Int pos)
         {
-            ValidateInitialization();
-            
-            // сервер проводит дополнительную проверку
-            if (!CanChooseInitialCountryPosition(playerId, pos))
-            {
-                return;
-            }
-
             var gameData = gameDataProvider.Get();
 
             var player = playerProvider.Find(playerId);
             var country = player.Country;
 
-            var hexes = new List<Hex>(1 + 6) {map[pos]};
+            var hexes = new List<Hex>(1 + 6) { map[pos] };
             foreach (var hex in map[pos].GetNeighbours(map))
             {
                 if (hex.GetHexData(gameData).CanCapture)
@@ -90,7 +108,7 @@ namespace Terrix.Controllers
                     hexes.Add(hex);
                 }
             }
-            
+
             country.ClearAndAdd(hexes.ToArray());
         }
 

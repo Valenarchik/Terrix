@@ -65,11 +65,11 @@ namespace Terrix.Map
                 for (int x = 0; x < map.Size.x; x++)
                 {
                     var i = y * map.Size.x + x;
-                    var hex = map.Hexes[x, y];
+                    var hex = map.Hexes[x, y, 0];
                     tileData[i] = new TileChangeData
                     {
                         position = (Vector3Int)hex.Position,
-                        tile = gameDataProvider.Get().HexTiles[map.Hexes[x, y].HexType],
+                        tile = gameDataProvider.Get().HexTiles[map.Hexes[x, y, 0].HexType],
                         color = Color.white,
                         transform = Matrix4x4.identity
                     };
@@ -80,8 +80,7 @@ namespace Terrix.Map
         }
 
 
-        private void GenerateDataOld(out TileChangeData[] tileChangeData, out Hex[,] map)
-        private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,,] map)
+        private void GenerateDataOld(out TileChangeData[] tileChangeData, out Hex[,,] map)
         {
             var gameData = gameDataProvider.Get();
             var texture2DWidth = settings.Texture2D.width;
@@ -120,7 +119,7 @@ namespace Terrix.Map
             }
         }
 
-        private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,] map)
+        private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,,] map)
         {
             if (settings.NoiseType is HexMapGeneratorSettingsSO.NoiseType.StaticMap)
             {
@@ -135,7 +134,7 @@ namespace Terrix.Map
                 ? new Vector2Int(settings.Height, settings.Width)
                 : new Vector2Int(settings.Width, settings.Height);
 
-            map = new Hex[mapSize.x, mapSize.y];
+            map = new Hex[mapSize.x, mapSize.y, 1];
             var matrix = GeneratePerlinMatrix(mapSize, settings.PerlinMainZoom);
             var landDictionary = new Dictionary<HexType, float>();
             foreach (var landHexType in settings.LandHexTypes)
@@ -169,7 +168,7 @@ namespace Terrix.Map
                     var i = y * settings.Width + x;
                     var pixelHeight = matrix[x, y];
                     var data = FindData(pixelHeight);
-                    var position = settings.Transpose ? new Vector2Int(y, x) : new Vector2Int(x, y);
+                    var position = settings.Transpose ? new Vector3Int(y, x, 0) : new Vector3Int(x, y, 0);
                     tileChangeData[i] = new TileChangeData
                     {
                         position = new Vector3Int(position.x, position.y),
@@ -178,8 +177,8 @@ namespace Terrix.Map
                         transform = Matrix4x4.identity
                     };
 
-                    var hex = new Hex(gameData.CellsStats[data.HexType], position, mapSize);
-                    map[hex.Position.x, hex.Position.y] = hex;
+                    var hex = new Hex(data.HexType, position);
+                    map[hex.Position.x, hex.Position.y, 0] = hex;
                 }
             }
         }

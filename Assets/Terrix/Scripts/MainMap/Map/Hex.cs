@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace Terrix.Map
 {
-    public class Hex: IEquatable<Hex>
+    public class Hex : IEquatable<Hex>
     {
         public HexType HexType { get; }
         public Vector3Int Position { get; }
         public Vector3Int[] NeighboursPositions { get; }
         public int? PlayerId { get; set; }
-        
+
         public Hex(HexType hexType, Vector3Int position)
         {
             HexType = hexType;
@@ -35,14 +35,13 @@ namespace Terrix.Map
         {
             return gameData.CellsStats[HexType];
         }
-        public Hex([NotNull] HexData data, Vector2Int position, Vector2Int[] neighboursPositions, Player owner)
+
+        public Hex(HexType hexType, Vector3Int position, Vector3Int[] neighboursPositions, int? playerId)
         {
-            Data = data;
+            HexType = hexType;
             Position = position;
             NeighboursPositions = neighboursPositions;
-            
-            OwnerChanged = null;
-            Owner = owner;
+            PlayerId = playerId;
         }
 
         public override string ToString()

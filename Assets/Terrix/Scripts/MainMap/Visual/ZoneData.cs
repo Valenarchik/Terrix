@@ -8,10 +8,16 @@ namespace Terrix.Visual
         public Texture2D Texture { get; set; } = null;
         public Color? Color { get; set; } = null;
         public Vector2? TileSizeModifier { get; set; } = null;
-        
+
         public ZoneData(int id)
         {
             ID = id;
+        }
+
+        public ZoneData(int id, Color color)
+        {
+            ID = id;
+            Color = color;
         }
     }
 }

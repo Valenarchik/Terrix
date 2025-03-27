@@ -1,6 +1,7 @@
 ﻿using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
+using Terrix.Networking;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -15,7 +16,7 @@ public class BootstrapNetworkManager : NetworkBehaviour
     {
         var player = NetworkManager.ClientManager.Connection;
         CreateNewGame_ToServer(player, sceneName);
-        CloseScenesOld(scenesToClose);
+        CloseScenes(scenesToClose);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -39,16 +40,16 @@ public class BootstrapNetworkManager : NetworkBehaviour
 
     public void CreateOrJoinDefaultLobby_OnClient()
     {
-        var player = NetworkManager.ClientManager.Connection;
+        var player = NetworkManager.ClientManager.Connection; //иногда ошибка
         CreateOrJoinDefaultLobby_ToServer(player);
-        CloseScenesOld(new[] { Terrix.Networking.Scenes.MenuScene });
+        CloseScenes(new[] { Scenes.MenuScene });
     }
 
     public void CreateCustomLobby_OnClient()
     {
         var player = NetworkManager.ClientManager.Connection;
         CreateCustomLobby_ToServer(player);
-        CloseScenesOld(new[] { Terrix.Networking.Scenes.MenuScene });
+        CloseScenes(new[] { Scenes.MenuScene });
     }
 
     public void TryJoinCustomLobby(int id)
@@ -63,7 +64,7 @@ public class BootstrapNetworkManager : NetworkBehaviour
         //
         // return false;
         TryJoinGame_ToServer(player, id);
-        CloseScenesOld(new[] { Terrix.Networking.Scenes.MenuScene });
+        CloseScenes(new[] { Scenes.MenuScene });
     }
 
 
@@ -85,7 +86,7 @@ public class BootstrapNetworkManager : NetworkBehaviour
         // return true;
     }
 
-    private void CloseScenesOld(string[] scenesToClose)
+    private void CloseScenes(string[] scenesToClose)
     {
         foreach (var sceneName in scenesToClose)
         {
@@ -97,13 +98,6 @@ public class BootstrapNetworkManager : NetworkBehaviour
     // {
     //     yield return new WaitForSeconds(delay);
     //     CloseScenesOld(scenesToClose);
-    // }
-
-    // [TargetRpc]
-    // private void CloseScenes(NetworkConnection connection, string[] scenesToClose)
-    // {
-    //     var sceneUnloadData = new SceneUnloadData(scenesToClose);
-    //     InstanceFinder.SceneManager.UnloadConnectionScenes(connection, sceneUnloadData);
     // }
 
 

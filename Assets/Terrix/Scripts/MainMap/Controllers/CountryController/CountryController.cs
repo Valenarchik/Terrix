@@ -1,5 +1,6 @@
 using System;
 using CustomUtilities.Attributes;
+using FishNet.Object;
 using Terrix.DTO;
 using Terrix.Game.GameRules;
 using UnityEngine;
@@ -9,17 +10,16 @@ using UnityEngine.Tilemaps;
 namespace Terrix.Controllers.Country
 {
     // только на клиенте
-    public partial class CountryController : MonoBehaviour
+    public partial class CountryController : NetworkBehaviour
     {
         [Header("References")]
         [SerializeField] private new Camera camera;
         [SerializeField] private Tilemap tilemap;
         [SerializeField] private MainMapCameraController cameraController;
-        [SerializeField] private MainMap mainMap;
-        
+
 
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
-        
+
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
         [SerializeField, ReadOnlyInspector] private CountryControllerStateType controllerStateType;
@@ -40,36 +40,31 @@ namespace Terrix.Controllers.Country
 
             this.phaseManager = phaseManager;
             this.gameEvents = gameEvents;
+            this.gameEvents.OnGameReady(OnGameReady);
         }
 
         public void OnChooseCountryPosition(InputAction.CallbackContext context)
         {
-            stateMachine.CurrentState.OnChooseCountryPosition(context, mainMap);
+            stateMachine?.CurrentState.OnChooseCountryPosition(context);
         }
 
         public void OnPoint(InputAction.CallbackContext context)
         {
-            stateMachine.CurrentState.OnPoint(context);
+            stateMachine?.CurrentState.OnPoint(context); //Ошибка
         }
 
         public void OnDragBorders(InputAction.CallbackContext context)
         {
-            stateMachine.CurrentState.OnDragBorders(context);
+            stateMachine?.CurrentState.OnDragBorders(context);
         }
 
-        public void Init_OnServer()
-        {
-        }
-
-        public void Init_OnClient()
+        public override void OnStartClient()
         {
             stateMachine = new CountryControllerStateMachine();
             idleState = new IdleState(this, CountryControllerStateType.Idle);
             chooseFirstCountryPositionState =
                 new ChooseFirstCountryPositionState(this, CountryControllerStateType.ChooseCountry);
             stateMachine.Initialize(idleState);
-            
-           gameEvents.OnGameReady(OnGameReady);
         }
 
         private void OnGameReady()
@@ -104,11 +99,10 @@ namespace Terrix.Controllers.Country
                     throw new ArgumentOutOfRangeException(nameof(phaseType), phaseType, null);
             }
         }
-        
-        private void TryChooseInitCountryPosition(Vector3Int pos)
+
+        private async void TryChooseInitCountryPosition(Vector3Int pos)
         {
-            // клиент проводит проверку
-            if (commandsExecutor.CanChooseInitialCountryPosition(playerId, pos))
+            if (await commandsExecutor.CanChooseInitialCountryPosition_OnClient(playerId, pos))
             {
                 commandsExecutor.ChooseInitialCountryPosition(playerId, pos);
             }

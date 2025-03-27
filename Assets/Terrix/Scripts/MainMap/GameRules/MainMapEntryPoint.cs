@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using Terrix.Controllers;
 using System.Linq;
+using FishNet.Transporting;
 using Terrix.Controllers.Country;
 using Terrix.DTO;
 using Terrix.Entities;
@@ -16,7 +18,6 @@ using UnityEngine;
 namespace Terrix.Game.GameRules
 {
     // Нужно разбить на 2 класса, для сервера и для клиента
-    // public class MainMapEntryPoint : MonoSingleton<MainMapEntryPoint>
     public class MainMapEntryPoint : NetworkBehaviour
     {
         [Header("References")]
@@ -27,111 +28,164 @@ namespace Terrix.Game.GameRules
         [SerializeField] private AllCountriesHandler allCountriesHandler;
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
         [SerializeField] private CountryController countryController;
-        [SerializeField] private MainMapCameraController cameraController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
 
         private IGameDataProvider gameDataProvider;
         private IPlayersFactory playersFactory;
         private IGameRefereeFactory gameRefereeFactory;
-        
+
         private GameEvents events;
         private HexMap map;
         private IGameReferee referee;
         private IAttackInvoker attackInvoker;
         private IPhaseManager phaseManager;
         private IPlayersProvider players;
-        
-        
+        private Dictionary<NetworkConnection, int> playersIds = new();
+        private Settings settings;
 
-        
         public override void OnStartServer()
         {
-            var settings = new Settings(
+            // Надо подтягивать эти данные откуда-то. наверно из лобби
+            base.OnStartServer();
+            NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
+            var gameMode = GameModeType.FFA;
+            var playersAndBots = new PlayersAndBots(lobby.PlayersMaxCount, 0);
+            settings = new Settings(
                 mapGenerator.DefaultSettingsSo.Get(),
-                new GameReferee.Settings(GameModeType.FFA),
-                new PlayersAndBots(1, 0),
-                new AllCountriesDrawer.Settings(new ZoneData[]
-                {
-                    new(0) {Color = Color.red}
-                }),
+                new GameReferee.Settings(gameMode),
+                playersAndBots,
+                // new AllCountriesDrawer.Settings(new ZoneData[]
+                // {
+                //     new(0) { Color = new Color(1, 0, 0, 1f) },
+                //     new(1) { Color = new Color(0, 1, 0, 1f) },
+                //     // new(2) { Color = new Color(0, 0, 1, 1f) }
+                // }),
+                new AllCountriesDrawer.Settings(
+                    Enumerable.Range(0, lobby.PlayersMaxCount).Select(i => new ZoneData(i)).ToArray()),
                 0
             );
-
-            ResolveDependencies_OnServer(settings);
-            lobby.LobbyStateMachine.OnStateChanged += LobbyStateMachineOnOnStateChanged;
+            Initialize_OnServer(settings);
+            lobby.LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged;
         }
 
-        private void LobbyStateMachineOnOnStateChanged(LobbyState state)
+        protected void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
+            RemoteConnectionStateArgs args)
+        {
+            switch (args.ConnectionState)
+            {
+                case RemoteConnectionState.Stopped:
+                    playersIds.Remove(conn);
+                    break;
+                case RemoteConnectionState.Started:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void LobbyStateMachineOnStateChanged(LobbyState state)
         {
             if (state == lobby.LobbyStateMachine.LobbyStartingState)
             {
                 StartGamePipeline();
             }
         }
+
         // Нужно так же делить на серверную и клиентскуюя часть
         public override void OnStartClient()
         {
-            ResolveDependencies_OnClient();
-            UpdateClients_ToServer(ClientManager.Connection);
-            mainMap.Events.StartGame();
+            base.OnStartClient();
+            var color = PlayerDataHolder.Color;
+            Initialize_OnClient_ToServer(ClientManager.Connection, color);
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        void UpdateClients_ToServer(NetworkConnection connection)
-        {
-            UpdateMap_ToTarget(connection, mainMap.Map);
-        }
-
-        [TargetRpc]
-        void UpdateMap_ToTarget(NetworkConnection connection, HexMap map)
-        {
-            mainMap.Map = map;
-            mapGenerator.UpdateMap(map);
-            Debug.Log("Main map Target");
-        }
-
-        [ObserversRpc]
         public void StartGamePipeline()
         {
             StartCoroutine(GamePipeline());
         }
-        private IEnumerator GamePipeline(Settings settings)
+
+        private IEnumerator GamePipeline()
         {
-            Initialize(settings);
-            
+            // Initialize(settings);
+
             // Ивент о начале игры
-            events.StartGame();
-            
+            // events.StartGame();
+
             // Выбор изначальной позиции
+            InitializeAllCountriesDrawer_ToObserver(settings.CountryDrawerSettings);
+
             phaseManager.NextPhase();
+            ChangePhase();
             var gameData = gameDataProvider.Get();
             yield return new WaitForSeconds(gameData.TimeForChooseFirstCountryPosition.Seconds);
         }
-        //Назвать Initialize
-        private void ResolveDependencies_OnServer(Settings settings)
+
+        [ObserversRpc]
+        private void ChangePhase()
+        {
+            phaseManager.NextPhase();
+        }
+
+        private void Initialize_OnServer(Settings settings)
         {
             gameDataProvider = new GameDataProvider();
             playersFactory = new PlayersFactory(gameDataProvider);
             gameRefereeFactory = new GameRefereeFactory(settings.GameModeSettings);
             map = mapGenerator.GenerateMap(settings.MapSettings);
+            phaseManager = new PhaseManager();
             referee = gameRefereeFactory.Create(playersFactory.CreatePlayers(settings.PlayersCount));
             players = new PlayersProvider(playersFactory.CreatePlayers(settings.PlayersCount));
             //TODO хз куда это
             allCountriesHandler.Initialize(players.GetAll().Select(p => p.Country).ToArray());
-            allCountriesDrawer.Initialize(settings.CountryDrawerSettings);
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
         }
 
-        private void ResolveDependencies_OnClient()
+        [ServerRpc(RequireOwnership = false)]
+        private void Initialize_OnClient_ToServer(NetworkConnection connection, Color color)
         {
+            int id = -1;
+            for (int i = 0; i < players.GetAll().Length; i++)
+            {
+                if (!playersIds.Values.Contains(i))
+                {
+                    id = i;
+                    playersIds.Add(connection, id);
+                    break;
+                }
+            }
+
+            if (id == -1)
+            {
+                throw new Exception("Id wasn't set");
+            }
+
+            settings.CountryDrawerSettings.Zones[id].Color = color;
+
+            Initialize_OnClient_ToTarget(connection, map, id);
+        }
+
+
+        [TargetRpc]
+        private void Initialize_OnClient_ToTarget(NetworkConnection connection, HexMap map, int id)
+        {
+            settings = new Settings(id);
+            this.map = map;
+            mapGenerator.UpdateMap(map);
             gameDataProvider = new GameDataProvider();
 
             events = new GameEvents();
             attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
-            //TODO не уверен, что это сюда
             countryController.Initialize(settings.LocalPlayerId, phaseManager, events);
             cameraController.Initialize(events);
+            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
+            events.StartGame();
+        }
+
+        [ObserversRpc]
+        private void InitializeAllCountriesDrawer_ToObserver(AllCountriesDrawer.Settings countriesDrawerSettings)
+        {
+            allCountriesDrawer.Initialize(countriesDrawerSettings);
         }
 
 #if UNITY_EDITOR
@@ -142,7 +196,7 @@ namespace Terrix.Game.GameRules
                 fontSize = 20
             };
 
-            GUI.Label(new Rect(0,0,300,25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
+            GUI.Label(new Rect(0, 0, 300, 25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
         }
 #endif
 
@@ -169,7 +223,16 @@ namespace Terrix.Game.GameRules
                                    throw new NullReferenceException(
                                        $"{nameof(MainMapEntryPoint)}.{nameof(Settings)}.{nameof(GameModeSettings)}");
                 PlayersCount = playersCount;
-                CountryDrawerSettings = countryDrawerSettings?? throw new NullReferenceException($"{nameof(MainMapEntryPoint)}.{nameof(Settings)}.{nameof(CountryDrawerSettings)}");
+                CountryDrawerSettings = countryDrawerSettings ??
+                                        throw new NullReferenceException(
+                                            $"{nameof(MainMapEntryPoint)}.{nameof(Settings)}.{nameof(CountryDrawerSettings)}");
+                LocalPlayerId = localPlayerId;
+            }
+
+            // для клиента
+            public Settings(
+                int localPlayerId)
+            {
                 LocalPlayerId = localPlayerId;
             }
         }

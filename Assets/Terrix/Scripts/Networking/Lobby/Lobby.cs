@@ -34,13 +34,9 @@ namespace Terrix.Networking
             {
                 LobbyStateMachine.CurrentState.Update();
                 float time;
-                if (LobbyStateMachine.CurrentState is LobbyTimerSearchingState timerSearchingState)
+                if (LobbyStateMachine.CurrentState is LobbyTimerState lobbyTimerState)
                 {
-                    time = timerSearchingState.TimeToStopTimer;
-                }
-                else if (LobbyStateMachine.CurrentState == LobbyStateMachine.LobbyStartingState)
-                {
-                    time = LobbyStateMachine.LobbyStartingState.TimeToStopTimer;
+                    time = lobbyTimerState.TimeToStopTimer;
                 }
                 else
                 {
@@ -51,20 +47,11 @@ namespace Terrix.Networking
             }
         }
 
-        // public void Init_OnServer()
-        // {
-        //     LobbyStateMachine = new LobbyStateMachine();
-        //     LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
-        // }
-        // public void Init_OnClient()
-        // {
-        // }
         public override void OnStartServer()
         {
             base.OnStartServer();
             NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
             Id = GetFreeId();
-
             Scene = gameObject.scene;
             Players = new List<NetworkConnection>();
             PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
@@ -88,7 +75,7 @@ namespace Terrix.Networking
 
         protected void LobbyStateMachineOnStateChanged_OnServer(LobbyState state)
         {
-            UpdateStateName_ToObserver(state.ToString());
+            UpdateStateName_ToObserver(state.Name);
         }
 
         [ObserversRpc]
@@ -123,15 +110,13 @@ namespace Terrix.Networking
         protected virtual void AddPlayer_ToServer(NetworkConnection newPlayer)
         {
             Players.Add(newPlayer);
-            if (Players.Count == PlayersMaxCount)
-            {
-                LobbyStateMachine.ChangeState(LobbyStateMachine.LobbyStartingState);
-            }
-
-            // SetInfo_ToObserver(Id, PlayersMaxCount);
             SetInfo_ToTarget(newPlayer, Id, PlayersMaxCount);
             UpdatePlayers_ToObserver(Players);
             UpdateStateName_ToObserver(LobbyStateMachine.CurrentState.ToString());
+            if (Players.Count == PlayersMaxCount)
+            {
+                LobbyStateMachine.ChangeState(LobbyStateMachine.LobbyBeforeStartingState);
+            }
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -140,7 +125,6 @@ namespace Terrix.Networking
             Players.Remove(player);
             var sld = new SceneLoadData(new[] { Scenes.MenuScene });
             SceneManager.LoadConnectionScenes(player, sld);
-            // SetInfo_ToObserver(Id, PlayersMaxCount);
             UpdatePlayers_ToObserver(Players);
         }
 

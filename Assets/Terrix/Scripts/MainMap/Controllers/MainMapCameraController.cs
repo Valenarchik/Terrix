@@ -28,7 +28,7 @@ namespace Terrix.Controllers
         private Vector3 origin;
         private Vector3 difference;
         private bool drag;
-        
+
         private GameEvents gameEvents;
 
         public bool Enable { get; set; }
@@ -64,19 +64,13 @@ namespace Terrix.Controllers
 
             drag = !context.canceled;
         }
+
         //TODO переделать
         public void Initialize(GameEvents gameEvents)
         {
             this.gameEvents = gameEvents;
+            this.gameEvents.OnGameReady(OnGameReady);
         }
-        public void Init_OnServer()
-        {
-        }
-        public void Init_OnClient()
-        {
-           gameEvents.OnGameReady(OnGameReady);
-        }
-        
 
         private void OnGameReady()
         {

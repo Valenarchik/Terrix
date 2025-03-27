@@ -23,7 +23,7 @@ namespace Terrix.Controllers.Country
 
             public virtual void OnDragBorders(InputAction.CallbackContext context) { }
             
-            public virtual void OnChooseCountryPosition(InputAction.CallbackContext context, MainMap map) { }
+            public virtual void OnChooseCountryPosition(InputAction.CallbackContext context) { }
             
             public virtual void OnPoint(InputAction.CallbackContext context) { }
             
