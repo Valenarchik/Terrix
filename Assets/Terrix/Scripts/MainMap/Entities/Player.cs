@@ -15,7 +15,6 @@ namespace Terrix.Entities
             ID = id;
             PlayerType = playerType;
         }
-        //TODO переделать сериализацию
         public Player(PlayerType playerType, Country country)
         {
             PlayerType = playerType;
