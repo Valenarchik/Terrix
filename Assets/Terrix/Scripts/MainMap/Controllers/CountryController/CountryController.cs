@@ -1,7 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using CustomUtilities.Attributes;
+using JetBrains.Annotations;
+using Priority_Queue;
 using Terrix.DTO;
 using Terrix.Game.GameRules;
+using Terrix.Map;
+using Terrix.Settings;
+using Terrix.Visual;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
@@ -16,6 +23,11 @@ namespace Terrix.Controllers
         [SerializeField] private Tilemap tilemap;
         [SerializeField] private MainMapCameraController cameraController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
+        [SerializeField] private AllCountriesDrawer countriesDrawer;
+        
+        [Header("Stretch borders")]
+        [SerializeField] private float alpha = 1.2f;
+        [SerializeField] private float beta = 10f;
         
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
@@ -23,20 +35,33 @@ namespace Terrix.Controllers
         [SerializeField, ReadOnlyInspector] private int playerId = int.MinValue;
 
         private CountryControllerStateMachine stateMachine;
-        private IdleState idleState;
-        private ChooseFirstCountryPositionState chooseFirstCountryPositionState;
-
+        private Dictionary<CountryControllerStateType, CountryControllerState> states;
+        
         private IPhaseManager phaseManager;
         private GameEvents gameEvents;
+        private IPlayersProvider playersProvider;
+        private HexMap map;
+        private IGameDataProvider gameDataProvider;
+        private Country country;
 
 
-        public void Initialize(int playerId, IPhaseManager phaseManager, GameEvents gameEvents)
+        public void Initialize(int playerId, 
+            [NotNull] IPhaseManager phaseManager, 
+            [NotNull] GameEvents gameEvents,
+            [NotNull] IPlayersProvider playersProvider,
+            [NotNull] HexMap map,
+            [NotNull] IGameDataProvider gameDataProvider)
         {
             this.playerId = playerId;
             gameObject.name = $"{nameof(CountryController)}_{playerId}";
 
-            this.phaseManager = phaseManager;
-            this.gameEvents = gameEvents;
+            this.phaseManager = phaseManager ?? throw new ArgumentNullException(nameof(phaseManager));
+            this.gameEvents = gameEvents ?? throw new ArgumentNullException(nameof(gameEvents));
+            this.playersProvider = playersProvider ?? throw new ArgumentNullException(nameof(playersProvider));
+            this.map = map ?? throw new ArgumentNullException(nameof(map));
+            this.gameDataProvider = gameDataProvider ?? throw new ArgumentNullException(nameof(gameDataProvider));
+
+            this.country = this.playersProvider.Find(playerId).Country;
         }
 
         public void OnChooseCountryPosition(InputAction.CallbackContext context)
@@ -57,11 +82,20 @@ namespace Terrix.Controllers
         private void Start()
         {
             stateMachine = new CountryControllerStateMachine();
-            idleState = new IdleState(this, CountryControllerStateType.Idle);
-            chooseFirstCountryPositionState = new ChooseFirstCountryPositionState(this, CountryControllerStateType.ChooseCountry);
-            stateMachine.Initialize(idleState);
+            states = new Dictionary<CountryControllerStateType, CountryControllerState>()
+            {
+                [CountryControllerStateType.Idle] = new IdleState(this),
+                [CountryControllerStateType.ChooseCountry] = new ChooseFirstCountryPositionState(this),
+                [CountryControllerStateType.DragBorders] = new DragBorders(this)
+            };
+            stateMachine.Initialize(states[CountryControllerStateType.Idle]);
             
            gameEvents.OnGameReady(OnGameReady);
+        }
+
+        private void Update()
+        {
+            stateMachine.CurrentState.Update();
         }
 
         private void OnGameReady()
@@ -81,20 +115,26 @@ namespace Terrix.Controllers
             switch (phaseType)
             {
                 case GamePhaseType.Uninitialized:
-                    stateMachine.ChangeState(idleState);
+                    ChangeState(CountryControllerStateType.Idle);
                     break;
                 case GamePhaseType.Initial:
-                    stateMachine.ChangeState(chooseFirstCountryPositionState);
+                    ChangeState(CountryControllerStateType.ChooseCountry);
                     break;
                 case GamePhaseType.Main:
-                    //TODO
+                    ChangeState(CountryControllerStateType.DragBorders);
                     break;
                 case GamePhaseType.Finish:
-                    stateMachine.ChangeState(idleState);
+                    ChangeState(CountryControllerStateType.Idle);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(phaseType), phaseType, null);
             }
+        }
+
+        private void ChangeState(CountryControllerStateType stateType)
+        {
+            controllerStateType = stateType;
+            stateMachine.ChangeState(states[stateType]);
         }
         
         private void TryChooseInitCountryPosition(Vector3Int pos)
@@ -104,6 +144,115 @@ namespace Terrix.Controllers
             {
                 commandsExecutor.ChooseInitialCountryPosition(playerId, pos);
             }
+        }
+        
+        private bool IsBorder(Vector3Int pos)
+        {
+            return map.HasHex(pos) && map[pos].GetNeighbours(map).Any(hex => hex.PlayerId == null);
+        }
+
+        private bool IsNotOur(Vector3Int pos)
+        {
+            return map.HasHex(pos) && map[pos].PlayerId != playerId;
+        }
+
+        private Country.UpdateCellsData GetUpdateData(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
+        {
+            var changeData = new List<Country.CellChangeData>();
+            
+            foreach (var removedHex in previousDragZoneHexes.Except(currentDragZoneHexes))
+            {
+                changeData.Add(new Country.CellChangeData(removedHex, Country.UpdateCellMode.Remove));
+            }
+
+            foreach (var addedHex in currentDragZoneHexes.Except(previousDragZoneHexes))
+            {
+                changeData.Add(new Country.CellChangeData(addedHex, Country.UpdateCellMode.Add));
+            }
+
+            return new Country.UpdateCellsData(AllCountriesDrawer.DRAG_ZONE_ID, changeData.ToArray());
+        }
+        
+        private Hex[] StretchBorders(
+            Vector3Int startPos,
+            Vector3Int endPos)
+        {
+            var gameData = gameDataProvider.Get();
+
+            var start = map[startPos];
+            var end = map[endPos];
+            
+            Vector3 direction = end.Position - start.Position;
+            var result = new List<Hex>();
+            var visited = new HashSet<Hex>();
+            var priorityQueue = new SimplePriorityQueue<Hex, float>();
+
+            foreach (var neighbour in start.GetNeighbours(map))
+            {
+                if (!country.Contains(neighbour))
+                {
+                    priorityQueue.Enqueue(neighbour, 0);
+                }
+            }
+
+            var remainingPoints = country.Population;
+            var targetReached = false;
+
+            while (priorityQueue.Count > 0 && remainingPoints > 0 && !targetReached)
+            {
+                priorityQueue.TryDequeue(out var cell);
+                if (visited.Contains(cell) || country.Contains(cell))
+                {
+                    continue;
+                }
+
+                var cellCost = cell.GetCost(playersProvider, gameData);
+                if (cellCost > remainingPoints)
+                {
+                    continue;
+                }
+
+                result.Add(cell);
+
+                if (end.Equals(cell))
+                {
+                    targetReached = true;
+                }
+                
+                remainingPoints -= cellCost;
+                visited.Add(cell);
+                
+                
+                foreach (var neighbor in cell.GetNeighbours(map))
+                {
+                    if (country.Contains(neighbor) || visited.Contains(neighbor))
+                    {
+                        continue;
+                    }
+
+                    var priority = CalculatePriority(neighbor);
+                    priorityQueue.Enqueue(neighbor, -priority);
+                }
+            }
+
+            return result.ToArray();
+            
+            float CalculatePriority(Hex current)
+            {
+                Vector3 delta = current.Position - start.Position;
+            
+                var projection = Vector3.Dot(delta.normalized, direction.normalized);
+            
+                var distance = delta.magnitude;
+                var distanceFactor = 1f / (1f + distance);
+
+                return projection * alpha + distanceFactor * beta;
+            }
+        }
+        
+        private Vector3Int GetCellPosition(Vector2 pointPos)
+        {
+            return MapUtilities.GetMousePosition(pointPos, camera, tilemap);
         }
     }
 }

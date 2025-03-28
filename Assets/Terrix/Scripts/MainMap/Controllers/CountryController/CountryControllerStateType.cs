@@ -3,6 +3,7 @@
     public enum CountryControllerStateType
     {
         Idle,
-        ChooseCountry
+        ChooseCountry,
+        DragBorders
     }
 }

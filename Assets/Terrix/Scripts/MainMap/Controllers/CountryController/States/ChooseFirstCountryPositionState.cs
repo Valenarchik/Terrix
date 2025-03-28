@@ -11,8 +11,7 @@ namespace Terrix.Controllers
         {
             private Vector2 pointPosition;
 
-            public ChooseFirstCountryPositionState(CountryController countryController,
-                CountryControllerStateType stateType) : base(countryController, stateType)
+            public ChooseFirstCountryPositionState(CountryController countryController) : base(countryController)
             {
             }
 
@@ -20,13 +19,7 @@ namespace Terrix.Controllers
             {
                 if (context.phase == InputActionPhase.Performed)
                 {
-                    var cellPosition = MapUtilities.GetMousePosition(pointPosition,
-                        CountryController.camera,
-                        CountryController.tilemap);
-                    
-                    Debug.Log(cellPosition);
-                    
-                    //(cellPosition.x, cellPosition.y) = (cellPosition.y, cellPosition.x);
+                    var cellPosition = CountryController.GetCellPosition(pointPosition);
                     CountryController.TryChooseInitCountryPosition(cellPosition);
                 }
             }

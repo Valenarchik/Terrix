@@ -80,11 +80,11 @@ namespace Terrix.Controllers
             }
             
             var player = playerProvider.Find(playerId);
-            ChooseInitialCountryPosition(player, pos);
+            ChooseInitialCountryPosition(player, pos, out _);
         }
 
         // [Server]
-        private void ChooseInitialCountryPosition(Player player, Vector3Int pos)
+        private void ChooseInitialCountryPosition(Player player, Vector3Int pos, out Hex[] captureHexes)
         {
             var gameData = gameDataProvider.Get();
             var country = player.Country;
@@ -96,7 +96,8 @@ namespace Terrix.Controllers
                     hexes.Add(hex);
                 }
             }
-            
+
+            captureHexes = hexes.ToArray();
             country.ClearAndAdd(hexes.ToArray());
         }
 
@@ -104,7 +105,7 @@ namespace Terrix.Controllers
         public void ChooseRandomInitialCountryPosition(IEnumerable<Player> players, Action<Player, bool> onChoose = null)
         {
             ValidateInitialization();
-
+            
             foreach (var player in players)
             {
                 var randomHex = map.CanCaptureHexes
@@ -114,7 +115,7 @@ namespace Terrix.Controllers
                 
                 if (success)
                 {
-                    ChooseInitialCountryPosition(player, randomHex.Position);
+                    ChooseInitialCountryPosition(player, randomHex.Position, out _);
                 }
                 
                 onChoose?.Invoke(player, success);

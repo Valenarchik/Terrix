@@ -49,7 +49,11 @@ namespace Terrix.Game.GameRules
                     {
                         Color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f))
                     })
-                    .ToArray())
+                    .ToArray(),
+                    new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID)
+                    {
+                        Color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f))
+                    })
             );
 
             var clientSettings = new ClientSettings(0);
@@ -97,10 +101,10 @@ namespace Terrix.Game.GameRules
 
             allCountriesHandler.Initialize(players.GetAll().Select(p => p.Country).ToArray());
             allCountriesDrawer.Initialize(serverSettings.CountryDrawerSettings);
-            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events);
             cameraController.Initialize(events);
 
             map = mapGenerator.GenerateMap(serverSettings.MapSettings);
+            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map, gameDataProvider);
 
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
         }

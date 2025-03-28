@@ -13,9 +13,10 @@ namespace Terrix.Settings
         [NamedArray("HexType")] public List<HexDataSerializable> HexStats;
         public float BaseCostOfNeutralLends;
         public float TickDurationInSeconds = 0.1f;
-        public float MaxDensePopulation;
+        public float MaxDensePopulation = 500;
         public float TimeForChooseFirstCountryPositionInSeconds = 30;
-
+        public float StartCountryPopulation = 100;
+        
         private GameData gameData;
         
         public GameData Get()
@@ -35,7 +36,8 @@ namespace Terrix.Settings
                 BaseCostOfNeutralLends,
                 TickDurationInSeconds,
                 MaxDensePopulation,
-                TimeSpan.FromSeconds(TimeForChooseFirstCountryPositionInSeconds));
+                TimeSpan.FromSeconds(TimeForChooseFirstCountryPositionInSeconds),
+                StartCountryPopulation);
         }
     }
 }

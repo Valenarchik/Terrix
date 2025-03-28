@@ -7,18 +7,13 @@ namespace Terrix.Controllers
         private abstract class CountryControllerState
         {
             protected readonly CountryController CountryController;
-            public CountryControllerStateType StateType { get; }
             
-            protected CountryControllerState(CountryController countryController, CountryControllerStateType stateType)
+            protected CountryControllerState(CountryController countryController)
             {
                 this.CountryController = countryController;
-                this.StateType = stateType;
             }
 
-            public virtual void Enter()
-            {
-                CountryController.controllerStateType = StateType;
-            }
+            public virtual void Enter() {}
 
             public virtual void OnDragBorders(InputAction.CallbackContext context) { }
             

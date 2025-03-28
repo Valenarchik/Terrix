@@ -41,14 +41,16 @@ namespace Terrix.Game.GameRules
 
         private IEnumerator Loop()
         {
-            
-            foreach (var handler in tickHandlersOrder)
+            while (true)
             {
-                handler.HandleTick();
-            }
+                foreach (var handler in tickHandlersOrder)
+                {
+                    handler.HandleTick();
+                }
 
-            var gameData = gameDataProvider.Get();
-            yield return new WaitForSeconds(gameData.TickDurationInSeconds);
+                var gameData = gameDataProvider.Get();
+                yield return new WaitForSeconds(gameData.TickDurationInSeconds);
+            }
         }
     }
 }
