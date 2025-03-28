@@ -53,7 +53,7 @@ namespace Terrix.Map
             GenerateData(out var tileData, out var map);
             tilemap.SetTiles(tileData, true);
 
-            return new HexMap(map);
+            return new HexMap(map, gameDataProvider.Get());
         }
 
         public void UpdateMap(HexMap map)

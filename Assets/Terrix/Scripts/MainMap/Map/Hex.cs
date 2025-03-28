@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Terrix.DTO;
+using Terrix.Game.GameRules;
 using UnityEngine;
 
 namespace Terrix.Map
@@ -42,6 +43,18 @@ namespace Terrix.Map
             Position = position;
             NeighboursPositions = neighboursPositions;
             PlayerId = playerId;
+        }
+
+        public float GetCost(IPlayersProvider playersProvider, GameData gameData)
+        {
+            if (PlayerId == null)
+            {
+                return gameData.BaseCostOfNeutralLends * GetHexData(gameData).Resist;
+            }
+            else
+            {
+                return playersProvider.Find(PlayerId.Value).Country.DensePopulation * GetHexData(gameData).Resist;
+            }
         }
 
         public override string ToString()

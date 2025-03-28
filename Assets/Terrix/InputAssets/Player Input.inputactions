@@ -11,7 +11,7 @@
                     "id": "bead1d28-0628-4f08-9369-ac15a1560bf1",
                     "expectedControlType": "Vector2",
                     "processors": "",
-                    "interactions": "Hold,Press(behavior=1)",
+                    "interactions": "",
                     "initialStateCheck": true
                 },
                 {
@@ -42,18 +42,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Point",
-                    "type": "Value",
-                    "id": "88c21b48-36b3-4f6f-9cbb-f577c6412730",
-                    "expectedControlType": "Vector2",
+                    "name": "Drag Country Borders",
+                    "type": "Button",
+                    "id": "165c4418-f756-4ec9-852f-9758e4496ec4",
+                    "expectedControlType": "",
                     "processors": "",
-                    "interactions": "",
+                    "interactions": "Hold",
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Drag Country Borders",
+                    "name": "Point",
                     "type": "Value",
-                    "id": "165c4418-f756-4ec9-852f-9758e4496ec4",
+                    "id": "88c21b48-36b3-4f6f-9cbb-f577c6412730",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -304,39 +304,6 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "Left + Position",
-                    "id": "5578c1b7-8160-41a2-a798-6adf0570d131",
-                    "path": "OneModifier",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Drag Country Borders",
-                    "isComposite": true,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "modifier",
-                    "id": "516509d4-f9f8-4f91-be4f-f98f38cf11bf",
-                    "path": "<Mouse>/leftButton",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Mouse and keyboard",
-                    "action": "Drag Country Borders",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
-                    "name": "binding",
-                    "id": "75a69a52-3e0d-428c-9e73-e19e2707ff46",
-                    "path": "<Mouse>/position",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Mouse and keyboard",
-                    "action": "Drag Country Borders",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
                     "name": "",
                     "id": "7e6cb325-4e91-4cea-b17a-89ba6a4c922e",
                     "path": "<Mouse>/leftButton",
@@ -355,6 +322,17 @@
                     "processors": "",
                     "groups": ";Mouse and keyboard",
                     "action": "Point",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2c861a6f-6997-4020-8d5e-ca90cea3e3dc",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Mouse and keyboard",
+                    "action": "Drag Country Borders",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

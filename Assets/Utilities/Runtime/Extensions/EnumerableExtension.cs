@@ -8,6 +8,66 @@ namespace CustomUtilities.Extensions
 {
     public static class EnumerableExtension
     {
+        /// <summary>
+        /// Без материализации коллекции. Рекомендуется для использования с большими коллекциями.
+        /// </summary>
+        public static T RandomElementReservoir<T>(this IEnumerable<T> enumerable, Random random = null)
+        {
+            if (enumerable is null)
+            {
+                throw new ArgumentNullException(nameof(enumerable));
+            }
+            
+            random ??= new Random();
+            T selected = default;
+            var count = 0;
+    
+            foreach (var element in enumerable)
+            {
+                count++;
+                if (random.Next(count) == 0)
+                {
+                    selected = element;
+                }
+            }
+    
+            if (count == 0)
+            {
+                throw new InvalidOperationException("Enumerable is empty!");
+            }
+
+            return selected;
+        }
+
+        /// <summary>
+        /// Без материализации коллекции. Рекомендуется для использования с большими коллекциями.
+        /// </summary>
+        public static T RandomElementReservoirOrDefault<T>(this IEnumerable<T> enumerable, Random random = null)
+        {
+            if (enumerable is null)
+            {
+                throw new ArgumentNullException(nameof(enumerable));
+            }
+            
+            random ??= new Random();
+            T selected = default;
+            var count = 0;
+    
+            foreach (var element in enumerable)
+            {
+                count++;
+                if (random.Next(count) == 0)
+                {
+                    selected = element;
+                }
+            }
+
+            return selected;
+        }
+        
+        /// <summary>
+        /// Находит случайный элемент в enumerable. Внимание! Не подходит для больших enumerable, так как материализирует коллекцию.
+        /// </summary>
         public static T RandomElement<T>(this IEnumerable<T> enumerable, Random random = null)
         {
             if (enumerable is null)
@@ -22,7 +82,10 @@ namespace CustomUtilities.Extensions
                 ? throw new InvalidOperationException("Cant get random element because enumerable is empty!")
                 : list[random.Next(0, list.Count)];
         }
-
+        
+        /// <summary>
+        /// Находит случайный элемент в enumerable. Внимание! Не подходит для больших enumerable, так как материализирует коллекцию.
+        /// </summary>
         public static T RandomElement<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate, Random random = null)
         {
             if (enumerable is null)
@@ -38,6 +101,9 @@ namespace CustomUtilities.Extensions
             return RandomElement(enumerable.Where(predicate), random);
         }
 
+        /// <summary>
+        /// Находит случайный элемент в enumerable. Внимание! Не подходит для больших enumerable, так как материализирует коллекцию.
+        /// </summary>
         public static T RandomElementOrDefault<T>(this IEnumerable<T> enumerable, Random random = null)
         {
             if (enumerable is null)
@@ -51,6 +117,9 @@ namespace CustomUtilities.Extensions
             return list.Count == 0 ? default : list[random.Next(0, list.Count)];
         }
 
+        /// <summary>
+        /// Находит случайный элемент в enumerable. Внимание! Не подходит для больших enumerable, так как материализирует коллекцию.
+        /// </summary>
         public static T RandomElementOrDefault<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate, Random random = null)
         {
             if (enumerable is null)

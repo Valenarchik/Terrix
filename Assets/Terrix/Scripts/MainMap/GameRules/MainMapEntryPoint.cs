@@ -14,6 +14,7 @@ using Terrix.Networking;
 using Terrix.Settings;
 using Terrix.Visual;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Terrix.Game.GameRules
 {
@@ -22,6 +23,7 @@ namespace Terrix.Game.GameRules
     {
         [Header("References")]
         [SerializeField] private HexMapGenerator mapGenerator;
+
         [SerializeField] private TickGenerator tickGenerator;
         [SerializeField] private Lobby lobby;
         [SerializeField] private MainMapCameraController cameraController;
@@ -36,6 +38,7 @@ namespace Terrix.Game.GameRules
 
         private GameEvents events;
         private HexMap map;
+        private ICountriesCollector countriesCollector;
         private IGameReferee referee;
         private IAttackInvoker attackInvoker;
         private IPhaseManager phaseManager;
@@ -45,23 +48,21 @@ namespace Terrix.Game.GameRules
 
         public override void OnStartServer()
         {
-            // Надо подтягивать эти данные откуда-то. наверно из лобби
             base.OnStartServer();
             NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
             var gameMode = GameModeType.FFA;
-            var playersAndBots = new PlayersAndBots(lobby.PlayersMaxCount, 0);
+            var playersAndBots = new PlayersAndBots(lobby.PlayersMaxCount, 100);
+            var countriesDrawerSettings = new AllCountriesDrawer.Settings(Enumerable.Range(0, lobby.PlayersMaxCount).Select(i => new ZoneData(i)).ToArray(),
+                new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID)
+                {
+                    Color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f))
+                });
+            //Server settings
             settings = new Settings(
                 mapGenerator.DefaultSettingsSo.Get(),
                 new GameReferee.Settings(gameMode),
                 playersAndBots,
-                // new AllCountriesDrawer.Settings(new ZoneData[]
-                // {
-                //     new(0) { Color = new Color(1, 0, 0, 1f) },
-                //     new(1) { Color = new Color(0, 1, 0, 1f) },
-                //     // new(2) { Color = new Color(0, 0, 1, 1f) }
-                // }),
-                new AllCountriesDrawer.Settings(
-                    Enumerable.Range(0, lobby.PlayersMaxCount).Select(i => new ZoneData(i)).ToArray()),
+                countriesDrawerSettings,
                 0
             );
             Initialize_OnServer(settings);
@@ -82,13 +83,17 @@ namespace Terrix.Game.GameRules
                     throw new ArgumentOutOfRangeException();
             }
         }
-
         private void LobbyStateMachineOnStateChanged(LobbyState state)
         {
             if (state == lobby.LobbyStateMachine.LobbyStartingState)
             {
                 StartGamePipeline();
             }
+        }
+
+        public void StartGamePipeline(ServerSettings serverSettings, ClientSettings clientSettings)
+        {
+            StartCoroutine(GamePipeline(serverSettings, clientSettings));
         }
 
         // Нужно так же делить на серверную и клиентскуюя часть
@@ -99,25 +104,25 @@ namespace Terrix.Game.GameRules
             Initialize_OnClient_ToServer(ClientManager.Connection, color);
         }
 
-        public void StartGamePipeline()
+        private IEnumerator GamePipeline(ServerSettings serverSettings, ClientSettings clientSettings)
         {
-            StartCoroutine(GamePipeline());
-        }
-
-        private IEnumerator GamePipeline()
-        {
-            // Initialize(settings);
-
-            // Ивент о начале игры
-            // events.StartGame();
-
-            // Выбор изначальной позиции
+            //TODO тут инициализация происходит и для сервака и дял клиента
             InitializeAllCountriesDrawer_ToObserver(settings.CountryDrawerSettings);
 
             phaseManager.NextPhase();
             ChangePhase();
             var gameData = gameDataProvider.Get();
+            BotsChooseRandomPositions();
             yield return new WaitForSeconds(gameData.TimeForChooseFirstCountryPosition.Seconds);
+            NotInitializedPlayersChooseRandomPositions();
+
+            phaseManager.NextPhase();
+            tickGenerator.Initialize(new ITickHandler[]
+            {
+                countriesCollector,
+                attackInvoker,
+                referee
+            });
         }
 
         [ObserversRpc]
@@ -127,15 +132,22 @@ namespace Terrix.Game.GameRules
         }
 
         private void Initialize_OnServer(Settings settings)
+        // TODO private void Initialize(ServerSettings serverSettings, ClientSettings clientSettings)
         {
             gameDataProvider = new GameDataProvider();
             playersFactory = new PlayersFactory(gameDataProvider);
             gameRefereeFactory = new GameRefereeFactory(settings.GameModeSettings);
             map = mapGenerator.GenerateMap(settings.MapSettings);
+            // events = new GameEvents();
+            // attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
-            referee = gameRefereeFactory.Create(playersFactory.CreatePlayers(settings.PlayersCount));
-            players = new PlayersProvider(playersFactory.CreatePlayers(settings.PlayersCount));
-            //TODO хз куда это
+
+            playersFactory = new PlayersFactory(gameDataProvider);
+            players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
+            gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
+            referee = gameRefereeFactory.Create();
+            countriesCollector = new CountriesCollector(players);
+
             allCountriesHandler.Initialize(players.GetAll().Select(p => p.Country).ToArray());
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
         }
@@ -188,6 +200,19 @@ namespace Terrix.Game.GameRules
             allCountriesDrawer.Initialize(countriesDrawerSettings);
         }
 
+        // [Server]
+        private void BotsChooseRandomPositions()
+        {
+            commandsExecutor.ChooseRandomInitialCountryPosition(players.GetAll().OfType<Bot>());
+        }
+
+        // [Server]
+        private void NotInitializedPlayersChooseRandomPositions()
+        {
+            commandsExecutor.ChooseRandomInitialCountryPosition(players.GetAll()
+                .Where(p => p.Country.TotalCellsCount == 0));
+        }
+
 #if UNITY_EDITOR
         private void OnGUI()
         {
@@ -197,41 +222,39 @@ namespace Terrix.Game.GameRules
             };
 
             GUI.Label(new Rect(0, 0, 300, 25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
+            GUI.Label(new Rect(0, 25, 300, 25), $"Time is {Time.time:F2}", labelStyle);
         }
 #endif
 
 
-        public class Settings
+        public class ServerSettings
         {
-            public HexMapGenerator.Settings MapSettings { get; } // сервер
-            public GameReferee.Settings GameModeSettings { get; } // сервер
-            public PlayersAndBots PlayersCount { get; } // сервер
-            public AllCountriesDrawer.Settings CountryDrawerSettings { get; } // клиент
-            public int LocalPlayerId { get; } // клиент
+            public HexMapGenerator.Settings MapSettings { get; }
+            public GameReferee.Settings GameModeSettings { get; }
+            public PlayersAndBots PlayersCount { get; }
+            public AllCountriesDrawer.Settings CountryDrawerSettings { get; }
 
-            public Settings(
+            public ServerSettings(
                 HexMapGenerator.Settings mapSettings,
                 GameReferee.Settings gameModeSettings,
                 PlayersAndBots playersCount,
-                AllCountriesDrawer.Settings countryDrawerSettings,
-                int localPlayerId)
+                AllCountriesDrawer.Settings countryDrawerSettings)
             {
-                MapSettings = mapSettings ??
-                              throw new NullReferenceException(
-                                  $"{nameof(MainMapEntryPoint)}.{nameof(Settings)}.{nameof(MapSettings)}");
-                GameModeSettings = gameModeSettings ??
-                                   throw new NullReferenceException(
-                                       $"{nameof(MainMapEntryPoint)}.{nameof(Settings)}.{nameof(GameModeSettings)}");
+                MapSettings = mapSettings ?? throw new NullReferenceException(
+                    $"{nameof(MainMapEntryPoint)}.{nameof(ServerSettings)}.{nameof(MapSettings)}");
+                GameModeSettings = gameModeSettings ?? throw new NullReferenceException(
+                    $"{nameof(MainMapEntryPoint)}.{nameof(ServerSettings)}.{nameof(GameModeSettings)}");
                 PlayersCount = playersCount;
-                CountryDrawerSettings = countryDrawerSettings ??
-                                        throw new NullReferenceException(
-                                            $"{nameof(MainMapEntryPoint)}.{nameof(Settings)}.{nameof(CountryDrawerSettings)}");
-                LocalPlayerId = localPlayerId;
+                CountryDrawerSettings = countryDrawerSettings ?? throw new NullReferenceException(
+                    $"{nameof(MainMapEntryPoint)}.{nameof(ServerSettings)}.{nameof(CountryDrawerSettings)}");
             }
+        }
 
-            // для клиента
-            public Settings(
-                int localPlayerId)
+        public class ClientSettings
+        {
+            public int LocalPlayerId { get; }
+
+            public ClientSettings(int localPlayerId)
             {
                 LocalPlayerId = localPlayerId;
             }

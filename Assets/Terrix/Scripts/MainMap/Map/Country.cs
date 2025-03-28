@@ -39,6 +39,13 @@ namespace Terrix.Map
             cellsByTypeCount = Enum.GetValues(typeof(HexType))
                 .OfType<HexType>()
                 .ToDictionary(type => type, _ => 0);
+
+            Population = gameDataProvider.Get().StartCountryPopulation;
+        }
+
+        public bool Contains(Hex cell)
+        {
+            return cellsSet.Contains(cell);
         }
 
         public void CollectIncome()

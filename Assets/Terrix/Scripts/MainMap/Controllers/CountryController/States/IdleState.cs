@@ -1,4 +1,4 @@
-﻿namespace Terrix.Controllers.Country
+﻿namespace Terrix.Controllers
 {
     public partial class CountryController
     {
@@ -7,8 +7,7 @@
         /// </summary>
         private class IdleState : CountryControllerState
         {
-            public IdleState(CountryController countryController, CountryControllerStateType stateType) :
-                base(countryController, stateType)
+            public IdleState(CountryController countryController) : base(countryController)
             {
             }
 

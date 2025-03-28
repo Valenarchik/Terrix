@@ -1,25 +1,20 @@
 ﻿using Terrix.Game.GameRules;
 using UnityEngine.InputSystem;
 
-namespace Terrix.Controllers.Country
+namespace Terrix.Controllers
 {
     public partial class CountryController
     {
         private abstract class CountryControllerState
         {
             protected readonly CountryController CountryController;
-            public CountryControllerStateType StateType { get; }
             
-            protected CountryControllerState(CountryController countryController, CountryControllerStateType stateType)
+            protected CountryControllerState(CountryController countryController)
             {
                 this.CountryController = countryController;
-                this.StateType = stateType;
             }
 
-            public virtual void Enter()
-            {
-                CountryController.controllerStateType = StateType;
-            }
+            public virtual void Enter() {}
 
             public virtual void OnDragBorders(InputAction.CallbackContext context) { }
             

@@ -9,22 +9,31 @@ namespace Terrix.Game.GameRules
     {
         Player[] GetAll();
         Player Find(int id);
+        Player[] Find(IEnumerable<int> ids);
     }
 
     public class PlayersProvider : IPlayersProvider
     {
         private readonly List<Player> players;
         public List<Player> Players => players;
+        private readonly Dictionary<int, Player> playersMap;
 
         public Player[] GetAll() => players.ToArray();
         public Player Find(int id)
         {
-            return players.Find(player => player.ID == id);
+            playersMap.TryGetValue(id, out var p);
+            return p;
+        }
+
+        public Player[] Find(IEnumerable<int> ids)
+        {
+            return ids.Where(id => playersMap.ContainsKey(id)).Select(id => playersMap[id]).ToArray();
         }
 
         public PlayersProvider(IEnumerable<Player> players)
         {
             this.players = players.ToList();
+            this.playersMap = this.players.ToDictionary(p => p.ID);
         }
     }
 }
