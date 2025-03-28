@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Terrix.DTO;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ namespace Terrix.Map
     public class HexMap
     {
         public Hex[,,] Hexes { get; }
-        public Hex[] CanCaptureHexes { get; }
+        public HashSet<Hex> CanCaptureHexes { get; }
         public Vector3Int Size { get; }
 
         public Hex this[int x, int y, int z]
@@ -31,7 +32,7 @@ namespace Terrix.Map
         {
             Hexes = hexes;
             Size = new Vector3Int(hexes.GetLength(0), hexes.GetLength(1), hexes.GetLength(2));
-            CanCaptureHexes = Hexes.Cast<Hex>().Where(hex => hex.GetHexData(gameData).CanCapture).ToArray();
+            CanCaptureHexes = Hexes.Cast<Hex>().Where(hex => hex.GetHexData(gameData).CanCapture).ToHashSet();
         }
     }
 }

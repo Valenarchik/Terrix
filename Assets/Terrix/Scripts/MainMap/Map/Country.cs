@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using System.Linq;
@@ -9,29 +10,25 @@ using UnityEngine;
 
 namespace Terrix.Map
 {
-    public class Country : Territory
+    public class Country: IEnumerable<Hex>
     {
         private readonly IGameDataProvider gameDataProvider;
-
-        /// <summary>
-        /// Храню информацию о территориях в сжатом формате
-        /// </summary>
+        private readonly HexMap map;
+        
         private readonly Dictionary<HexType, int> cellsByTypeCount;
-
         private readonly HashSet<Hex> cellsSet = new();
 
         public int PlayerId => Owner.ID;
         public float Population { get; private set; }
         public int TotalCellsCount { get; private set; }
+        public float DensePopulation { get; private set; }
+        public HashSet<Hex> Border { get; }
         public Player Owner { get; private set; }
-
-        public float DensePopulation => Population / TotalCellsCount;
-        public override IReadOnlyCollection<Hex> Cells => cellsSet;
+        
         public event Action<UpdateCellsData> OnCellsUpdate;
 
 
-        public Country([NotNull] IGameDataProvider gameDataProvider, [NotNull] Player owner) : base(
-            Enumerable.Empty<Hex>())
+        public Country([NotNull] IGameDataProvider gameDataProvider, [NotNull] Player owner, HexMap map)
         {
             this.gameDataProvider = gameDataProvider;
             this.Owner = owner ?? throw new ArgumentNullException(nameof(owner));
@@ -41,6 +38,9 @@ namespace Terrix.Map
                 .ToDictionary(type => type, _ => 0);
 
             Population = gameDataProvider.Get().StartCountryPopulation;
+            DensePopulation = 0;
+            Border = new HashSet<Hex>();
+            this.map = map;
         }
 
         public bool Contains(Hex cell)
@@ -59,6 +59,14 @@ namespace Terrix.Map
             }
 
             Population = Mathf.Clamp(Population, 0, TotalCellsCount * gameData.MaxDensePopulation);
+            if (TotalCellsCount != 0)
+            {
+                DensePopulation = Population / TotalCellsCount;
+            }
+            else
+            {
+                DensePopulation = 0;
+            }
         }
 
         public void ClearAndAdd(IEnumerable<Hex> addedHexesAfterClear)
@@ -74,17 +82,7 @@ namespace Terrix.Map
             var changeData = new List<CellChangeData>(removedSet.Count + addedSet.Count);
             changeData.AddRange(removedSet.Select(hex => new CellChangeData(hex, UpdateCellMode.Remove)));
             changeData.AddRange(addedSet.Select(hex => new CellChangeData(hex, UpdateCellMode.Add)));
-
-            foreach (var cellChangeData in changeData)
-            {
-                cellChangeData.Hex.PlayerId = cellChangeData.Mode switch
-                {
-                    UpdateCellMode.Add => PlayerId,
-                    UpdateCellMode.Remove => null,
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-            }
-
+            
             var data = new UpdateCellsData(PlayerId, changeData.ToArray());
 
             UpdateCells(data);
@@ -93,7 +91,7 @@ namespace Terrix.Map
         public void UpdateCells([NotNull] UpdateCellsData data)
         {
             ValidateUpdateCellsData(data);
-
+            
             foreach (var updateData in data.ChangeData)
             {
                 var cell = updateData.Hex;
@@ -105,6 +103,7 @@ namespace Terrix.Map
                         {
                             cellsByTypeCount[cell.HexType]++;
                             TotalCellsCount++;
+                            cell.PlayerId = PlayerId;
                         }
                         break;
                     }
@@ -114,6 +113,7 @@ namespace Terrix.Map
                         {
                             cellsByTypeCount[cell.HexType]--;
                             TotalCellsCount--;
+                            cell.PlayerId = null;
                         }
                         break;
                     }
@@ -124,7 +124,20 @@ namespace Terrix.Map
                 }
             }
 
+            UpdateBorder();
             OnCellsUpdate?.Invoke(data);
+        }
+
+        private void UpdateBorder()
+        {
+            Border.Clear();
+            foreach (var cell in cellsSet)
+            {
+                if (cell.GetNeighbours(map).Any(neighbor => !Contains(neighbor)))
+                {
+                    Border.Add(cell);
+                }
+            }
         }
 
         private void ValidateUpdateCellsData(UpdateCellsData data)
@@ -137,17 +150,6 @@ namespace Terrix.Map
             if (data.PlayerId != PlayerId)
             {
                 throw new InvalidOperationException($"{nameof(Country)}.{nameof(UpdateCells)} | Не верно указан id!");
-            }
-
-            foreach (var changeData in data.ChangeData)
-            {
-                if (changeData.Mode == UpdateCellMode.Add)
-                {
-                    if (changeData.Hex.PlayerId != PlayerId)
-                    {
-                        throw new Exception("Прежде чем добавлять клетки стране, назначте клеткам владельца.");
-                    }
-                }
             }
         }
 
@@ -179,6 +181,16 @@ namespace Terrix.Map
         {
             Add,
             Remove
+        }
+
+        public IEnumerator<Hex> GetEnumerator()
+        {
+            return cellsSet.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

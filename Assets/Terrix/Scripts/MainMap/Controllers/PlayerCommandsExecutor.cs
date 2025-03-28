@@ -110,7 +110,7 @@ namespace Terrix.Controllers
             {
                 var randomHex = map.CanCaptureHexes
                     .Where(hex => hex.PlayerId == null && hex.GetNeighbours(map).All(neigh => neigh.PlayerId == null))
-                    .RandomElementOrDefault();
+                    .RandomElementReservoirOrDefault();
                 var success = randomHex is not null;
                 
                 if (success)

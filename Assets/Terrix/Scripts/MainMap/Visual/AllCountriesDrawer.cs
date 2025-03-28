@@ -30,18 +30,19 @@ namespace Terrix.Visual
             }
 
             drawersByIds = new Dictionary<int, CountryDrawer>();
-            
-            foreach (var zone in settings.Zones)
+
+            for (var i = 0; i < settings.Zones.Length; i++)
             {
+                var zone = settings.Zones[i];
                 var material = zoneMaterialFactory.Create(zone);
                 var countryDrawer = Instantiate(countryDrawerPrefab, playerInstantiateRoot.transform, true);
                 drawersByIds.Add(zone.ID, countryDrawer);
-                countryDrawer.Initialize(new CountryDrawer.Settings(zone.ID, material));
+                countryDrawer.Initialize(new CountryDrawer.Settings(zone.ID, material, i));
             }
 
             var dragZoneMaterial = zoneMaterialFactory.Create(settings.DragZone);
             dragZoneDrawer = Instantiate(countryDrawerPrefab, playerInstantiateRoot.transform, true);
-            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.ID, dragZoneMaterial));
+            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.ID, dragZoneMaterial, settings.Zones.Length));
         }
 
         public void UpdateZone(Country.UpdateCellsData updateData)

@@ -92,20 +92,22 @@ namespace Terrix.Game.GameRules
             events = new GameEvents();
             attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
+            
 
-            playersFactory = new PlayersFactory(gameDataProvider);
+            allCountriesDrawer.Initialize(serverSettings.CountryDrawerSettings);
+            cameraController.Initialize(events);
+
+            map = mapGenerator.GenerateMap(serverSettings.MapSettings);
+            playersFactory = new PlayersFactory(gameDataProvider, map);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
+            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map, gameDataProvider);
+
             gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
             referee = gameRefereeFactory.Create();
             countriesCollector = new CountriesCollector(players);
 
             allCountriesHandler.Initialize(players.GetAll().Select(p => p.Country).ToArray());
-            allCountriesDrawer.Initialize(serverSettings.CountryDrawerSettings);
-            cameraController.Initialize(events);
-
-            map = mapGenerator.GenerateMap(serverSettings.MapSettings);
-            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map, gameDataProvider);
-
+            
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
         }
 

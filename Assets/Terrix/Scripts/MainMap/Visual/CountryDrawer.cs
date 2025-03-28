@@ -29,7 +29,9 @@ namespace Terrix.Visual
 
             this.zoneMaterial = settings.ZoneMaterial;
 
-            zoneTilemap.GetComponent<TilemapRenderer>().sharedMaterial = zoneMaterial;
+            var tilemapRenderer = zoneTilemap.GetComponent<TilemapRenderer>();
+            tilemapRenderer.sharedMaterial = zoneMaterial;
+            tilemapRenderer.sortingOrder = settings.SortingOrder;
         }
 
         public void UpdateZone([NotNull] Country.UpdateCellsData data)
@@ -83,11 +85,13 @@ namespace Terrix.Visual
         {
             public int PlayerId { get; }
             public Material ZoneMaterial { get; }
+            public int SortingOrder { get; }
 
-            public Settings(int playerId, Material zoneMaterial)
+            public Settings(int playerId, Material zoneMaterial, int sortingOrder)
             {
                 PlayerId = playerId;
                 ZoneMaterial = zoneMaterial;
+                SortingOrder = sortingOrder;
             }
         }
     }
