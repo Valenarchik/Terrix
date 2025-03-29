@@ -36,13 +36,13 @@ namespace Terrix.Visual
                 var zone = settings.Zones[i];
                 var material = zoneMaterialFactory.Create(zone);
                 var countryDrawer = Instantiate(countryDrawerPrefab, playerInstantiateRoot.transform, true);
-                drawersByIds.Add(zone.ID, countryDrawer);
-                countryDrawer.Initialize(new CountryDrawer.Settings(zone.ID, material, i));
+                drawersByIds.Add(zone.PlayerId, countryDrawer);
+                countryDrawer.Initialize(new CountryDrawer.Settings(zone.PlayerId, material, i));
             }
 
             var dragZoneMaterial = zoneMaterialFactory.Create(settings.DragZone);
             dragZoneDrawer = Instantiate(countryDrawerPrefab, playerInstantiateRoot.transform, true);
-            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.ID, dragZoneMaterial, settings.Zones.Length));
+            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.PlayerId, dragZoneMaterial, settings.Zones.Length));
         }
 
         public void UpdateZone(Country.UpdateCellsData updateData)
