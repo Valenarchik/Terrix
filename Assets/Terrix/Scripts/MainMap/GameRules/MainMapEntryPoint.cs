@@ -90,7 +90,6 @@ namespace Terrix.Game.GameRules
         {
             gameDataProvider = new GameDataProvider();
             events = new GameEvents();
-            attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
             
 
@@ -102,6 +101,8 @@ namespace Terrix.Game.GameRules
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
             countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map, gameDataProvider);
 
+            attackInvoker = new AttackInvoker(players, map, gameDataProvider);
+            
             gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
             referee = gameRefereeFactory.Create();
             countriesCollector = new CountriesCollector(players);

@@ -16,15 +16,14 @@ namespace Terrix.Map
         private readonly HexMap map;
         
         private readonly Dictionary<HexType, int> cellsByTypeCount;
-        private readonly HashSet<Hex> cellsSet = new();
 
         public int PlayerId => Owner.ID;
         public float Population { get; private set; }
         public int TotalCellsCount { get; private set; }
         public float DensePopulation { get; private set; }
-        public HashSet<Hex> Border { get; }
+        public HashSet<Hex> CellsSet { get; } = new();
+        public HashSet<Hex> Border { get; } = new();
         public Player Owner { get; private set; }
-        
         public event Action<UpdateCellsData> OnCellsUpdate;
 
 
@@ -39,13 +38,12 @@ namespace Terrix.Map
 
             Population = gameDataProvider.Get().StartCountryPopulation;
             DensePopulation = 0;
-            Border = new HashSet<Hex>();
             this.map = map;
         }
 
         public bool Contains(Hex cell)
         {
-            return cellsSet.Contains(cell);
+            return CellsSet.Contains(cell);
         }
 
         public void CollectIncome()
@@ -71,7 +69,7 @@ namespace Terrix.Map
 
         public void ClearAndAdd(IEnumerable<Hex> addedHexesAfterClear)
         {
-            RemoveAndAdd(cellsSet, addedHexesAfterClear);
+            RemoveAndAdd(CellsSet, addedHexesAfterClear);
         }
 
         public void RemoveAndAdd(IEnumerable<Hex> removedHexes, IEnumerable<Hex> addedHexes)
@@ -99,7 +97,7 @@ namespace Terrix.Map
                 {
                     case UpdateCellMode.Add:
                     {
-                        if (cellsSet.Add(cell))
+                        if (CellsSet.Add(cell))
                         {
                             cellsByTypeCount[cell.HexType]++;
                             TotalCellsCount++;
@@ -109,17 +107,13 @@ namespace Terrix.Map
                     }
                     case UpdateCellMode.Remove:
                     {
-                        if (cellsSet.Remove(cell))
+                        if (CellsSet.Remove(cell))
                         {
                             cellsByTypeCount[cell.HexType]--;
                             TotalCellsCount--;
                             cell.PlayerId = null;
                         }
                         break;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException();
                     }
                 }
             }
@@ -131,7 +125,7 @@ namespace Terrix.Map
         private void UpdateBorder()
         {
             Border.Clear();
-            foreach (var cell in cellsSet)
+            foreach (var cell in CellsSet)
             {
                 if (cell.GetNeighbours(map).Any(neighbor => !Contains(neighbor)))
                 {
@@ -185,7 +179,7 @@ namespace Terrix.Map
 
         public IEnumerator<Hex> GetEnumerator()
         {
-            return cellsSet.GetEnumerator();
+            return CellsSet.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
