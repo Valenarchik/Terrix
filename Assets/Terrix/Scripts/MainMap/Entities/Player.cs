@@ -4,21 +4,18 @@ using Terrix.Map;
 
 namespace Terrix.Entities
 {
-    public class Player
+    public class Player: Entity<int>
     {
-        public int ID { get; }
         public PlayerType PlayerType { get; }
         [MaybeNull] public Country Country { get; set; }
-
-        public Player(int id, PlayerType playerType)
+        
+        public Player(int id, PlayerType playerType): base(id)
         {
-            ID = id;
             PlayerType = playerType;
         }
 
-        public Player(int id, PlayerType playerType, Country country)
+        public Player(int id, PlayerType playerType, Country country) : base(id)
         {
-            ID = id;
             PlayerType = playerType;
             Country = country;
         }

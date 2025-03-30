@@ -47,13 +47,18 @@ namespace Terrix.Map
 
         public float GetCost(IPlayersProvider playersProvider, GameData gameData)
         {
-            if (PlayerId == null)
+            return GetCost(PlayerId, playersProvider, gameData);
+        }
+
+        public float GetCost(int? playerId, IPlayersProvider playersProvider, GameData gameData)
+        {
+            if (playerId == null)
             {
                 return gameData.BaseCostOfNeutralLends * GetHexData(gameData).Resist;
             }
             else
             {
-                return playersProvider.Find(PlayerId.Value).Country.DensePopulation * GetHexData(gameData).Resist;
+                return playersProvider.Find(playerId.Value).Country.DensePopulation * GetHexData(gameData).Resist;
             }
         }
 
