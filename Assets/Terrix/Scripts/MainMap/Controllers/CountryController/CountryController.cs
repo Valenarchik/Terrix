@@ -25,11 +25,11 @@ namespace Terrix.Controllers
         [SerializeField] private MainMapCameraController cameraController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
         [SerializeField] private AllCountriesDrawer countriesDrawer;
-        
+
         [Header("Stretch borders")]
         [SerializeField] private float alpha = 1.2f;
         [SerializeField] private float beta = 10f;
-        
+
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
         [SerializeField, ReadOnlyInspector] private CountryControllerStateType controllerStateType;
@@ -37,7 +37,7 @@ namespace Terrix.Controllers
 
         private CountryControllerStateMachine stateMachine;
         private Dictionary<CountryControllerStateType, CountryControllerState> states;
-        
+
         private IPhaseManager phaseManager;
         private GameEvents gameEvents;
         private IPlayersProvider playersProvider;
@@ -46,8 +46,8 @@ namespace Terrix.Controllers
         private Country country;
 
 
-        public void Initialize(int playerId, 
-            [NotNull] IPhaseManager phaseManager, 
+        public void Initialize(int playerId,
+            [NotNull] IPhaseManager phaseManager,
             [NotNull] GameEvents gameEvents,
             [NotNull] IPlayersProvider playersProvider,
             [NotNull] HexMap map,
@@ -91,13 +91,12 @@ namespace Terrix.Controllers
                 [CountryControllerStateType.DragBorders] = new DragBorders(this)
             };
             stateMachine.Initialize(states[CountryControllerStateType.Idle]);
-            
-           gameEvents.OnGameReady(OnGameReady);
         }
+
         //TODO новое
         private void Update()
         {
-            stateMachine.CurrentState.Update();
+            stateMachine?.CurrentState.Update();
         }
 
         private void OnGameReady()
@@ -138,16 +137,16 @@ namespace Terrix.Controllers
             controllerStateType = stateType;
             stateMachine.ChangeState(states[stateType]);
         }
-        
+
         private async void TryChooseInitCountryPosition(Vector3Int pos)
         {
             // клиент проводит проверку
-            if ( await commandsExecutor.CanChooseInitialCountryPosition(playerId, pos))
+            if (await commandsExecutor.CanChooseInitialCountryPosition_OnClient(playerId, pos))
             {
                 commandsExecutor.ChooseInitialCountryPosition(playerId, pos);
             }
         }
-        
+
         private bool IsBorder(Vector3Int pos)
         {
             return map.HasHex(pos) && map[pos].GetNeighbours(map).Any(hex => hex.PlayerId == null);
@@ -158,10 +157,10 @@ namespace Terrix.Controllers
             return map.HasHex(pos) && map[pos].PlayerId != playerId;
         }
 
-        private Country.UpdateCellsData GetUpdateData(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
+        private Country.UpdateCellsData  GetUpdateData(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
         {
             var changeData = new List<Country.CellChangeData>();
-            
+
             foreach (var removedHex in previousDragZoneHexes.Except(currentDragZoneHexes))
             {
                 changeData.Add(new Country.CellChangeData(removedHex, Country.UpdateCellMode.Remove));
@@ -174,7 +173,7 @@ namespace Terrix.Controllers
 
             return new Country.UpdateCellsData(AllCountriesDrawer.DRAG_ZONE_ID, changeData.ToArray());
         }
-        
+
         private Hex[] StretchBorders(
             Vector3Int startPos,
             Vector3Int endPos)
@@ -183,7 +182,7 @@ namespace Terrix.Controllers
 
             var start = map[startPos];
             var end = map[endPos];
-            
+
             Vector3 direction = end.Position - start.Position;
             var result = new List<Hex>();
             var visited = new HashSet<Hex>();
@@ -220,11 +219,11 @@ namespace Terrix.Controllers
                 {
                     targetReached = true;
                 }
-                
+
                 remainingPoints -= cellCost;
                 visited.Add(cell);
-                
-                
+
+
                 foreach (var neighbor in cell.GetNeighbours(map))
                 {
                     if (country.Contains(neighbor) || visited.Contains(neighbor))
@@ -238,23 +237,43 @@ namespace Terrix.Controllers
             }
 
             return result.ToArray();
-            
+
             float CalculatePriority(Hex current)
             {
                 Vector3 delta = current.Position - start.Position;
-            
+
                 var projection = Vector3.Dot(delta.normalized, direction.normalized);
-            
+
                 var distance = delta.magnitude;
                 var distanceFactor = 1f / (1f + distance);
 
                 return projection * alpha + distanceFactor * beta;
             }
         }
-        
+
         private Vector3Int GetCellPosition(Vector2 pointPos)
         {
             return MapUtilities.GetMousePosition(pointPos, camera, tilemap);
+        }
+
+        [ObserversRpc]
+        public void UpdateCountries_OnClient(Dictionary<int, Country> countries)
+        {
+            foreach (var currentPlayer in playersProvider.GetAll())
+            {
+                currentPlayer.Country = countries[currentPlayer.ID];
+                currentPlayer.Country.Owner = currentPlayer;
+                // .First(currentCountry => currentCountry.PlayerId == currentPlayer.ID);
+            }
+
+            country = playersProvider.Find(playerId).Country;
+            var a = 0;
+            //
+            // // foreach (var currentCountry in countries)
+            // // {
+            // //     
+            // // }
+            // this.playersProvider = playersProvider;
         }
     }
 }

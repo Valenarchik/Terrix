@@ -11,6 +11,7 @@ namespace Terrix.Visual
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
         
         private Country[] countries;
+        public Country[] Countries => countries;
         private bool initialize;
         private bool handle;
         

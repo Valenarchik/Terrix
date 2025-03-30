@@ -6,7 +6,7 @@ using FishNet.Object;
 using Terrix.Controllers;
 using System.Linq;
 using FishNet.Transporting;
-using Terrix.Controllers.Country;
+using MoreLinq;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Map;
@@ -44,28 +44,31 @@ namespace Terrix.Game.GameRules
         private IPhaseManager phaseManager;
         private IPlayersProvider players;
         private Dictionary<NetworkConnection, int> playersIds = new();
-        private Settings settings;
+        // private Settings settings;
+        private ServerSettings serverSettings;
+        private ClientSettings clientSettings;
 
         public override void OnStartServer()
         {
             base.OnStartServer();
             NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
             var gameMode = GameModeType.FFA;
-            var playersAndBots = new PlayersAndBots(lobby.PlayersMaxCount, 100);
-            var countriesDrawerSettings = new AllCountriesDrawer.Settings(Enumerable.Range(0, lobby.PlayersMaxCount).Select(i => new ZoneData(i)).ToArray(),
+            var playersAndBots = new PlayersAndBots(lobby.PlayersMaxCount, 0);
+            //TODO исправить
+            var countriesDrawerSettings = new AllCountriesDrawer.Settings(
+                Enumerable.Range(0, lobby.PlayersMaxCount).Select(i => new ZoneData(i)).ToArray(),
                 new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID)
                 {
                     Color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f))
                 });
             //Server settings
-            settings = new Settings(
+            serverSettings = new ServerSettings(
                 mapGenerator.DefaultSettingsSo.Get(),
                 new GameReferee.Settings(gameMode),
                 playersAndBots,
-                countriesDrawerSettings,
-                0
+                countriesDrawerSettings
             );
-            Initialize_OnServer(settings);
+            Initialize_OnServer(serverSettings);
             lobby.LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged;
         }
 
@@ -83,6 +86,7 @@ namespace Terrix.Game.GameRules
                     throw new ArgumentOutOfRangeException();
             }
         }
+
         private void LobbyStateMachineOnStateChanged(LobbyState state)
         {
             if (state == lobby.LobbyStateMachine.LobbyStartingState)
@@ -91,9 +95,9 @@ namespace Terrix.Game.GameRules
             }
         }
 
-        public void StartGamePipeline(ServerSettings serverSettings, ClientSettings clientSettings)
+        public void StartGamePipeline()
         {
-            StartCoroutine(GamePipeline(serverSettings, clientSettings));
+            StartCoroutine(GamePipeline());
         }
 
         // Нужно так же делить на серверную и клиентскуюя часть
@@ -104,10 +108,10 @@ namespace Terrix.Game.GameRules
             Initialize_OnClient_ToServer(ClientManager.Connection, color);
         }
 
-        private IEnumerator GamePipeline(ServerSettings serverSettings, ClientSettings clientSettings)
+        private IEnumerator GamePipeline()
         {
             //TODO тут инициализация происходит и для сервака и дял клиента
-            InitializeAllCountriesDrawer_ToObserver(settings.CountryDrawerSettings);
+            Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings, players);
 
             phaseManager.NextPhase();
             ChangePhase();
@@ -115,14 +119,16 @@ namespace Terrix.Game.GameRules
             BotsChooseRandomPositions();
             yield return new WaitForSeconds(gameData.TimeForChooseFirstCountryPosition.Seconds);
             NotInitializedPlayersChooseRandomPositions();
-
             phaseManager.NextPhase();
+            ChangePhase();
             tickGenerator.Initialize(new ITickHandler[]
             {
                 countriesCollector,
                 attackInvoker,
                 referee
             });
+            countryController.UpdateCountries_OnClient(
+                allCountriesHandler.Countries.ToDictionary(country => country.PlayerId));
         }
 
         [ObserversRpc]
@@ -131,17 +137,14 @@ namespace Terrix.Game.GameRules
             phaseManager.NextPhase();
         }
 
-        private void Initialize_OnServer(Settings settings)
-        // TODO private void Initialize(ServerSettings serverSettings, ClientSettings clientSettings)
+        private void Initialize_OnServer(ServerSettings settings)
+            // TODO private void Initialize(ServerSettings serverSettings, ClientSettings clientSettings)
         {
             gameDataProvider = new GameDataProvider();
-            playersFactory = new PlayersFactory(gameDataProvider);
-            gameRefereeFactory = new GameRefereeFactory(settings.GameModeSettings);
             map = mapGenerator.GenerateMap(settings.MapSettings);
             // events = new GameEvents();
             // attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
-
             playersFactory = new PlayersFactory(gameDataProvider);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
             gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
@@ -171,7 +174,7 @@ namespace Terrix.Game.GameRules
                 throw new Exception("Id wasn't set");
             }
 
-            settings.CountryDrawerSettings.Zones[id].Color = color;
+            serverSettings.CountryDrawerSettings.Zones[id].Color = color;
 
             Initialize_OnClient_ToTarget(connection, map, id);
         }
@@ -180,7 +183,7 @@ namespace Terrix.Game.GameRules
         [TargetRpc]
         private void Initialize_OnClient_ToTarget(NetworkConnection connection, HexMap map, int id)
         {
-            settings = new Settings(id);
+            clientSettings = new ClientSettings(id);
             this.map = map;
             mapGenerator.UpdateMap(map);
             gameDataProvider = new GameDataProvider();
@@ -188,16 +191,33 @@ namespace Terrix.Game.GameRules
             events = new GameEvents();
             attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
-            countryController.Initialize(settings.LocalPlayerId, phaseManager, events);
+            // TODO Инициализировать когда все игроки подсодинятся
+            // countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, this.map,
+            //     gameDataProvider);
             cameraController.Initialize(events);
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
             events.StartGame();
         }
 
         [ObserversRpc]
-        private void InitializeAllCountriesDrawer_ToObserver(AllCountriesDrawer.Settings countriesDrawerSettings)
+        private void Initialize_InitialPhase_ToObserver(AllCountriesDrawer.Settings countriesDrawerSettings,
+            IPlayersProvider iPlayersProvider)
+        {
+            iPlayersProvider.GetAll().ForEach(player => player.Country.Owner = player);
+            InitializeCountryController_OnClient(iPlayersProvider);
+            InitializeAllCountriesDrawer_OnClient(countriesDrawerSettings);
+        }
+
+        private void InitializeAllCountriesDrawer_OnClient(AllCountriesDrawer.Settings countriesDrawerSettings)
         {
             allCountriesDrawer.Initialize(countriesDrawerSettings);
+        }
+
+        private void InitializeCountryController_OnClient(IPlayersProvider iPlayersProvider)
+        {
+            players = iPlayersProvider;
+            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map,
+                gameDataProvider);
         }
 
         // [Server]
@@ -221,7 +241,7 @@ namespace Terrix.Game.GameRules
                 fontSize = 20
             };
 
-            GUI.Label(new Rect(0, 0, 300, 25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
+            // GUI.Label(new Rect(0, 0, 300, 25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
             GUI.Label(new Rect(0, 25, 300, 25), $"Time is {Time.time:F2}", labelStyle);
         }
 #endif

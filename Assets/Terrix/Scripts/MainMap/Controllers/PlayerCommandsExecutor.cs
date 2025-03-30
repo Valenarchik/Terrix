@@ -49,6 +49,40 @@ namespace Terrix.Controllers
             return result;
         }
 
+        public bool CanChooseInitialCountryPosition_OnServer(int playerId, Vector3Int pos)
+        {
+            ValidateInitialization();
+
+            var gameData = gameDataProvider.Get();
+
+            var result = PlayerCheck() && PhaseCheck() && MapCheck();
+            return result;
+
+            bool PhaseCheck()
+            {
+                return phaseManager.CurrentPhase == GamePhaseType.Initial;
+            }
+
+            bool MapCheck()
+            {
+                return map.HasHex(pos) &&
+                       OwnerCheck(map[pos]) &&
+                       map[pos].GetHexData(gameData).CanCapture &&
+                       map[pos].GetNeighbours(map).All(OwnerCheck);
+            }
+
+            bool OwnerCheck(Hex hex)
+            {
+                return hex.PlayerId == null || hex.PlayerId == playerId;
+            }
+
+            bool PlayerCheck()
+            {
+                var player = playerProvider.Find(playerId);
+                return player is not null && player.Country is not null;
+            }
+        }
+
         [TargetRpc]
         public void CanChooseInitialCountryPosition_ToTarget(NetworkConnection connection, bool result)
         {
@@ -98,13 +132,13 @@ namespace Terrix.Controllers
         public void ChooseInitialCountryPosition(int playerId, Vector3Int pos)
         {
             ValidateInitialization();
-            
+
             // сервер проводит дополнительную проверку
-            if (!CanChooseInitialCountryPosition(playerId, pos))
+            if (!CanChooseInitialCountryPosition_OnServer(playerId, pos))
             {
                 return;
             }
-            
+
             var player = playerProvider.Find(playerId);
             ChooseInitialCountryPosition(player, pos, out _);
         }
@@ -129,22 +163,23 @@ namespace Terrix.Controllers
         }
 
         // [Server]
-        public void ChooseRandomInitialCountryPosition(IEnumerable<Player> players, Action<Player, bool> onChoose = null)
+        public void ChooseRandomInitialCountryPosition(IEnumerable<Player> players,
+            Action<Player, bool> onChoose = null)
         {
             ValidateInitialization();
-            
+
             foreach (var player in players)
             {
                 var randomHex = map.CanCaptureHexes
                     .Where(hex => hex.PlayerId == null && hex.GetNeighbours(map).All(neigh => neigh.PlayerId == null))
                     .RandomElementOrDefault();
                 var success = randomHex is not null;
-                
+
                 if (success)
                 {
                     ChooseInitialCountryPosition(player, randomHex.Position, out _);
                 }
-                
+
                 onChoose?.Invoke(player, success);
             }
         }

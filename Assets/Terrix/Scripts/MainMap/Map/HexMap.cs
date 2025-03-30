@@ -34,10 +34,11 @@ namespace Terrix.Map
             CanCaptureHexes = Hexes.Cast<Hex>().Where(hex => hex.GetHexData(gameData).CanCapture).ToArray();
         }
 
-        public HexMap(Hex[,,] hexes, Vector3Int size)
+        public HexMap(Hex[,,] hexes, Hex[] canCaptureHexes)
         {
             Hexes = hexes;
-            Size = size;
+            Size = new Vector3Int(hexes.GetLength(0), hexes.GetLength(1), hexes.GetLength(2));
+            CanCaptureHexes = canCaptureHexes;
         }
     }
 }

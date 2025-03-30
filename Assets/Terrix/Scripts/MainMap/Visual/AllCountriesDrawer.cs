@@ -12,7 +12,7 @@ namespace Terrix.Visual
     public class AllCountriesDrawer : NetworkBehaviour
     {
         public static int DRAG_ZONE_ID = -1;
-        
+
         [Header("Prefabs")]
         [SerializeField] private CountryDrawer countryDrawerPrefab;
 
@@ -22,7 +22,7 @@ namespace Terrix.Visual
 
         private Dictionary<int, CountryDrawer> drawersByIds;
         private CountryDrawer dragZoneDrawer;
-        
+
         public void Initialize([NotNull] Settings settings)
         {
             if (settings == null)
@@ -48,6 +48,7 @@ namespace Terrix.Visual
         [ObserversRpc]
         public void UpdateZone(Country.UpdateCellsData updateData)
         {
+            var a = updateData;
             drawersByIds[updateData.PlayerId].UpdateZone(updateData);
         }
 
@@ -55,12 +56,12 @@ namespace Terrix.Visual
         {
             dragZoneDrawer.UpdateZone(updateData);
         }
-        
+
         public class Settings
         {
             public ZoneData[] Zones { get; }
             public ZoneData DragZone { get; }
-            
+
             public Settings(ZoneData[] zones, ZoneData dragZone)
             {
                 Zones = zones;

@@ -6,7 +6,6 @@ using CustomUtilities.Attributes;
 using Terrix.DTO;
 using Terrix.Map;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 
 namespace Terrix.Settings
@@ -33,6 +32,7 @@ namespace Terrix.Settings
             [Range(0, 1)] public float Height;
             public Tile Tile;
         }
+
         [Serializable]
         public class Percent
         {

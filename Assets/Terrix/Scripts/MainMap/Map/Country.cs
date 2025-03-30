@@ -23,7 +23,7 @@ namespace Terrix.Map
         public int PlayerId => Owner.ID;
         public float Population { get; private set; }
         public int TotalCellsCount { get; private set; }
-        public Player Owner { get; private set; }
+        public Player Owner { get; set; }
 
         public float DensePopulation => Population / TotalCellsCount;
         public override IReadOnlyCollection<Hex> Cells => cellsSet;
@@ -36,6 +36,18 @@ namespace Terrix.Map
             this.gameDataProvider = gameDataProvider;
             this.Owner = owner ?? throw new ArgumentNullException(nameof(owner));
 
+            cellsByTypeCount = Enum.GetValues(typeof(HexType))
+                .OfType<HexType>()
+                .ToDictionary(type => type, _ => 0);
+
+            Population = gameDataProvider.Get().StartCountryPopulation;
+        }
+
+        public Country([NotNull] IGameDataProvider gameDataProvider, IEnumerable<Hex> cellsSet) : base(
+            Enumerable.Empty<Hex>())
+        {
+            this.gameDataProvider = gameDataProvider;
+            this.cellsSet = cellsSet.ToHashSet();
             cellsByTypeCount = Enum.GetValues(typeof(HexType))
                 .OfType<HexType>()
                 .ToDictionary(type => type, _ => 0);
@@ -106,6 +118,7 @@ namespace Terrix.Map
                             cellsByTypeCount[cell.HexType]++;
                             TotalCellsCount++;
                         }
+
                         break;
                     }
                     case UpdateCellMode.Remove:
@@ -115,6 +128,7 @@ namespace Terrix.Map
                             cellsByTypeCount[cell.HexType]--;
                             TotalCellsCount--;
                         }
+
                         break;
                     }
                     default:

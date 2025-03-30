@@ -1,13 +1,12 @@
 using FishNet.Object;
 using Terrix.Controllers;
-using Terrix.Controllers.Country;
-using Terrix.DTO;
 using Terrix.Game.GameRules;
 using Terrix.Networking;
 using UnityEngine;
 
 namespace Terrix
 {
+    //Класс не используется
     public class NetworkInitializer : NetworkBehaviour
     {
         // Start is called once before the first execution of Update after the MonoBehaviour is created

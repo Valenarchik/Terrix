@@ -7,7 +7,7 @@ namespace Terrix.Controllers
 {
     public partial class CountryController
     {
-        private class DragBorders: CountryControllerState
+        private class DragBorders : CountryControllerState
         {
             private HexMap map => CountryController.map;
             private Vector2 pointPosition;
@@ -68,7 +68,7 @@ namespace Terrix.Controllers
                     }
                 }
             }
-            
+
             private void TryStartDrag()
             {
                 var cellPosition = CountryController.GetCellPosition(pointPosition);
@@ -84,6 +84,7 @@ namespace Terrix.Controllers
             {
                 if (drag)
                 {
+                    Debug.Log(dragHexes.Length);
                     drag = false;
                     var newDragHexes = Array.Empty<Hex>();
                     var updateData = CountryController.GetUpdateData(dragHexes, newDragHexes);

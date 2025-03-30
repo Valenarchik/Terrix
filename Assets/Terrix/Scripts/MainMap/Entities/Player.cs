@@ -9,14 +9,16 @@ namespace Terrix.Entities
         public int ID { get; }
         public PlayerType PlayerType { get; }
         [MaybeNull] public Country Country { get; set; }
-        
+
         public Player(int id, PlayerType playerType)
         {
             ID = id;
             PlayerType = playerType;
         }
-        public Player(PlayerType playerType, Country country)
+
+        public Player(int id, PlayerType playerType, Country country)
         {
+            ID = id;
             PlayerType = playerType;
             Country = country;
         }

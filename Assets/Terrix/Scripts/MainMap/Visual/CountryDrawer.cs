@@ -44,8 +44,9 @@ namespace Terrix.Visual
                 throw new InvalidOperationException(
                     $"{nameof(CountryDrawer)}.{nameof(UpdateZone)} | Не верно указан id!");
             }
-
+            Debug.Log(data.ChangeData.Length);
             var changeData = GenerateData(data);
+            // Debug.Log(changeData.Length);
             zoneTilemap.SetTiles(changeData, true);
         }
 
@@ -69,7 +70,7 @@ namespace Terrix.Visual
                     {
                         position = hex.Position,
                         tile = null,
-                        color = Color.white, 
+                        color = Color.white,
                         transform = Matrix4x4.identity
                     },
                     _ => throw new ArgumentOutOfRangeException()
