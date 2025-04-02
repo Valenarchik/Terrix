@@ -10,8 +10,8 @@ namespace Terrix.DTO
         public float BaseCostOfNeutralLends { get; }
         public float TickDurationInSeconds { get; }
         public float MaxDensePopulation { get; }
-
         public TimeSpan TimeForChooseFirstCountryPosition { get; }
+        public float StartCountryPopulation { get; }
         public Dictionary<HexType, Tile> HexTiles { get; }
 
 
@@ -21,6 +21,7 @@ namespace Terrix.DTO
             float tickDurationInSeconds,
             float maxDensePopulation,
             TimeSpan timeForChooseFirstCountryPosition,
+            float startCountryPopulation,
             Dictionary<HexType, Tile> hexTiles)
         {
             CellsStats = cellsStats;
@@ -28,6 +29,7 @@ namespace Terrix.DTO
             TickDurationInSeconds = tickDurationInSeconds;
             MaxDensePopulation = maxDensePopulation;
             TimeForChooseFirstCountryPosition = timeForChooseFirstCountryPosition;
+            StartCountryPopulation = startCountryPopulation;
             HexTiles = hexTiles;
         }
     }

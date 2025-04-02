@@ -10,31 +10,15 @@ public class LobbyManager : NetworkBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     [SerializeField] private int playersMaxCount;
+    [SerializeField] private int playersAndBotsMaxCount;
     public int PlayersMaxCount => playersMaxCount;
+    public int PlayersAndBotsMaxCount => playersAndBotsMaxCount;
     private Dictionary<int, Lobby> defaultLobbies = new();
     private Dictionary<int, CustomLobby> customLobbies = new();
     public static LobbyManager Instance { get; private set; }
 
     private void Awake() => Instance = this;
-    // {
-    //     if (!IsServerInitialized)
-    //     {
-    //         return;
-    //     }
-    //
-    //     Instance = this;
-    // }
-
-
-    // Update is called once per frame
-    void Update()
-    {
-    }
-
-    // public void AddScene(int id, Scene scene)
-    // {
-    //     _scenes.Add(id, scene);
-    // }
+    
     public bool TryGetAvailableLobby(out Lobby availableLobby)
     {
         foreach (var lobby in defaultLobbies.Values)

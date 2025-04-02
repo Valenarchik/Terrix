@@ -4,19 +4,19 @@ namespace Terrix.Visual
 {
     public class ZoneData
     {
-        public int ID { get; }
+        public int PlayerId { get; }
         public Texture2D Texture { get; set; } = null;
         public Color? Color { get; set; } = null;
         public Vector2? TileSizeModifier { get; set; } = null;
-
-        public ZoneData(int id)
+        
+        public ZoneData(int playerId)
         {
-            ID = id;
+            PlayerId = playerId;
         }
 
         public ZoneData(int id, Color color)
         {
-            ID = id;
+            PlayerId = id;
             Color = color;
         }
     }

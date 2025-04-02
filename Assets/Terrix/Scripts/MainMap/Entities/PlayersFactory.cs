@@ -1,7 +1,8 @@
-﻿using Terrix.DTO;
+﻿using System;
+using JetBrains.Annotations;
+using Terrix.DTO;
 using Terrix.Map;
 using Terrix.Settings;
-using UnityEngine;
 
 namespace Terrix.Entities
 {
@@ -13,10 +14,12 @@ namespace Terrix.Entities
     public class PlayersFactory: IPlayersFactory
     {
         private readonly IGameDataProvider gameDataProvider;
+        private readonly HexMap map;
 
-        public PlayersFactory(IGameDataProvider gameDataProvider)
+        public PlayersFactory([NotNull] IGameDataProvider gameDataProvider, [NotNull] HexMap map)
         {
-            this.gameDataProvider = gameDataProvider;
+            this.gameDataProvider = gameDataProvider ?? throw new ArgumentNullException(nameof(gameDataProvider));
+            this.map = map ?? throw new ArgumentNullException(nameof(map));
         }
 
         public Player[] CreatePlayers(PlayersAndBots playersCount)
@@ -33,7 +36,7 @@ namespace Terrix.Entities
                 {
                     players[i] = new Bot(i, PlayerType.Bot);
                 }
-                players[i].Country = new Country(gameDataProvider, players[i]);
+                players[i].Country = new Country(gameDataProvider, players[i], map);
             }
 
             return players;

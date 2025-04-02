@@ -11,6 +11,7 @@ namespace Terrix.Visual
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
         
         private Country[] countries;
+        public Country[] Countries => countries;
         private bool initialize;
         private bool handle;
         
@@ -37,7 +38,7 @@ namespace Terrix.Visual
         
         private void CountryOnCellsUpdate(Country.UpdateCellsData data)
         {
-            allCountriesDrawer.UpdateZone(data);
+            allCountriesDrawer.UpdateZone_ToObserver(data);
         }
         
         

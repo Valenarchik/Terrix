@@ -1,14 +1,24 @@
-﻿namespace Terrix.Map
-{
-    public class Attack
-    {
-        public Country AttackingCountry { get; }
-        public Territory AttackedTerritory { get; }
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using Terrix.DTO;
+using Terrix.Entities;
 
-        public Attack(Country attackingCountry, Territory attackedTerritory)
+namespace Terrix.Map
+{
+    public class Attack: Entity<int>
+    {
+        public Player Owner { get; }
+        public HashSet<Hex> Territory { get;  }
+        public float Points { get;  }
+        
+        [MaybeNull] public Player Target { get; }
+        
+        public Attack(int id, Player owner, HashSet<Hex> territory, float points, Player target): base(id)
         {
-            AttackingCountry = attackingCountry;
-            AttackedTerritory = attackedTerritory;
+            Owner = owner;
+            Territory = territory;
+            Points = points;
+            Target = target;
         }
     }
 }

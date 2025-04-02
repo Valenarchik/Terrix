@@ -1,8 +1,9 @@
-﻿namespace Terrix.Controllers.Country
+﻿namespace Terrix.Controllers
 {
     public enum CountryControllerStateType
     {
         Idle,
-        ChooseCountry
+        ChooseCountry,
+        DragBorders
     }
 }

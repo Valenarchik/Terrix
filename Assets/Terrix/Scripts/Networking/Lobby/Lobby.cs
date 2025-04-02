@@ -15,6 +15,7 @@ namespace Terrix.Networking
         // public List<NetworkObject> Players { get; private set; }
         public List<NetworkConnection> Players { get; private set; }
         public int PlayersMaxCount { get; private set; }
+        public int PlayersAndBotsMaxCount { get; private set; }
         public int PlayersCurrentCount => Players.Count;
 
         public LobbyStateMachine LobbyStateMachine { get; private set; }
@@ -55,6 +56,7 @@ namespace Terrix.Networking
             Scene = gameObject.scene;
             Players = new List<NetworkConnection>();
             PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
+            PlayersAndBotsMaxCount = LobbyManager.Instance.PlayersAndBotsMaxCount;
             LobbyStateMachine = CreateStateMachine();
             LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
             AddLobbyToLobbyManager();

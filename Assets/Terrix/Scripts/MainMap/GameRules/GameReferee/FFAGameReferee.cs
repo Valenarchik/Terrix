@@ -1,14 +1,11 @@
-﻿using System.Collections.Generic;
-using Terrix.Entities;
-
-namespace Terrix.Game.GameRules
+﻿namespace Terrix.Game.GameRules
 {
     /// <summary>
     /// Все против всех
     /// </summary>
     public class FFAGameReferee: GameReferee
     {
-        public FFAGameReferee(IEnumerable<Player> players) : base(players)
+        public FFAGameReferee(IPlayersProvider playersProvider) : base(playersProvider)
         {
         }
 

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using FishNet.Serializing;
 using Terrix.DTO;
 using Terrix.Entities;
@@ -14,16 +16,18 @@ namespace Terrix.Networking
     {
         public static void WriteHexMap(this Writer writer, HexMap value)
         {
-            writer.Write(value.Hexes);
+            writer.Write(value.Hexes.ToArray());
+            writer.Write(value.CanCaptureHexes.ToArray());
             writer.WriteVector3Int(value.Size);
         }
 
         public static HexMap ReadHexMap(this Reader reader)
         {
             var hexes = reader.Read<Hex[]>();
+            var canCaptureHexes = reader.Read<Hex[]>();
             var size = reader.ReadVector3Int();
             var matrix = hexes.ToMatrix(size.x, size.y, size.z);
-            return new HexMap(matrix);
+            return new HexMap(matrix, canCaptureHexes);
         }
 
         public static void WriteHex(this Writer writer, Hex value)
@@ -58,12 +62,20 @@ namespace Terrix.Networking
         public static void WriteCountry(this Writer writer, Country value)
         {
             writer.Write(value.GameDataProvider);
-            writer.Write(value.Owner);
+            writer.WriteList(value.CellsSet.ToList());
+            writer.Write(value.Population);
+            writer.WriteInt32(value.TotalCellsCount);
+            writer.Write(value.DensePopulation);
+            // writer.Write(value.Map);
+            // writer.Write(value.Owner);
         }
 
         public static Country ReadCountry(this Reader reader)
         {
-            return new Country(reader.Read<IGameDataProvider>(), reader.Read<Player>());
+            // return new Country(reader.Read<IGameDataProvider>(), reader.Read<Player>());
+            return new Country(reader.Read<IGameDataProvider>(),
+                reader.ReadListAllocated<Hex>(), reader.Read<float>(), reader.ReadInt32(), reader.Read<float>());
+            // reader.Read<HexMap>())
         }
 
         public static void WriteIGameDataProvider(this Writer writer, IGameDataProvider value)
@@ -92,8 +104,18 @@ namespace Terrix.Networking
             writer.WriteBoolean(isInitialized);
             if (isInitialized)
             {
-                writer.Write(value.PlayerType);
-                writer.Write(value.Country);
+                if (value is Bot bot)
+                {
+                    writer.WriteUInt8Unpacked(1);
+                    writer.Write(bot);
+                }
+                else
+                {
+                    writer.WriteUInt8Unpacked(2);
+                    writer.WriteInt32(value.ID);
+                    writer.Write(value.PlayerType);
+                    writer.Write(value.Country);
+                }
             }
         }
 
@@ -104,18 +126,39 @@ namespace Terrix.Networking
                 return null;
             }
 
-            return new Player(reader.Read<PlayerType>(), reader.Read<Country>());
+            var classType = reader.ReadUInt8Unpacked();
+            if (classType == 1)
+            {
+                return reader.Read<Bot>();
+            }
+
+            var player = new Player(reader.ReadInt32(), reader.Read<PlayerType>(), reader.Read<Country>());
+            player.Country.Owner = player;
+            return player;
         }
 
-        public static void WriteActionBool(this Writer writer, Country value)
+        public static void WriteBot(this Writer writer, Bot value)
         {
-            writer.Write(value.GameDataProvider);
-            writer.Write(value.Owner);
+            var isInitialized = value is not null;
+            writer.WriteBoolean(isInitialized);
+            if (isInitialized)
+            {
+                writer.WriteInt32(value.ID);
+                writer.Write(value.PlayerType);
+                writer.Write(value.Country);
+            }
         }
 
-        public static Country ReadActionBool(this Reader reader)
+        public static Bot ReadBot(this Reader reader)
         {
-            return new Country(reader.Read<IGameDataProvider>(), reader.Read<Player>());
+            if (!reader.ReadBoolean())
+            {
+                return null;
+            }
+
+            var player = new Bot(reader.ReadInt32(), reader.Read<PlayerType>(), reader.Read<Country>());
+            player.Country.Owner = player;
+            return player;
         }
 
         public static void WriteIPlayersProvider(this Writer writer, IPlayersProvider value)
@@ -148,6 +191,7 @@ namespace Terrix.Networking
             return new PlayersProvider(reader.ReadListAllocated<Player>());
         }
 
+
         public static void WriteUpdateCellsData(this Writer writer, Country.UpdateCellsData value)
         {
             writer.WriteInt32(value.PlayerId);
@@ -162,18 +206,17 @@ namespace Terrix.Networking
         public static void WriteAllCountriesDrawerSettings(this Writer writer, AllCountriesDrawer.Settings value)
         {
             writer.Write(value.Zones);
+            writer.Write(value.DragZone);
         }
 
         public static AllCountriesDrawer.Settings ReadAllCountriesDrawerSettings(this Reader reader)
         {
-            var result = new AllCountriesDrawer.Settings(reader.Read<ZoneData[]>());
-            return result;
-            return new AllCountriesDrawer.Settings(reader.Read<ZoneData[]>());
+            return new AllCountriesDrawer.Settings(reader.Read<ZoneData[]>(), reader.Read<ZoneData>());
         }
 
         public static void WriteZoneData(this Writer writer, ZoneData value)
         {
-            writer.WriteInt32(value.ID);
+            writer.WriteInt32(value.PlayerId);
             var hasColor = value.Color is not null;
             writer.WriteBoolean(hasColor);
             if (hasColor)
@@ -191,7 +234,7 @@ namespace Terrix.Networking
                 return new ZoneData(id, reader.Read<Color>());
             }
 
-            return new ZoneData(reader.ReadInt32());
+            return new ZoneData(id);
         }
 
         public static T[,] ToMatrix<T>(this T[] array, int width, int height)
@@ -227,12 +270,29 @@ namespace Terrix.Networking
                 {
                     for (int x = 0; x < width; x++)
                     {
-                        matrix[x, y, z] = array[z * height + (y * width + x)];
+                        matrix[x, y, z] = array[z * height + y * width + x];
                     }
                 }
             }
 
             return matrix;
+        }
+
+        public static T[] ToArray<T>(this T[,,] matrix)
+        {
+            var result = new List<T>();
+            for (var z = 0; z < matrix.GetLength(2); z++)
+            {
+                for (var y = 0; y < matrix.GetLength(1); y++)
+                {
+                    for (var x = 0; x < matrix.GetLength(0); x++)
+                    {
+                        result.Add(matrix[x, y, z]);
+                    }
+                }
+            }
+
+            return result.ToArray();
         }
     }
 }

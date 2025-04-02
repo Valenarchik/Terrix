@@ -53,13 +53,12 @@ namespace Terrix.Map
             GenerateData(out var tileData, out var map);
             tilemap.SetTiles(tileData, true);
 
-            return new HexMap(map);
+            return new HexMap(map, gameDataProvider.Get());
         }
 
         public void UpdateMap(HexMap map)
         {
             TileChangeData[] tileData = new TileChangeData[map.Size.x * map.Size.y];
-            Debug.Log(map.Hexes.Length);
             for (int y = 0; y < map.Size.y; y++)
             {
                 for (int x = 0; x < map.Size.x; x++)
@@ -68,7 +67,7 @@ namespace Terrix.Map
                     var hex = map.Hexes[x, y, 0];
                     tileData[i] = new TileChangeData
                     {
-                        position = (Vector3Int)hex.Position,
+                        position = hex.Position,
                         tile = gameDataProvider.Get().HexTiles[map.Hexes[x, y, 0].HexType],
                         color = Color.white,
                         transform = Matrix4x4.identity
