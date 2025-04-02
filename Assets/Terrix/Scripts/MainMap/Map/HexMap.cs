@@ -39,7 +39,7 @@ namespace Terrix.Map
         {
             Hexes = hexes;
             Size = new Vector3Int(hexes.GetLength(0), hexes.GetLength(1), hexes.GetLength(2));
-            CanCaptureHexes = canCaptureHexes;
+            CanCaptureHexes = canCaptureHexes.ToHashSet();
         }
     }
 }

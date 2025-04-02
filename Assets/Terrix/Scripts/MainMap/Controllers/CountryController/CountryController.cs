@@ -159,7 +159,7 @@ namespace Terrix.Controllers
             return map.HasHex(pos) && map[pos].PlayerId != playerId;
         }
 
-        private Country.UpdateCellsData  GetUpdateData(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
+        private Country.UpdateCellsData GetUpdateData(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
         {
             var changeData = new List<Country.CellChangeData>();
 
@@ -175,32 +175,49 @@ namespace Terrix.Controllers
 
             return new Country.UpdateCellsData(AllCountriesDrawer.DRAG_ZONE_ID, changeData.ToArray());
         }
+        //TODO метод для дебага. Нужно будет потом убрать
+        private Country.UpdateCellsData GetUpdateDataActual(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
+        {
+            var changeData = new List<Country.CellChangeData>();
+
+            foreach (var removedHex in previousDragZoneHexes.Except(currentDragZoneHexes))
+            {
+                changeData.Add(new Country.CellChangeData(removedHex, Country.UpdateCellMode.Remove));
+            }
+
+            foreach (var addedHex in currentDragZoneHexes.Except(previousDragZoneHexes))
+            {
+                changeData.Add(new Country.CellChangeData(addedHex, Country.UpdateCellMode.Add));
+            }
+
+            return new Country.UpdateCellsData(country.PlayerId, changeData.ToArray());
+        }
 
         private Hex[] StretchBorders(
             Vector3Int startPos,
             Vector3Int endPos)
         {
             var gameData = gameDataProvider.Get();
-        
+
             var start = map[startPos];
             var end = map[endPos];
-            
+
             var direction = tilemap.CellToWorld(end.Position) - tilemap.CellToWorld(start.Position);
             var result = new List<Hex>();
             var visited = new HashSet<Hex>();
             var priorityQueue = new SimplePriorityQueue<Hex, float>();
-        
+
             foreach (var neighbour in start.GetNeighbours(map))
             {
                 if (!country.Contains(neighbour) || !neighbour.GetHexData(gameData).CanCapture)
                 {
-                    priorityQueue.Enqueue(neighbour,0);
+                    priorityQueue.Enqueue(neighbour, 0);
                 }
             }
-        
+
             var remainingPoints = country.Population;
             var targetReached = false;
-        
+
             while (priorityQueue.Count > 0 && remainingPoints > 0 && !targetReached)
             {
                 priorityQueue.TryDequeue(out var cell);
@@ -208,15 +225,15 @@ namespace Terrix.Controllers
                 {
                     continue;
                 }
-        
+
                 var cellCost = cell.GetCost(playersProvider, gameData);
                 if (cellCost > remainingPoints)
                 {
                     continue;
                 }
-        
+
                 result.Add(cell);
-        
+
                 if (end.Equals(cell))
                 {
                     targetReached = true;
@@ -224,31 +241,32 @@ namespace Terrix.Controllers
 
                 remainingPoints -= cellCost;
                 visited.Add(cell);
-                
-                
+
+
                 foreach (var neighbour in cell.GetNeighbours(map))
                 {
-                    if (country.Contains(neighbour) || visited.Contains(neighbour) || !neighbour.GetHexData(gameData).CanCapture)
+                    if (country.Contains(neighbour) || visited.Contains(neighbour) ||
+                        !neighbour.GetHexData(gameData).CanCapture)
                     {
                         continue;
                     }
-        
+
                     var priority = CalculatePriority(neighbour);
                     priorityQueue.Enqueue(neighbour, -priority);
                 }
             }
-        
+
             return result.ToArray();
 
             float CalculatePriority(Hex current)
             {
                 var delta = tilemap.CellToWorld(current.Position) - tilemap.CellToWorld(start.Position);
-            
+
                 var projection = Vector3.Dot(delta.normalized, direction.normalized);
 
                 var distance = delta.magnitude;
                 var distanceFactor = 1f / (1f + distance);
-        
+
                 return projection * alpha + distanceFactor * beta;
             }
         }
@@ -259,7 +277,7 @@ namespace Terrix.Controllers
         }
 
         [ObserversRpc]
-        public void UpdateCountries_OnClient(Dictionary<int, Country> countries)
+        public void UpdateCountries_ToObserver(Dictionary<int, Country> countries)
         {
             foreach (var currentPlayer in playersProvider.GetAll())
             {
@@ -269,13 +287,12 @@ namespace Terrix.Controllers
             }
 
             country = playersProvider.Find(playerId).Country;
-            var a = 0;
-            //
-            // // foreach (var currentCountry in countries)
-            // // {
-            // //     
-            // // }
-            // this.playersProvider = playersProvider;
+        }
+
+        public void UpdateCountries_OnClient(IPlayersProvider playersProvider)
+        {
+            this.playersProvider = playersProvider;
+            country = playersProvider.Find(playerId).Country;
         }
     }
 }

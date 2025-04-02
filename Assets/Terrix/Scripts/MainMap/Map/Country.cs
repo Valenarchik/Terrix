@@ -10,11 +10,13 @@ using UnityEngine;
 
 namespace Terrix.Map
 {
-    public class Country: IEnumerable<Hex>
+    public class Country : IEnumerable<Hex>
     {
         private readonly IGameDataProvider gameDataProvider;
+        public IGameDataProvider GameDataProvider => gameDataProvider;
         private readonly HexMap map;
-        
+        public HexMap Map => map;
+
         private readonly Dictionary<HexType, int> cellsByTypeCount;
 
         public int PlayerId => Owner.ID;
@@ -41,18 +43,21 @@ namespace Terrix.Map
             DensePopulation = 0;
             this.map = map;
         }
+
         //TODO возможно ошибка
-        public Country([NotNull] IGameDataProvider gameDataProvider, IEnumerable<Hex> cellsSet, HexMap map)
+        public Country([NotNull] IGameDataProvider gameDataProvider, IEnumerable<Hex> cellsSet, float population,
+            int totalCellsCount, float densePopulation)
         {
             this.gameDataProvider = gameDataProvider;
-            this.СellsSet = cellsSet.ToHashSet();
+            CellsSet = cellsSet.ToHashSet();
             cellsByTypeCount = Enum.GetValues(typeof(HexType))
                 .OfType<HexType>()
                 .ToDictionary(type => type, _ => 0);
 
-            Population = gameDataProvider.Get().StartCountryPopulation;
-            DensePopulation = 0;
-            this.map = map;
+            Population = population;
+            TotalCellsCount = totalCellsCount;
+            DensePopulation = densePopulation;
+            // this.map = map;
         }
 
         public bool Contains(Hex cell)
@@ -94,7 +99,7 @@ namespace Terrix.Map
             var changeData = new List<CellChangeData>(removedSet.Count + addedSet.Count);
             changeData.AddRange(removedSet.Select(hex => new CellChangeData(hex, UpdateCellMode.Remove)));
             changeData.AddRange(addedSet.Select(hex => new CellChangeData(hex, UpdateCellMode.Add)));
-            
+
             var data = new UpdateCellsData(PlayerId, changeData.ToArray());
 
             UpdateCells(data);
@@ -103,7 +108,7 @@ namespace Terrix.Map
         public void UpdateCells([NotNull] UpdateCellsData data)
         {
             ValidateUpdateCellsData(data);
-            
+
             foreach (var updateData in data.ChangeData)
             {
                 var cell = updateData.Hex;
@@ -117,6 +122,7 @@ namespace Terrix.Map
                             TotalCellsCount++;
                             cell.PlayerId = PlayerId;
                         }
+
                         break;
                     }
                     case UpdateCellMode.Remove:
@@ -127,6 +133,7 @@ namespace Terrix.Map
                             TotalCellsCount--;
                             cell.PlayerId = null;
                         }
+
                         break;
                     }
                 }

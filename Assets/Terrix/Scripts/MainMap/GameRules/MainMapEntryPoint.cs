@@ -48,20 +48,33 @@ namespace Terrix.Game.GameRules
         private ServerSettings serverSettings;
         private ClientSettings clientSettings;
 
+
+        private void TickGenerator_OnUpdated()
+        {
+            UpdatePlayersInfo_ToObserver(players);
+        }
+
+        [ObserversRpc]
+        private void UpdatePlayersInfo_ToObserver(IPlayersProvider playersProvider)
+        {
+            players = playersProvider;
+            countryController.UpdateCountries_OnClient(players);
+        }
+
         public override void OnStartServer()
         {
             base.OnStartServer();
             NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
             var gameMode = GameModeType.FFA;
-            var playersAndBots = new PlayersAndBots(lobby.PlayersMaxCount, 0);
-            //TODO исправить
+            var playersAndBots = new PlayersAndBots(lobby.PlayersMaxCount,
+                lobby.PlayersAndBotsMaxCount - lobby.PlayersMaxCount);
+            // 0); // без ботов
             var countriesDrawerSettings = new AllCountriesDrawer.Settings(
-                Enumerable.Range(0, lobby.PlayersMaxCount).Select(i => new ZoneData(i)).ToArray(),
+                Enumerable.Range(0, lobby.PlayersAndBotsMaxCount).Select(i => new ZoneData(i)).ToArray(),
                 new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID)
                 {
                     Color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f))
                 });
-            //Server settings
             serverSettings = new ServerSettings(
                 mapGenerator.DefaultSettingsSo.Get(),
                 new GameReferee.Settings(gameMode),
@@ -70,6 +83,7 @@ namespace Terrix.Game.GameRules
             );
             Initialize_OnServer(serverSettings);
             lobby.LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged;
+            tickGenerator.OnUpdated += TickGenerator_OnUpdated;
         }
 
         protected void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
@@ -111,6 +125,12 @@ namespace Terrix.Game.GameRules
         private IEnumerator GamePipeline()
         {
             //TODO тут инициализация происходит и для сервака и дял клиента
+            foreach (var bot in players.GetAll().Where(player => player.PlayerType is PlayerType.Bot))
+            {
+                serverSettings.CountryDrawerSettings.Zones[bot.ID].Color = new Color(Random.Range(0, 1f),
+                    Random.Range(0, 1f), Random.Range(0, 1f), 1f);
+            }
+
             Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings, players);
 
             phaseManager.NextPhase();
@@ -127,7 +147,7 @@ namespace Terrix.Game.GameRules
                 attackInvoker,
                 referee
             });
-            countryController.UpdateCountries_OnClient(
+            countryController.UpdateCountries_ToObserver(
                 allCountriesHandler.Countries.ToDictionary(country => country.PlayerId));
         }
 
@@ -145,7 +165,7 @@ namespace Terrix.Game.GameRules
             // events = new GameEvents();
             // attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
-            playersFactory = new PlayersFactory(gameDataProvider);
+            playersFactory = new PlayersFactory(gameDataProvider, map);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
             gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
             referee = gameRefereeFactory.Create();
@@ -189,11 +209,7 @@ namespace Terrix.Game.GameRules
             gameDataProvider = new GameDataProvider();
 
             events = new GameEvents();
-            attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
-            // TODO Инициализировать когда все игроки подсодинятся
-            // countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, this.map,
-            //     gameDataProvider);
             cameraController.Initialize(events);
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
             events.StartGame();
@@ -203,8 +219,15 @@ namespace Terrix.Game.GameRules
         private void Initialize_InitialPhase_ToObserver(AllCountriesDrawer.Settings countriesDrawerSettings,
             IPlayersProvider iPlayersProvider)
         {
-            iPlayersProvider.GetAll().ForEach(player => player.Country.Owner = player);
-            InitializeCountryController_OnClient(iPlayersProvider);
+            players = iPlayersProvider;
+            var playerColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].Color;
+            if (playerColor != null)
+            {
+                playerColor = new Color(playerColor.Value.r, playerColor.Value.g, playerColor.Value.b, 0.4f);
+            }
+
+            countriesDrawerSettings.DragZone.Color = playerColor;
+            InitializeCountryController_OnClient();
             InitializeAllCountriesDrawer_OnClient(countriesDrawerSettings);
         }
 
@@ -213,9 +236,8 @@ namespace Terrix.Game.GameRules
             allCountriesDrawer.Initialize(countriesDrawerSettings);
         }
 
-        private void InitializeCountryController_OnClient(IPlayersProvider iPlayersProvider)
+        private void InitializeCountryController_OnClient()
         {
-            players = iPlayersProvider;
             countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map,
                 gameDataProvider);
         }

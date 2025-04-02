@@ -38,18 +38,25 @@ namespace Terrix.Visual
                 var material = zoneMaterialFactory.Create(zone);
                 var countryDrawer = Instantiate(countryDrawerPrefab, playerInstantiateRoot.transform, true);
                 drawersByIds.Add(zone.PlayerId, countryDrawer);
-                countryDrawer.Initialize(new CountryDrawer.Settings(zone.PlayerId, material, i));
+                countryDrawer.Initialize(new CountryDrawer.Settings(zone.PlayerId, material, i + 1));
             }
 
             var dragZoneMaterial = zoneMaterialFactory.Create(settings.DragZone);
             dragZoneDrawer = Instantiate(countryDrawerPrefab, playerInstantiateRoot.transform, true);
-            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.PlayerId, dragZoneMaterial, settings.Zones.Length));
+            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.PlayerId, dragZoneMaterial,
+                settings.Zones.Length));
         }
 
         [ObserversRpc]
-        public void UpdateZone(Country.UpdateCellsData updateData)
+        public void UpdateZone_ToObserver(Country.UpdateCellsData updateData)
         {
-            drawersByIds[updateData.PlayerId].UpdateZone(updateData);
+            drawersByIds[updateData.PlayerId].UpdateZone(updateData); //ошибка
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void UpdateZone_ToServer(Country.UpdateCellsData updateData)
+        {
+            UpdateZone_ToObserver(updateData);
         }
 
         public void UpdateDragZone(Country.UpdateCellsData updateData)

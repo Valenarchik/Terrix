@@ -46,9 +46,7 @@ namespace Terrix.Visual
                 throw new InvalidOperationException(
                     $"{nameof(CountryDrawer)}.{nameof(UpdateZone)} | Не верно указан id!");
             }
-            Debug.Log(data.ChangeData.Length);
             var changeData = GenerateData(data);
-            // Debug.Log(changeData.Length);
             zoneTilemap.SetTiles(changeData, true);
         }
 

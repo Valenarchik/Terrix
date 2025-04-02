@@ -1,21 +1,23 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Terrix.Settings;
 using UnityEngine;
 
 namespace Terrix.Game.GameRules
 {
-    public class TickGenerator: MonoBehaviour
+    public class TickGenerator : MonoBehaviour
     {
         private readonly IGameDataProvider gameDataProvider = new GameDataProvider();
 
         private readonly List<ITickHandler> tickHandlersOrder = new();
+        public event Action OnUpdated;
 
         public void Initialize(IEnumerable<ITickHandler> tickHandlers)
         {
             foreach (var tickHandler in tickHandlers)
             {
-                if(tickHandler != null)
+                if (tickHandler != null)
                 {
                     tickHandlersOrder.Add(tickHandler);
                 }
@@ -30,7 +32,7 @@ namespace Terrix.Game.GameRules
             {
                 return;
             }
-            
+
             tickHandlersOrder.Add(tickHandler);
         }
 
@@ -46,6 +48,7 @@ namespace Terrix.Game.GameRules
                 foreach (var handler in tickHandlersOrder)
                 {
                     handler.HandleTick();
+                    OnUpdated?.Invoke();
                 }
 
                 var gameData = gameDataProvider.Get();

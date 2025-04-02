@@ -7,12 +7,12 @@ namespace Terrix.Controllers
 {
     public partial class CountryController
     {
-        private class DragBordersState: CountryControllerState
+        private class DragBordersState : CountryControllerState
         {
             private static readonly Vector3Int DefaultStartDragHexPosition = new(-1, -1, -1);
-            
+
             private Vector2 pointPosition;
-            
+
             private Hex[] dragHexes;
             private bool drag;
             private Vector3Int startDragHexPosition;
@@ -120,10 +120,14 @@ namespace Terrix.Controllers
                 var newDragHexes = Array.Empty<Hex>();
                 var updateData = CountryController.GetUpdateData(dragHexes, newDragHexes);
                 CountryController.countriesDrawer.UpdateDragZone(updateData);
+                // TODO убрать
+                var newUpdateData = CountryController.GetUpdateDataActual(newDragHexes, dragHexes);
+                CountryController.countriesDrawer.UpdateZone_ToServer (newUpdateData);
+                //
                 dragHexes = newDragHexes;
                 CountryController.cameraController.EnableDrag = true;
                 startDragHexPosition = DefaultStartDragHexPosition;
-            }
+            } 
 
             private Vector3Int GetCellPosition()
             {

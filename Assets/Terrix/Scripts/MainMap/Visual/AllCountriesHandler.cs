@@ -38,7 +38,7 @@ namespace Terrix.Visual
         
         private void CountryOnCellsUpdate(Country.UpdateCellsData data)
         {
-            allCountriesDrawer.UpdateZone(data);
+            allCountriesDrawer.UpdateZone_ToObserver(data);
         }
         
         
