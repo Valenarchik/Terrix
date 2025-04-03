@@ -1,16 +1,25 @@
 ﻿using System;
+using System.Linq;
 using JetBrains.Annotations;
 using CustomUtilities.Attributes;
+using NUnit.Framework.Constraints;
+using Terrix.DTO;
 using Terrix.Map;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 
 namespace Terrix.Visual
 {
     public class CountryDrawer : MonoBehaviour
     {
+        [SerializeField] private Grid grid;
         [SerializeField] private Tilemap zoneTilemap;
         [SerializeField] private Tile zoneTile;
+        [SerializeField] private TextMeshPro playerNameText;
+        [SerializeField] private TextMeshPro playerScoreText;
+        [SerializeField] private RectTransform playerInfoHolder;
 
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private int playerId = int.MinValue;
@@ -32,9 +41,11 @@ namespace Terrix.Visual
             var tilemapRenderer = zoneTilemap.GetComponent<TilemapRenderer>();
             tilemapRenderer.sharedMaterial = zoneMaterial;
             tilemapRenderer.sortingOrder = settings.SortingOrder;
+            // playerInfoHolder.gameObject.SetActive(true);
+            playerNameText.text = settings.PlayerName;
         }
 
-        public void UpdateZone([NotNull] Country.UpdateCellsData data)
+        public void UpdateZone([NotNull] Country.UpdateCellsData data, float? score)
         {
             if (data == null)
             {
@@ -46,8 +57,28 @@ namespace Terrix.Visual
                 throw new InvalidOperationException(
                     $"{nameof(CountryDrawer)}.{nameof(UpdateZone)} | Не верно указан id!");
             }
+
             var changeData = GenerateData(data);
             zoneTilemap.SetTiles(changeData, true);
+            zoneTilemap.CompressBounds();
+            var cellBounds = zoneTilemap.cellBounds;
+            // playerNameText.rectTransform.position = new Vector3(cellBounds.center.y * grid.cellSize.y * 0.75f,
+            //     cellBounds.center.x * grid.cellSize.x);
+            // playerNameText.rectTransform.sizeDelta = new Vector2(cellBounds.size.x, cellBounds.size.y);
+            if (score is null || playerId == -1)
+            {
+                return;
+            }
+
+            playerInfoHolder.gameObject.SetActive(true);
+            playerInfoHolder.position = new Vector3(cellBounds.center.y * grid.cellSize.y * 0.75f,
+                cellBounds.center.x * grid.cellSize.x);
+            playerInfoHolder.sizeDelta = new Vector2(cellBounds.size.x, cellBounds.size.y);
+        }
+
+        public void UpdateScore(float score)
+        {
+            playerScoreText.text = score.ToString();
         }
 
         private TileChangeData[] GenerateData(Country.UpdateCellsData data)
@@ -85,12 +116,14 @@ namespace Terrix.Visual
             public int PlayerId { get; }
             public Material ZoneMaterial { get; }
             public int SortingOrder { get; }
+            public string PlayerName { get; }
 
-            public Settings(int playerId, Material zoneMaterial, int sortingOrder)
+            public Settings(int playerId, Material zoneMaterial, int sortingOrder, string playerName)
             {
                 PlayerId = playerId;
                 ZoneMaterial = zoneMaterial;
                 SortingOrder = sortingOrder;
+                PlayerName = playerName;
             }
         }
     }

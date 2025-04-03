@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using JetBrains.Annotations;
 using Terrix.Map;
 using UnityEngine;
@@ -6,22 +7,22 @@ using UnityEngine;
 namespace Terrix.Visual
 {
     // Только на сервере
-    public class AllCountriesHandler: MonoBehaviour
+    public class AllCountriesHandler : MonoBehaviour
     {
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
-        
+
         private Country[] countries;
         public Country[] Countries => countries;
         private bool initialize;
         private bool handle;
-        
+
         public void Initialize([NotNull] Country[] countries)
         {
             this.countries = countries ?? throw new ArgumentNullException(nameof(countries));
 
 
             initialize = true;
-            
+
             SubscribeCountryEvents();
         }
 
@@ -34,14 +35,15 @@ namespace Terrix.Visual
         {
             UnsubscribeCountryEvents();
         }
-        
-        
+
+
         private void CountryOnCellsUpdate(Country.UpdateCellsData data)
         {
-            allCountriesDrawer.UpdateZone_ToObserver(data);
+            allCountriesDrawer.UpdateZone_ToObserver(data,
+                countries.First(country => country.PlayerId == data.PlayerId).Population);
         }
-        
-        
+
+
         private void SubscribeCountryEvents()
         {
             if (!initialize)
@@ -53,7 +55,7 @@ namespace Terrix.Visual
             {
                 return;
             }
-            
+
             foreach (var country in countries)
             {
                 country.OnCellsUpdate += CountryOnCellsUpdate;

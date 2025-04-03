@@ -115,6 +115,7 @@ namespace Terrix.Networking
                     writer.WriteInt32(value.ID);
                     writer.Write(value.PlayerType);
                     writer.Write(value.Country);
+                    writer.WriteString(value.PlayerName);
                 }
             }
         }
@@ -132,7 +133,8 @@ namespace Terrix.Networking
                 return reader.Read<Bot>();
             }
 
-            var player = new Player(reader.ReadInt32(), reader.Read<PlayerType>(), reader.Read<Country>());
+            var player = new Player(reader.ReadInt32(), reader.Read<PlayerType>(), reader.Read<Country>(),
+                reader.ReadString());
             player.Country.Owner = player;
             return player;
         }
@@ -146,6 +148,7 @@ namespace Terrix.Networking
                 writer.WriteInt32(value.ID);
                 writer.Write(value.PlayerType);
                 writer.Write(value.Country);
+                writer.WriteString(value.PlayerName);
             }
         }
 
@@ -156,7 +159,8 @@ namespace Terrix.Networking
                 return null;
             }
 
-            var player = new Bot(reader.ReadInt32(), reader.Read<PlayerType>(), reader.Read<Country>());
+            var player = new Bot(reader.ReadInt32(), reader.Read<PlayerType>(), reader.Read<Country>(),
+                reader.ReadString());
             player.Country.Owner = player;
             return player;
         }
@@ -217,6 +221,7 @@ namespace Terrix.Networking
         public static void WriteZoneData(this Writer writer, ZoneData value)
         {
             writer.WriteInt32(value.PlayerId);
+            writer.WriteString(value.PlayerName);
             var hasColor = value.Color is not null;
             writer.WriteBoolean(hasColor);
             if (hasColor)
@@ -228,10 +233,12 @@ namespace Terrix.Networking
         public static ZoneData ReadZoneData(this Reader reader)
         {
             var id = reader.ReadInt32();
+            var playerName = reader.ReadString();
             var hasColor = reader.ReadBoolean();
+
             if (hasColor)
             {
-                return new ZoneData(id, reader.Read<Color>());
+                return new ZoneData(id, reader.Read<Color>(), playerName);
             }
 
             return new ZoneData(id);

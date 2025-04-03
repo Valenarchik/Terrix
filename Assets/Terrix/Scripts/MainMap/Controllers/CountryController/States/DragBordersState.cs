@@ -75,7 +75,8 @@ namespace Terrix.Controllers
                 {
                     var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition);
                     var updateData = CountryController.GetUpdateData(dragHexes, newDragHexes);
-                    CountryController.countriesDrawer.UpdateDragZone(updateData);
+                    var score = CountryController.country.Population;
+                    CountryController.countriesDrawer.UpdateDragZone(updateData, score);
                     dragHexes = newDragHexes;
                 }
             }
@@ -119,15 +120,16 @@ namespace Terrix.Controllers
                 drag = false;
                 var newDragHexes = Array.Empty<Hex>();
                 var updateData = CountryController.GetUpdateData(dragHexes, newDragHexes);
-                CountryController.countriesDrawer.UpdateDragZone(updateData);
+                var score = CountryController.country.Population;
+                CountryController.countriesDrawer.UpdateDragZone(updateData, score);
                 // TODO убрать
                 var newUpdateData = CountryController.GetUpdateDataActual(newDragHexes, dragHexes);
-                CountryController.countriesDrawer.UpdateZone_ToServer (newUpdateData);
+                CountryController.countriesDrawer.UpdateZone_ToServer(newUpdateData, score);
                 //
                 dragHexes = newDragHexes;
                 CountryController.cameraController.EnableDrag = true;
                 startDragHexPosition = DefaultStartDragHexPosition;
-            } 
+            }
 
             private Vector3Int GetCellPosition()
             {

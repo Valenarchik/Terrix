@@ -31,6 +31,7 @@ namespace Terrix.Game.GameRules
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
         [SerializeField] private CountryController countryController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
+        [SerializeField] private LeaderboardUI leaderboardUI;
 
         private IGameDataProvider gameDataProvider;
         private IPlayersFactory playersFactory;
@@ -59,6 +60,8 @@ namespace Terrix.Game.GameRules
         {
             players = playersProvider;
             countryController.UpdateCountries_OnClient(players);
+            allCountriesDrawer.UpdateScore_OnClient(players);
+            leaderboardUI.UpdateInfo(players);
         }
 
         public override void OnStartServer()
@@ -71,10 +74,7 @@ namespace Terrix.Game.GameRules
             // 0); // без ботов
             var countriesDrawerSettings = new AllCountriesDrawer.Settings(
                 Enumerable.Range(0, lobby.PlayersAndBotsMaxCount).Select(i => new ZoneData(i)).ToArray(),
-                new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID)
-                {
-                    Color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f))
-                });
+                new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID));
             serverSettings = new ServerSettings(
                 mapGenerator.DefaultSettingsSo.Get(),
                 new GameReferee.Settings(gameMode),
@@ -119,7 +119,8 @@ namespace Terrix.Game.GameRules
         {
             base.OnStartClient();
             var color = PlayerDataHolder.Color;
-            Initialize_OnClient_ToServer(ClientManager.Connection, color);
+            var playerName = PlayerDataHolder.PlayerName;
+            Initialize_OnClient_ToServer(ClientManager.Connection, color, playerName);
         }
 
         private IEnumerator GamePipeline()
@@ -127,8 +128,10 @@ namespace Terrix.Game.GameRules
             //TODO тут инициализация происходит и для сервака и дял клиента
             foreach (var bot in players.GetAll().Where(player => player.PlayerType is PlayerType.Bot))
             {
+                bot.PlayerName = $"Bot {bot.ID}";
                 serverSettings.CountryDrawerSettings.Zones[bot.ID].Color = new Color(Random.Range(0, 1f),
                     Random.Range(0, 1f), Random.Range(0, 1f), 1f);
+                serverSettings.CountryDrawerSettings.Zones[bot.ID].PlayerName = bot.PlayerName;
             }
 
             Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings, players);
@@ -176,7 +179,7 @@ namespace Terrix.Game.GameRules
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void Initialize_OnClient_ToServer(NetworkConnection connection, Color color)
+        private void Initialize_OnClient_ToServer(NetworkConnection connection, Color color, string playerName)
         {
             int id = -1;
             for (int i = 0; i < players.GetAll().Length; i++)
@@ -194,7 +197,16 @@ namespace Terrix.Game.GameRules
                 throw new Exception("Id wasn't set");
             }
 
+            if (playerName == "")
+            {
+                playerName = $"Player {id}";
+            }
+
+            players.Find(id).PlayerName = playerName;
+
+
             serverSettings.CountryDrawerSettings.Zones[id].Color = color;
+            serverSettings.CountryDrawerSettings.Zones[id].PlayerName = playerName;
 
             Initialize_OnClient_ToTarget(connection, map, id);
         }
@@ -227,8 +239,10 @@ namespace Terrix.Game.GameRules
             }
 
             countriesDrawerSettings.DragZone.Color = playerColor;
+            countriesDrawerSettings.DragZone.PlayerName = "";
             InitializeCountryController_OnClient();
             InitializeAllCountriesDrawer_OnClient(countriesDrawerSettings);
+            leaderboardUI.Initialize(players);
         }
 
         private void InitializeAllCountriesDrawer_OnClient(AllCountriesDrawer.Settings countriesDrawerSettings)

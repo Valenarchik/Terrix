@@ -12,7 +12,8 @@ namespace Terrix.Entities
         {
         }
 
-        public Bot(int id, PlayerType playerType, Country country) : base(id, playerType, country)
+        public Bot(int id, PlayerType playerType, Country country, string playerName) : base(id, playerType, country,
+            playerName)
         {
         }
     }
