@@ -10,15 +10,17 @@ namespace Terrix.Map
     {
         public HexType HexType { get; }
         public Vector3Int Position { get; }
+        public Vector3 WorldPosition { get; }
         public Vector3Int[] NeighboursPositions { get; }
         public int? PlayerId { get; set; }
         
-        public Hex(HexType hexType, Vector3Int position)
+        public Hex(HexType hexType, Vector3Int position, Vector3 worldPosition)
         {
             HexType = hexType;
             Position = position;
             NeighboursPositions = MapUtilities.GetHexNeighborsPositions(position);
             PlayerId = null;
+            WorldPosition = worldPosition;
         }
 
         public IEnumerable<Hex> GetNeighbours(HexMap hexMap)

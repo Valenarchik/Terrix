@@ -73,9 +73,8 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (CountryController.IsNotOur(cellPosition))
                 {
-                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition);
-                    var updateData = CountryController.GetUpdateData(dragHexes, newDragHexes);
-                    CountryController.countriesDrawer.UpdateDragZone(updateData);
+                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition, out var attackTarget);
+                    CountryController.UpdateDragZone(dragHexes, newDragHexes);
                     dragHexes = newDragHexes;
                 }
             }
@@ -88,7 +87,7 @@ namespace Terrix.Controllers
                 }
 
                 var cellPosition = GetCellPosition();
-                if (CountryController.IsBorder(cellPosition))
+                if (CountryController.IsOurBorder(cellPosition))
                 {
                     startDragHexPosition = cellPosition;
                     CountryController.cameraController.EnableDrag = false;
@@ -118,8 +117,7 @@ namespace Terrix.Controllers
 
                 drag = false;
                 var newDragHexes = Array.Empty<Hex>();
-                var updateData = CountryController.GetUpdateData(dragHexes, newDragHexes);
-                CountryController.countriesDrawer.UpdateDragZone(updateData);
+                CountryController.UpdateDragZone(dragHexes, newDragHexes);
                 dragHexes = newDragHexes;
                 CountryController.cameraController.EnableDrag = true;
                 startDragHexPosition = DefaultStartDragHexPosition;
