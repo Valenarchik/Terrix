@@ -8,7 +8,7 @@ namespace Terrix.Map
     public class Attack: Entity<int>
     {
         public Player Owner { get; }
-        public HashSet<Hex> Territory { get;  }
+        public HashSet<Hex> Territory { get; }
         public float Points { get;  }
         
         [MaybeNull] public Player Target { get; }

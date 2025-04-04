@@ -147,7 +147,7 @@ namespace Terrix.Controllers
 
         private bool IsOurBorder(Vector3Int pos)
         {
-            return map.TryGetHex(pos, out var hex) && country.Border.Contains(hex);
+            return map.TryGetHex(pos, out var hex) && country.GetInnerBorder().Contains(hex);
         }
 
         private bool IsNotOur(Vector3Int pos)
@@ -179,8 +179,6 @@ namespace Terrix.Controllers
                 endPos,
                 map,
                 country,
-                gameDataProvider.Get(),
-                players,
                 out attackTarget);
         }
 

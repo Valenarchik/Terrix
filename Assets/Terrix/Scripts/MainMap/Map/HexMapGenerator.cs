@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using CustomUtilities.Attributes;
 using CustomUtilities.Extensions;
+using JetBrains.Annotations;
 using Terrix.DTO;
+using Terrix.Game.GameRules;
 using Terrix.Settings;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -15,35 +17,19 @@ namespace Terrix.Map
         [SerializeField] private Tilemap tilemap;
         [SerializeField] private HexMapGeneratorSettingsSO initialSettingsSo;
 
-        private IGameDataProvider gameDataProvider = new GameDataProvider();
+        private IGameDataProvider gameDataProvider;
+        private IPlayersProvider players;
+        
         private Settings settings;
 
         public HexMapGeneratorSettingsSO DefaultSettingsSo => initialSettingsSo;
 
-        [EditorButton]
-        private void UpdateMap()
+        public void Initialize([NotNull] IGameDataProvider gameData, [NotNull] IPlayersProvider players)
         {
-            ClearMap();
-            
-            if (initialSettingsSo != null)
-            {
-                GenerateMap(initialSettingsSo.Get());
-            }
-            else
-            {
-                Debug.LogWarning("initialSettingsSo is null");
-            }
+            this.gameDataProvider = gameData ?? throw new ArgumentNullException(nameof(gameData));
+            this.players = players ?? throw new ArgumentNullException(nameof(players));
         }
-
-        [EditorButton]
-        private void ClearMap()
-        {
-            
-            tilemap.ClearAllTiles();
-        }
-
-        // Разделить ответсвенность по созданию модели и визуализации карты?
-        // + можно будет разделить ответственность, модель создается на сервере, а визуал на криенте.
+        
         public HexMap GenerateMap(Settings initSettings)
         {
             ValidateSettings(initSettings);
@@ -52,10 +38,10 @@ namespace Terrix.Map
             GenerateData(out var tileData, out var map);
             tilemap.SetTiles(tileData, true);
 
-            return new HexMap(map, gameDataProvider.Get());
+            return map;
         }
 
-        private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,,] map)
+        private void GenerateData(out TileChangeData[] tileChangeData, out HexMap map)
         {
             var gameData = gameDataProvider.Get();
             var texture2DWidth = settings.Texture2D.width;
@@ -65,10 +51,10 @@ namespace Terrix.Map
             tileChangeData = new TileChangeData[texture2DWidth * texture2DHeight];
 
             var mapSize = settings.Transpose
-                ? new Vector2Int(texture2DHeight, texture2DWidth)
-                : new Vector2Int(texture2DWidth, texture2DHeight);
+                ? new Vector3Int(texture2DHeight, texture2DWidth, 1)
+                : new Vector3Int(texture2DWidth, texture2DHeight, 1);
 
-            map = new Hex[mapSize.x, mapSize.y, 1];
+            map = new HexMap(mapSize);
 
             for (var y = 0; y < texture2DHeight; y++)
             {
@@ -88,7 +74,7 @@ namespace Terrix.Map
                         transform = Matrix4x4.identity
                     };
 
-                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position, tilemap.CellToWorld(position));
+                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position, tilemap.CellToWorld(position), map, gameDataProvider, players);
                     map[hex.Position.x, hex.Position.y, 0] = hex;
                 }
             }

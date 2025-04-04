@@ -18,8 +18,6 @@ namespace Terrix.Controllers
             Vector3Int endPos,
             HexMap map,
             Country country,
-            GameData gameData,
-            IPlayersProvider players,
             out int? attackTarget)
         {
             var start = map[startPos];
@@ -30,8 +28,8 @@ namespace Terrix.Controllers
             var visited = new HashSet<Hex>();
             var priorityQueue = new SimplePriorityQueue<Hex, float>();
 
-            var seed = start.GetNeighbours(map)
-                .Where(neighbour => !country.Contains(neighbour) || !neighbour.GetHexData(gameData).CanCapture)
+            var seed = start.GetNeighbours()
+                .Where(neighbour => !country.Contains(neighbour) || !neighbour.GetHexData().CanCapture)
                 .Select(hex => new {Hex = hex, Direction = (hex.WorldPosition - start.WorldPosition).normalized})
                 .OrderByDescending(hex => Vector3.Dot(hex.Direction, direction))
                 .Select(hex=> hex.Hex)
@@ -52,7 +50,7 @@ namespace Terrix.Controllers
                     continue;
                 }
         
-                var cellCost = cell.GetCost(players, gameData);
+                var cellCost = cell.GetCost();
                 if (cellCost > remainingPoints)
                 {
                     continue;
@@ -69,11 +67,11 @@ namespace Terrix.Controllers
                 visited.Add(cell);
                 
                 
-                foreach (var neighbour in cell.GetNeighbours(map))
+                foreach (var neighbour in cell.GetNeighbours())
                 {
                     if (country.Contains(neighbour) 
                         || visited.Contains(neighbour) 
-                        || !neighbour.GetHexData(gameData).CanCapture
+                        || !neighbour.GetHexData().CanCapture
                         || attackTarget != neighbour.PlayerId)
                     {
                         continue;

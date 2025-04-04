@@ -52,8 +52,8 @@ namespace Terrix.Controllers
             {
                 return map.HasHex(pos) &&
                        OwnerCheck(map[pos]) &&
-                       map[pos].GetHexData(gameData).CanCapture &&
-                       map[pos].GetNeighbours(map).All(OwnerCheck);
+                       map[pos].GetHexData().CanCapture &&
+                       map[pos].GetNeighbours().All(OwnerCheck);
             }
 
             bool OwnerCheck(Hex hex)
@@ -86,12 +86,11 @@ namespace Terrix.Controllers
         // [Server]
         private void ChooseInitialCountryPosition(Player player, Vector3Int pos, out Hex[] captureHexes)
         {
-            var gameData = gameDataProvider.Get();
             var country = player.Country;
             var hexes = new List<Hex>(1 + 6) {map[pos]};
-            foreach (var hex in map[pos].GetNeighbours(map))
+            foreach (var hex in map[pos].GetNeighbours())
             {
-                if (hex.GetHexData(gameData).CanCapture)
+                if (hex.GetHexData().CanCapture)
                 {
                     hexes.Add(hex);
                 }
@@ -108,8 +107,8 @@ namespace Terrix.Controllers
             
             foreach (var player in players)
             {
-                var randomHex = map.CanCaptureHexes
-                    .Where(hex => hex.PlayerId == null && hex.GetNeighbours(map).All(neigh => neigh.PlayerId == null))
+                var randomHex = map.Hexes.Cast<Hex>().Where(hex => hex.GetHexData().CanCapture)
+                    .Where(hex => hex.PlayerId == null && hex.GetNeighbours().All(neigh => neigh.PlayerId == null))
                     .RandomElementReservoirOrDefault();
                 var success = randomHex is not null;
                 
