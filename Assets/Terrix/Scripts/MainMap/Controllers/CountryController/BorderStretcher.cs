@@ -18,7 +18,8 @@ namespace Terrix.Controllers
             Vector3Int endPos,
             HexMap map,
             Country country,
-            out int? attackTarget)
+            out int? attackTarget,
+            out float attackPoints)
         {
             var start = map[startPos];
             var end = map[endPos];
@@ -81,7 +82,8 @@ namespace Terrix.Controllers
                     priorityQueue.Enqueue(neighbour, -priority);
                 }
             }
-        
+
+            attackPoints = country.Population - remainingPoints;
             return result.ToArray();
             
             float CalculatePriority(Hex current)

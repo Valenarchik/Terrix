@@ -5,6 +5,7 @@ using CustomUtilities.Attributes;
 using JetBrains.Annotations;
 using Priority_Queue;
 using Terrix.DTO;
+using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
 using Terrix.Settings;
@@ -41,6 +42,7 @@ namespace Terrix.Controllers
         private IPlayersProvider players;
         private HexMap map;
         private IGameDataProvider gameDataProvider;
+        private Player player;
         private Country country;
 
 
@@ -60,7 +62,8 @@ namespace Terrix.Controllers
             this.map = map ?? throw new ArgumentNullException(nameof(map));
             this.gameDataProvider = gameDataProvider ?? throw new ArgumentNullException(nameof(gameDataProvider));
 
-            this.country = this.players.Find(playerId).Country;
+            this.player = this.players.Find(playerId);
+            this.country = this.player.Country;
         }
 
         public void OnChooseCountryPosition(InputAction.CallbackContext context)
@@ -173,18 +176,25 @@ namespace Terrix.Controllers
             countriesDrawer.UpdateDragZone(data);
         }
 
-        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget)
+        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget, out float attackPoints)
         {
             return borderStretcher.StretchBorders(startPos,
                 endPos,
                 map,
                 country,
-                out attackTarget);
+                out attackTarget,
+                out attackPoints);
         }
 
         private Vector3Int GetCellPosition(Vector2 pointPos)
         {
             return MapUtilities.GetMousePosition(pointPos, camera, tilemap);
+        }
+
+        private void StartAttack(int? targetId, float points, IEnumerable<Hex> territory)
+        {
+            var target = targetId.HasValue ? players.Find(targetId.Value) : null; 
+            commandsExecutor.ExecuteAttack(new Attack(Guid.NewGuid(), player, target, points, territory.ToHashSet()));
         }
     }
 }

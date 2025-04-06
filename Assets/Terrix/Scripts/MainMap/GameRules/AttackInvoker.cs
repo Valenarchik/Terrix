@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
-using MoreLinq;
-using Terrix.Entities;
 using Terrix.Map;
-using Terrix.Settings;
 
 namespace Terrix.Game.GameRules
 {
@@ -18,8 +14,8 @@ namespace Terrix.Game.GameRules
     public class AttackInvoker : IAttackInvoker
     {
         private readonly List<Attack> attacksOrder = new();
-        private readonly Dictionary<int, Attack> attacksMap = new();
-        private readonly Dictionary<int, AttackState> attacksStates = new();
+        private readonly Dictionary<Guid, Attack> attacksMap = new();
+        private readonly Dictionary<Guid, AttackState> attacksStates = new();
 
         public void AddAttack(Attack attack)
         {
@@ -32,6 +28,7 @@ namespace Terrix.Game.GameRules
             {
                 attacksOrder.Add(attack);
                 attacksStates.Add(attack.ID, new AttackState(attack, attack.Points));
+                attack.Owner.Country.AddConstIncome(attack.Points);
             }
         }
 

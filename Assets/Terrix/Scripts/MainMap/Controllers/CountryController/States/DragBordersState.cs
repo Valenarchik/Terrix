@@ -14,6 +14,9 @@ namespace Terrix.Controllers
             private Vector2 pointPosition;
             
             private Hex[] dragHexes;
+            private float attackPoints;
+            private int? attackTarget;
+            
             private bool drag;
             private Vector3Int startDragHexPosition;
 
@@ -73,7 +76,7 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (CountryController.IsNotOur(cellPosition))
                 {
-                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition, out var attackTarget);
+                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition, out attackTarget, out attackPoints);
                     CountryController.UpdateDragZone(dragHexes, newDragHexes);
                     dragHexes = newDragHexes;
                 }
@@ -118,6 +121,7 @@ namespace Terrix.Controllers
                 drag = false;
                 var newDragHexes = Array.Empty<Hex>();
                 CountryController.UpdateDragZone(dragHexes, newDragHexes);
+                CountryController.StartAttack(attackTarget, attackPoints, dragHexes);
                 dragHexes = newDragHexes;
                 CountryController.cameraController.EnableDrag = true;
                 startDragHexPosition = DefaultStartDragHexPosition;

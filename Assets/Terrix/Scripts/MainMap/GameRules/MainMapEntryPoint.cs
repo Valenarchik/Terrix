@@ -6,6 +6,7 @@ using Terrix.Controllers;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Map;
+using Terrix.Network.DTO;
 using Terrix.Settings;
 using Terrix.Visual;
 using UnityEngine;
@@ -36,6 +37,7 @@ namespace Terrix.Game.GameRules
         private IAttackInvoker attackInvoker;
         private IPhaseManager phaseManager;
         private IPlayersProvider players;
+        private IAttackMassageEncoder attackMassageEncoder;
 
         private void Start()
         {
@@ -109,8 +111,9 @@ namespace Terrix.Game.GameRules
             countriesCollector = new CountriesCollector(players);
 
             allCountriesHandler.Initialize(players.GetAll().Select(p => p.Country).ToArray());
-            
-            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
+
+            attackMassageEncoder = new AttackMassageEncoder(players, map);
+            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider, attackMassageEncoder, attackInvoker);
         }
 
         // [Server]

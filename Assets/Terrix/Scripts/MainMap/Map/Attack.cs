@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Terrix.DTO;
 using Terrix.Entities;
 
 namespace Terrix.Map
 {
-    public class Attack: Entity<int>
+    public class Attack: Entity<Guid>
     {
         public Player Owner { get; }
         public HashSet<Hex> Territory { get; }
@@ -13,7 +14,7 @@ namespace Terrix.Map
         
         [MaybeNull] public Player Target { get; }
         
-        public Attack(int id, Player owner, HashSet<Hex> territory, float points, Player target): base(id)
+        public Attack(Guid id, Player owner, Player target, float points, HashSet<Hex> territory) : base(id)
         {
             Owner = owner;
             Territory = territory;

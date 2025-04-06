@@ -2,35 +2,42 @@
 using System.Collections.Generic;
 using System.Linq;
 using CustomUtilities.Extensions;
+using JetBrains.Annotations;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
+using Terrix.Network.DTO;
 using Terrix.Settings;
 using UnityEngine;
 
 namespace Terrix.Controllers
 {
-    // только на сервере
     public class PlayerCommandsExecutor : MonoBehaviour
     {
         private HexMap map;
         private IPhaseManager phaseManager;
         private IPlayersProvider playerProvider;
         private IGameDataProvider gameDataProvider;
-
+        private IAttackMassageEncoder attackMassageEncoder;
+        private IAttackInvoker attackInvoker;
+        
         private bool initialized;
 
         public void Initialize(HexMap map,
             IPhaseManager phaseManager,
             IPlayersProvider playersProvider,
-            IGameDataProvider gameDataProvider)
+            IGameDataProvider gameDataProvider,
+            IAttackMassageEncoder attackMassageEncoder,
+            IAttackInvoker attackInvoker)
         {
             this.map = map;
             this.phaseManager = phaseManager;
             this.playerProvider = playersProvider;
             this.gameDataProvider = gameDataProvider;
-
+            this.attackMassageEncoder = attackMassageEncoder;
+            this.attackInvoker = attackInvoker;
+            
             initialized = true;
         }
 
@@ -121,6 +128,23 @@ namespace Terrix.Controllers
             }
         }
 
+        #region Attack
+        //[Client]
+        public void ExecuteAttack([NotNull] Attack attack)
+        {
+            var msg = attackMassageEncoder.Encode(attack);
+            ExecuteAttack(msg);
+        }
+
+        //[Server]
+        private void ExecuteAttack(AttackMessage msg)
+        {
+            var attack = attackMassageEncoder.Decode(msg);
+            attackInvoker.AddAttack(attack);
+        }
+        
+        #endregion
+        
         private void ValidateInitialization()
         {
             if (!initialized)

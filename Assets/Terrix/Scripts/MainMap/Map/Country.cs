@@ -79,6 +79,7 @@ namespace Terrix.Map
         public void AddConstIncome(float income)
         {
             Population += income;
+            Population = Mathf.Clamp(Population, 0, TotalCellsCount * gameDataProvider.Get().MaxDensePopulation);
             CalculateDensePopulation();
         }
 
