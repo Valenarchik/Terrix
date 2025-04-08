@@ -4,6 +4,7 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Terrix.Networking
@@ -21,7 +22,7 @@ namespace Terrix.Networking
         public LobbyStateMachine LobbyStateMachine { get; private set; }
         public event Action OnStartInfoSet;
         public event Action OnPlayersChanged;
-        public event Action<string> OnStateChanged;
+        public event Action<LobbyStateType> OnStateChanged;
         public event Action<float> OnTimerChanged;
 
         private void Update()
@@ -77,13 +78,13 @@ namespace Terrix.Networking
 
         protected void LobbyStateMachineOnStateChanged_OnServer(LobbyState state)
         {
-            UpdateStateName_ToObserver(state.Name);
+            UpdateStateName_ToObserver(state.LobbyStateType);
         }
 
         [ObserversRpc]
-        protected void UpdateStateName_ToObserver(string lobbyStateName)
+        protected void UpdateStateName_ToObserver(LobbyStateType lobbyStateType)
         {
-            OnStateChanged?.Invoke(lobbyStateName);
+            OnStateChanged?.Invoke(lobbyStateType);
         }
 
         protected void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
@@ -114,7 +115,7 @@ namespace Terrix.Networking
             Players.Add(newPlayer);
             SetInfo_ToTarget(newPlayer, Id, PlayersMaxCount);
             UpdatePlayers_ToObserver(Players);
-            UpdateStateName_ToObserver(LobbyStateMachine.CurrentState.ToString());
+            UpdateStateName_ToObserver(LobbyStateMachine.CurrentState.LobbyStateType);
             if (Players.Count == PlayersMaxCount)
             {
                 LobbyStateMachine.ChangeState(LobbyStateMachine.LobbyBeforeStartingState);
@@ -184,6 +185,12 @@ namespace Terrix.Networking
         void Unsubscribe_ToServer()
         {
             NetworkManager.ServerManager.OnRemoteConnectionState -= ServerManagerOnRemoteConnectionState_OnServer;
+        }
+
+        public void RemoveThisPlayer_OnClient()
+        {
+            Debug.Log("Clicked");
+            RemovePlayer_ToServer(NetworkManager.ClientManager.Connection);
         }
     }
 }

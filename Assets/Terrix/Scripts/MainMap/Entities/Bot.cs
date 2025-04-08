@@ -1,5 +1,6 @@
 ﻿using Terrix.DTO;
 using Terrix.Map;
+using UnityEngine;
 
 namespace Terrix.Entities
 {
@@ -12,8 +13,8 @@ namespace Terrix.Entities
         {
         }
 
-        public Bot(int id, PlayerType playerType, Country country, string playerName) : base(id, playerType, country,
-            playerName)
+        public Bot(int id, PlayerType playerType, Country country, string playerName, Color color) : base(id, playerType, country,
+            playerName, color)
         {
         }
     }

@@ -17,15 +17,18 @@ namespace Terrix.Networking
             RectTransform = GetComponent<RectTransform>();
         }
 
-        public void Initialize(string playerName)
+        public void Initialize(string playerName, Color color)
         {
             playerNameText.text = playerName;
             rankText.text = RectTransform.GetSiblingIndex().ToString();
+            rankText.color = color;
+            playerNameText.color = color;
+            scoreText.color = color;
         }
 
         public void UpdateInfo(float points)
         {
-            rankText.text = RectTransform.GetSiblingIndex().ToString();
+            rankText.text = $"#{RectTransform.GetSiblingIndex() + 1}";
             scoreText.text = points.ToString();
         }
     }

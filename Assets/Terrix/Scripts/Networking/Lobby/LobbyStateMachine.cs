@@ -42,12 +42,12 @@ namespace Terrix.Networking
         public LobbyStateMachine(bool isCustom = false)
         {
             LobbySearchingState = isCustom
-                ? new LobbyState(this, "Поиск игроков")
-                : new LobbyTimerState(this, "Поиск игроков", 90);
-            LobbyBeforeStartingState = new LobbyTimerState(this, "Игра начинается", 5);
-            LobbyStartingState = new LobbyTimerState(this, "Выбор территории", 30);
-            LobbyPlayingState = new LobbyState(this, "Игра идёт");
-            LobbyEndedState = new LobbyState(this, "Игра окончена");
+                ? new LobbyState(this, LobbyStateType.Searching)
+                : new LobbyTimerState(this,LobbyStateType.Searching , 90);
+            LobbyBeforeStartingState = new LobbyTimerState(this, LobbyStateType.BeforeStarting, 5);
+            LobbyStartingState = new LobbyTimerState(this, LobbyStateType.Starting, 30);
+            LobbyPlayingState = new LobbyState(this, LobbyStateType.Playing);
+            LobbyEndedState = new LobbyState(this, LobbyStateType.Ended);
             CurrentState = LobbySearchingState;
             if (LobbySearchingState is LobbyTimerState lobbyTimerState)
             {

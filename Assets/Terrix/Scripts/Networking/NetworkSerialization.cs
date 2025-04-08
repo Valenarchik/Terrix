@@ -116,6 +116,7 @@ namespace Terrix.Networking
                     writer.Write(value.PlayerType);
                     writer.Write(value.Country);
                     writer.WriteString(value.PlayerName);
+                    writer.WriteColor(value.PlayerColor);
                 }
             }
         }
@@ -134,7 +135,7 @@ namespace Terrix.Networking
             }
 
             var player = new Player(reader.ReadInt32(), reader.Read<PlayerType>(), reader.Read<Country>(),
-                reader.ReadString());
+                reader.ReadString(), reader.ReadColor());
             player.Country.Owner = player;
             return player;
         }
@@ -149,6 +150,7 @@ namespace Terrix.Networking
                 writer.Write(value.PlayerType);
                 writer.Write(value.Country);
                 writer.WriteString(value.PlayerName);
+                writer.WriteColor(value.PlayerColor);
             }
         }
 
@@ -160,7 +162,7 @@ namespace Terrix.Networking
             }
 
             var player = new Bot(reader.ReadInt32(), reader.Read<PlayerType>(), reader.Read<Country>(),
-                reader.ReadString());
+                reader.ReadString(), reader.ReadColor());
             player.Country.Owner = player;
             return player;
         }

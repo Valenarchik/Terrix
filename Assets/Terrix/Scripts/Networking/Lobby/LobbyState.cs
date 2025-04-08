@@ -5,7 +5,7 @@ namespace Terrix.Networking
     public class LobbyState
     {
         protected LobbyStateMachine stateMachine;
-        public string Name { get; protected set; }
+        public LobbyStateType LobbyStateType { get; protected set; }
 
         public virtual void Enter()
         {
@@ -19,10 +19,10 @@ namespace Terrix.Networking
         {
         }
 
-        public LobbyState(LobbyStateMachine stateMachine, string stateName)
+        public LobbyState(LobbyStateMachine stateMachine, LobbyStateType lobbyStateType)
         {
             this.stateMachine = stateMachine;
-            Name = stateName;
+            LobbyStateType = lobbyStateType;
         }
     }
 
@@ -37,8 +37,8 @@ namespace Terrix.Networking
             TimeToStopTimer = timer;
         }
 
-        public LobbyTimerState(LobbyStateMachine stateMachine, string stateName, float time) : base(stateMachine,
-            stateName)
+        public LobbyTimerState(LobbyStateMachine stateMachine, LobbyStateType stateType, float time) : base(stateMachine,
+            stateType)
         {
             timer = time;
         }
@@ -57,5 +57,14 @@ namespace Terrix.Networking
                 stateMachine.ChangeState(nextState);
             }
         }
+    }
+
+    public enum LobbyStateType
+    {
+        Searching,
+        BeforeStarting,
+        Starting,
+        Playing,
+        Ended
     }
 }

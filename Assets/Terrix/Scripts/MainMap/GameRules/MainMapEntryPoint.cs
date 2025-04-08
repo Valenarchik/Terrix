@@ -6,7 +6,6 @@ using FishNet.Object;
 using Terrix.Controllers;
 using System.Linq;
 using FishNet.Transporting;
-using MoreLinq;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Map;
@@ -129,8 +128,9 @@ namespace Terrix.Game.GameRules
             foreach (var bot in players.GetAll().Where(player => player.PlayerType is PlayerType.Bot))
             {
                 bot.PlayerName = $"Bot {bot.ID}";
-                serverSettings.CountryDrawerSettings.Zones[bot.ID].Color = new Color(Random.Range(0, 1f),
+                bot.PlayerColor = new Color(Random.Range(0, 1f),
                     Random.Range(0, 1f), Random.Range(0, 1f), 1f);
+                serverSettings.CountryDrawerSettings.Zones[bot.ID].Color = bot.PlayerColor;
                 serverSettings.CountryDrawerSettings.Zones[bot.ID].PlayerName = bot.PlayerName;
             }
 
@@ -202,7 +202,9 @@ namespace Terrix.Game.GameRules
                 playerName = $"Player {id}";
             }
 
-            players.Find(id).PlayerName = playerName;
+            var player = players.Find(id);
+            player.PlayerName = playerName;
+            player.PlayerColor = color;
 
 
             serverSettings.CountryDrawerSettings.Zones[id].Color = color;

@@ -1,23 +1,28 @@
-﻿using TMPro;
+﻿using System;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 namespace Terrix.Networking
 {
     public class LobbyUI : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI playersCountText;
-        [SerializeField] private TextMeshProUGUI lobbyStateText;
-        [SerializeField] private TextMeshProUGUI timerText;
+        [SerializeField] private TextMeshProUGUI lobbyStateAndTimeText;
+        // [SerializeField] private TextMeshProUGUI timerText;
         [SerializeField] private TextMeshProUGUI idText;
         [SerializeField] private Lobby lobby;
+        [SerializeField] private Button exitButton;
+        private string stateString;
 
         private void Start()
         {
             if (lobby.IsServerInitialized)
             {
                 playersCountText.gameObject.SetActive(false);
-                lobbyStateText.gameObject.SetActive(false);
-                timerText.gameObject.SetActive(false);
+                lobbyStateAndTimeText.gameObject.SetActive(false);
+                // timerText.gameObject.SetActive(false);
                 gameObject.SetActive(false);
             }
         }
@@ -37,12 +42,43 @@ namespace Terrix.Networking
 
         private void LobbyOnTimerChanged(float time)
         {
-            timerText.text = $"Время до следущего этапа: {((int)time).ToString()}с.";
+            if (time > 0)
+            {
+                lobbyStateAndTimeText.text = $"{stateString} {(int)time}с.";
+            }
+            else
+            {
+                lobbyStateAndTimeText.text = stateString;
+            }
         }
 
-        private void LobbyOnStateChanged(string lobbyStateName)
+        private void LobbyOnStateChanged(LobbyStateType lobbyStateType)
         {
-            lobbyStateText.text = lobbyStateName;
+            switch (lobbyStateType)
+            {
+                case LobbyStateType.Searching:
+                    stateString = "До начала игры осталось ";
+                    break;
+                case LobbyStateType.BeforeStarting:
+                    exitButton.gameObject.SetActive(false);
+                    playersCountText.gameObject.SetActive(false);
+                    stateString = "Игра начинается через ";
+                    break;
+                case LobbyStateType.Starting:
+                    stateString = "Выбор территории закончится через ";
+                    break;
+                case LobbyStateType.Playing:
+                    lobbyStateAndTimeText.gameObject.SetActive(false);
+                    stateString = "Игра идёт";
+                    break;
+                case LobbyStateType.Ended:
+                    stateString = "Игра окончена";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(lobbyStateType), lobbyStateType, null);
+            }
+
+            lobbyStateAndTimeText.text = stateString;
         }
 
         private void LobbyOnPlayersChanged()

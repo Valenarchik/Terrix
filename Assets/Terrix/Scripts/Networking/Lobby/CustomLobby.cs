@@ -40,7 +40,7 @@ namespace Terrix.Networking
             Players.Add(newPlayer);
             SetInfo_ToTarget(newPlayer, Id, PlayersMaxCount);
             UpdatePlayers_ToObserver(Players);
-            UpdateStateName_ToObserver(LobbyStateMachine.CurrentState.ToString());
+            UpdateStateName_ToObserver(LobbyStateMachine.CurrentState.LobbyStateType);
         }
     }
 }

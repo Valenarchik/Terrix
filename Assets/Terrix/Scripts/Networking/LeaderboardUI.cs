@@ -19,7 +19,7 @@ namespace Terrix.Networking
             foreach (var player in playersProvider.GetAll())
             {
                 var playerInfoUI = Instantiate(playerInfoUIPrefab, transform);
-                playerInfoUI.Initialize(player.PlayerName);
+                playerInfoUI.Initialize(player.PlayerName, player.PlayerColor);
                 playersInfos.Add(player.ID, playerInfoUI);
             }
         }
