@@ -9,6 +9,7 @@ using FishNet.Transporting;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Map;
+using Terrix.Network.DTO;
 using Terrix.Networking;
 using Terrix.Settings;
 using Terrix.Visual;
@@ -29,6 +30,7 @@ namespace Terrix.Game.GameRules
         [SerializeField] private AllCountriesHandler allCountriesHandler;
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
         [SerializeField] private CountryController countryController;
+        [SerializeField] private MainMapCameraController cameraController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
         [SerializeField] private LeaderboardUI leaderboardUI;
 
@@ -48,6 +50,7 @@ namespace Terrix.Game.GameRules
         private ServerSettings serverSettings;
         private ClientSettings clientSettings;
 
+        private IAttackMassageEncoder attackMassageEncoder;
 
         private void TickGenerator_OnUpdated()
         {
@@ -161,21 +164,30 @@ namespace Terrix.Game.GameRules
         }
 
         private void Initialize_OnServer(ServerSettings settings)
-            // TODO private void Initialize(ServerSettings serverSettings, ClientSettings clientSettings)
         {
             gameDataProvider = new GameDataProvider();
-            map = mapGenerator.GenerateMap(settings.MapSettings);
+            //TODO Страрая карта
+            // map = mapGenerator.GenerateMap(settings.MapSettings);
+            
             // events = new GameEvents();
             // attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
             playersFactory = new PlayersFactory(gameDataProvider, map);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
+            mapGenerator.Initialize(gameDataProvider, players);
+            map = mapGenerator.GenerateMap(serverSettings.MapSettings);
+            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map, gameDataProvider);
+
+            attackInvoker = new AttackInvoker();
+            
             gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
             referee = gameRefereeFactory.Create();
             countriesCollector = new CountriesCollector(players);
 
             allCountriesHandler.Initialize(players.GetAll().Select(p => p.Country).ToArray());
-            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
+
+            attackMassageEncoder = new AttackMassageEncoder(players, map);
+            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider, attackMassageEncoder, attackInvoker);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -279,7 +291,7 @@ namespace Terrix.Game.GameRules
                 fontSize = 20
             };
 
-            // GUI.Label(new Rect(0, 0, 300, 25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
+            GUI.Label(new Rect(0, 0, 300, 25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
             GUI.Label(new Rect(0, 25, 300, 25), $"Time is {Time.time:F2}", labelStyle);
         }
 #endif

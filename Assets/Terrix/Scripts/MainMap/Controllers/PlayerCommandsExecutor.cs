@@ -5,10 +5,12 @@ using CustomUtilities.Extensions;
 using System.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Object;
+using JetBrains.Annotations;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
+using Terrix.Network.DTO;
 using Terrix.Settings;
 using UnityEngine;
 
@@ -22,7 +24,9 @@ namespace Terrix.Controllers
         private IPhaseManager phaseManager;
         private IPlayersProvider playerProvider;
         private IGameDataProvider gameDataProvider;
-
+        private IAttackMassageEncoder attackMassageEncoder;
+        private IAttackInvoker attackInvoker;
+        
         private bool initialized;
 
         private TaskCompletionSource<bool> tcs;
@@ -30,13 +34,17 @@ namespace Terrix.Controllers
         public void Initialize(HexMap map,
             IPhaseManager phaseManager,
             IPlayersProvider playersProvider,
-            IGameDataProvider gameDataProvider)
+            IGameDataProvider gameDataProvider,
+            IAttackMassageEncoder attackMassageEncoder,
+            IAttackInvoker attackInvoker)
         {
             this.map = map;
             this.phaseManager = phaseManager;
             this.playerProvider = playersProvider;
             this.gameDataProvider = gameDataProvider;
-
+            this.attackMassageEncoder = attackMassageEncoder;
+            this.attackInvoker = attackInvoker;
+            
             initialized = true;
         }
 
@@ -111,8 +119,8 @@ namespace Terrix.Controllers
             {
                 return map.HasHex(pos) &&
                        OwnerCheck(map[pos]) &&
-                       map[pos].GetHexData(gameData).CanCapture &&
-                       map[pos].GetNeighbours(map).All(OwnerCheck);
+                       map[pos].GetHexData().CanCapture &&
+                       map[pos].GetNeighbours().All(OwnerCheck);
             }
 
             bool OwnerCheck(Hex hex)
@@ -146,13 +154,11 @@ namespace Terrix.Controllers
         // [Server]
         private void ChooseInitialCountryPosition(Player player, Vector3Int pos, out Hex[] captureHexes)
         {
-            var gameData = gameDataProvider.Get();
             var country = player.Country;
-
-            var hexes = new List<Hex>(1 + 6) { map[pos] };
-            foreach (var hex in map[pos].GetNeighbours(map))
+            var hexes = new List<Hex>(1 + 6) {map[pos]};
+            foreach (var hex in map[pos].GetNeighbours())
             {
-                if (hex.GetHexData(gameData).CanCapture)
+                if (hex.GetHexData().CanCapture)
                 {
                     hexes.Add(hex);
                 }
@@ -170,8 +176,8 @@ namespace Terrix.Controllers
 
             foreach (var player in players)
             {
-                var randomHex = map.CanCaptureHexes
-                    .Where(hex => hex.PlayerId == null && hex.GetNeighbours(map).All(neigh => neigh.PlayerId == null))
+                var randomHex = map.Hexes.Cast<Hex>().Where(hex => hex.GetHexData().CanCapture)
+                    .Where(hex => hex.PlayerId == null && hex.GetNeighbours().All(neigh => neigh.PlayerId == null))
                     .RandomElementReservoirOrDefault();
                 var success = randomHex is not null;
 
@@ -184,6 +190,23 @@ namespace Terrix.Controllers
             }
         }
 
+        #region Attack
+        //[Client]
+        public void ExecuteAttack([NotNull] Attack attack)
+        {
+            var msg = attackMassageEncoder.Encode(attack);
+            ExecuteAttack(msg);
+        }
+
+        //[Server]
+        private void ExecuteAttack(AttackMessage msg)
+        {
+            var attack = attackMassageEncoder.Decode(msg);
+            attackInvoker.AddAttack(attack);
+        }
+        
+        #endregion
+        
         private void ValidateInitialization()
         {
             if (!initialized)

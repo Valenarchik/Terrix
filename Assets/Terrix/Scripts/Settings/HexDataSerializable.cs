@@ -13,9 +13,9 @@ namespace Terrix.Settings
         public bool IsSeeTile;
 
 
-        public HexData Get()
+        public GameHexData Get()
         {
-            return new HexData(HexType, Income, Resist, CanCapture, IsSeeTile);
+            return new GameHexData(HexType, Income, Resist, CanCapture, IsSeeTile);
         }
     }
 }

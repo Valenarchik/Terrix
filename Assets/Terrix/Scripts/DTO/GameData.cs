@@ -6,7 +6,7 @@ namespace Terrix.DTO
 {
     public class GameData
     {
-        public Dictionary<HexType, HexData> CellsStats { get; }
+        public Dictionary<HexType, GameHexData> CellsStats { get; }
         public float BaseCostOfNeutralLends { get; }
         public float TickDurationInSeconds { get; }
         public float MaxDensePopulation { get; }
@@ -16,7 +16,7 @@ namespace Terrix.DTO
 
 
         public GameData(
-            Dictionary<HexType, HexData> cellsStats,
+            Dictionary<HexType, GameHexData> cellsStats,
             float baseCostOfNeutralLends,
             float tickDurationInSeconds,
             float maxDensePopulation,

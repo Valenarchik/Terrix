@@ -1,6 +1,6 @@
 ﻿namespace Terrix.DTO
 {
-    public class HexData
+    public class GameHexData
     {
         public HexType HexType { get; }
         public float Income { get; }
@@ -8,7 +8,7 @@
         public bool CanCapture { get; }
         public bool IsSeeTile { get; }
 
-        public HexData(
+        public GameHexData(
             HexType hexType,
             float income,
             float resist,

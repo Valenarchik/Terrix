@@ -1,14 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Terrix.DTO;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Terrix.Map
 {
     public class HexMap
     {
         public Hex[,,] Hexes { get; }
-        public HashSet<Hex> CanCaptureHexes { get; }
         public Vector3Int Size { get; }
 
         public Hex this[int x, int y, int z]
@@ -19,20 +15,41 @@ namespace Terrix.Map
 
         public Hex this[Vector3Int pos]
         {
-            get => Hexes[pos.x, pos.y, pos.z];
-            set => Hexes[pos.x, pos.y, pos.z] = value;
+            get => this[pos.x, pos.y, pos.z];
+            set => this[pos.x, pos.y, pos.z] = value;
         }
 
+        public Hex FindHex(Vector3Int pos)
+        {
+            if (HasHex(pos))
+            {
+                return this[pos];
+            }
+
+            return null;
+        }
+
+        public bool TryGetHex(Vector3Int pos, out Hex hex)
+        {
+            if (HasHex(pos))
+            {
+                hex = this[pos];
+                return true;
+            }
+
+            hex = null;
+            return false;
+        }
+        
         public bool HasHex(Vector3Int pos)
         {
             return pos.x >= 0 && pos.y >= 0 && pos.z >= 0 && pos.x < Size.x && pos.y < Size.y && pos.z < Size.z;
         }
 
-        public HexMap(Hex[,,] hexes, GameData gameData)
+        public HexMap(Vector3Int size)
         {
-            Hexes = hexes;
-            Size = new Vector3Int(hexes.GetLength(0), hexes.GetLength(1), hexes.GetLength(2));
-            CanCaptureHexes = Hexes.Cast<Hex>().Where(hex => hex.GetHexData(gameData).CanCapture).ToHashSet();
+            Size = size;
+            Hexes = new Hex[size.x, size.y, size.z];
         }
 
         public HexMap(Hex[,,] hexes, Hex[] canCaptureHexes)
