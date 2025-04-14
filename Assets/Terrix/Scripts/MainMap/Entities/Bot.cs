@@ -1,5 +1,4 @@
 ﻿using Terrix.DTO;
-using Terrix.Map;
 
 namespace Terrix.Entities
 {

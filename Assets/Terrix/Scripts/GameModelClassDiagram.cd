@@ -1,0 +1,169 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Terrix.Map.Hex" Collapsed="true">
+    <Position X="3" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CQAAAAAAAAAAgACsgAAAAQAAAAAAAIAAIAAIAAAAAgA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\Map\Hex.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Terrix.Map.HexMap" Collapsed="true">
+    <Position X="3" Y="3.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAQAAAgAIACAAAAIAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\Map\HexMap.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Hexes" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Terrix.Map.Country" Collapsed="true">
+    <Position X="0.5" Y="2.5" Width="1.5" />
+    <NestedTypes>
+      <Class Name="Terrix.Map.Country.UpdateCellsData" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Assets\Terrix\Scripts\MainMap\Map\Country.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Struct Name="Terrix.Map.Country.CellChangeData" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Assets\Terrix\Scripts\MainMap\Map\Country.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+      <Enum Name="Terrix.Map.Country.UpdateCellMode" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Assets\Terrix\Scripts\MainMap\Map\Country.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>CEIBEACCEIAhABAIAYIABAIAAgAAAAEUAAQoCAAQAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\Map\Country.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="cellsSet" />
+    </ShowAsCollectionAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Terrix.Entities.Player">
+    <Position X="0.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAEAAAAIAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\Entities\Player.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Country" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Terrix.Entities.Bot" Collapsed="true">
+    <Position X="0.5" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\Entities\Bot.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Terrix.Game.GameRules.AttackInvoker" Collapsed="true">
+    <Position X="6" Y="4.5" Width="1.5" />
+    <NestedTypes>
+      <Class Name="Terrix.Game.GameRules.AttackInvoker.AttackState" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Assets\Terrix\Scripts\MainMap\GameRules\AttackInvoker.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAARIACAAAAAAQBIAAgBAAAAAAAIAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\AttackInvoker.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="attacksOrder" />
+    </ShowAsCollectionAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Terrix.Map.Attack" Collapsed="true">
+    <Position X="6" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAACAAAAAgAAAAAAAACAgAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\Map\Attack.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Territory" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Terrix.Game.GameRules.TickGenerator" Collapsed="true">
+    <Position X="13.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAABAIEAAAAQAAAAAABAAIAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\TickGenerator.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="tickHandlersOrder" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Terrix.Game.GameRules.GameReferee">
+    <Position X="3.25" Y="5.75" Width="1.5" />
+    <NestedTypes>
+      <Class Name="Terrix.Game.GameRules.GameReferee.Settings" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Assets\Terrix\Scripts\MainMap\GameRules\GameReferee\GameReferee.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\GameReferee\GameReferee.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="playersProvider" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Terrix.Game.GameRules.PlayersProvider" Collapsed="true">
+    <Position X="3" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAAAAAAAAIAAAAIgAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\PlayersProvider.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="players" />
+    </ShowAsCollectionAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Interface Name="Terrix.Game.GameRules.ITickHandler" Collapsed="true">
+    <Position X="10.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\ITickHandler.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Terrix.Game.GameRules.ICountriesCollector" Collapsed="true">
+    <Position X="8.5" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\CountriesCollector.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Terrix.Game.GameRules.IGameReferee" Collapsed="true">
+    <Position X="10.25" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\GameReferee\GameReferee.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Terrix.Game.GameRules.IAttackInvoker" Collapsed="true">
+    <Position X="12" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAIAAABAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\AttackInvoker.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Terrix.Game.GameRules.IPlayersProvider" Collapsed="true">
+    <Position X="6" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>Assets\Terrix\Scripts\MainMap\GameRules\PlayersProvider.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
