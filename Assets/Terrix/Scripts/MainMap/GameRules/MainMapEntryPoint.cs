@@ -60,7 +60,8 @@ namespace Terrix.Game.GameRules
         private void UpdatePlayersInfo_ToObserver(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
         {
             players = playersCountryMapData.IPlayersProvider;
-            countryController.UpdateCountries_OnClient(players);
+            map = playersCountryMapData.HexMap;
+            countryController.UpdateData_OnClient(playersCountryMapData);
             allCountriesDrawer.UpdateScore_OnClient(playersCountryMapData);
             leaderboardUI.UpdateInfo(players);
         }

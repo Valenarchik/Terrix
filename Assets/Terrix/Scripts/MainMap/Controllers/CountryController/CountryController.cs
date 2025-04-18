@@ -9,6 +9,7 @@ using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
+using Terrix.Networking;
 using Terrix.Settings;
 using Terrix.Visual;
 using UnityEngine;
@@ -223,10 +224,17 @@ namespace Terrix.Controllers
             country = players.Find(playerId).Country;
         }
 
-        public void UpdateCountries_OnClient(IPlayersProvider playersProvider)
+        // public void UpdateCountries_OnClient(IPlayersProvider playersProvider)
+        // {
+        //     this.players = playersProvider;
+        //     country = playersProvider.Find(playerId).Country;
+        // }
+
+        public void UpdateData_OnClient(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
         {
-            this.players = playersProvider;
-            country = playersProvider.Find(playerId).Country;
+            players = playersCountryMapData.IPlayersProvider;
+            map = playersCountryMapData.HexMap;
+            country = players.Find(playerId).Country;
         }
 
         private void StartAttack(int? targetId, float points, IEnumerable<Hex> territory)
