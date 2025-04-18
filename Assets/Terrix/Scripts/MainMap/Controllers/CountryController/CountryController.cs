@@ -9,6 +9,7 @@ using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
+using Terrix.Networking;
 using Terrix.Settings;
 using Terrix.Visual;
 using UnityEngine;
@@ -173,8 +174,9 @@ namespace Terrix.Controllers
             }
 
             var data = new Country.UpdateCellsData(AllCountriesDrawer.DRAG_ZONE_ID, changeData.ToArray());
-            countriesDrawer.UpdateDragZone(data);
+            countriesDrawer.UpdateDragZone(data, country.Population);
         }
+
         //TODO метод для дебага. Нужно будет потом убрать
         private Country.UpdateCellsData GetUpdateDataActual(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
         {
@@ -193,7 +195,8 @@ namespace Terrix.Controllers
             return new Country.UpdateCellsData(country.PlayerId, changeData.ToArray());
         }
 
-        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget, out float attackPoints)
+        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget,
+            out float attackPoints)
         {
             return borderStretcher.StretchBorders(startPos,
                 endPos,
@@ -211,25 +214,32 @@ namespace Terrix.Controllers
         [ObserversRpc]
         public void UpdateCountries_ToObserver(Dictionary<int, Country> countries)
         {
-            foreach (var currentPlayer in playersProvider.GetAll())
+            foreach (var currentPlayer in players.GetAll())
             {
                 currentPlayer.Country = countries[currentPlayer.ID];
                 currentPlayer.Country.Owner = currentPlayer;
                 // .First(currentCountry => currentCountry.PlayerId == currentPlayer.ID);
             }
 
-            country = playersProvider.Find(playerId).Country;
+            country = players.Find(playerId).Country;
         }
 
-        public void UpdateCountries_OnClient(IPlayersProvider playersProvider)
+        // public void UpdateCountries_OnClient(IPlayersProvider playersProvider)
+        // {
+        //     this.players = playersProvider;
+        //     country = playersProvider.Find(playerId).Country;
+        // }
+
+        public void UpdateData_OnClient(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
         {
-            this.playersProvider = playersProvider;
-            country = playersProvider.Find(playerId).Country;
+            players = playersCountryMapData.IPlayersProvider;
+            map = playersCountryMapData.HexMap;
+            country = players.Find(playerId).Country;
         }
 
         private void StartAttack(int? targetId, float points, IEnumerable<Hex> territory)
         {
-            var target = targetId.HasValue ? players.Find(targetId.Value) : null; 
+            var target = targetId.HasValue ? players.Find(targetId.Value) : null;
             commandsExecutor.ExecuteAttack(new Attack(Guid.NewGuid(), player, target, points, territory.ToHashSet()));
         }
     }

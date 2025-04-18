@@ -16,9 +16,10 @@ namespace Terrix.Game.GameRules
     {
         private readonly List<Player> players;
         public List<Player> Players => players;
-        private readonly Dictionary<int, Player> playersMap;
+        private Dictionary<int, Player> playersMap;
 
         public Player[] GetAll() => players.ToArray();
+
         public Player Find(int id)
         {
             playersMap.TryGetValue(id, out var p);
@@ -34,6 +35,11 @@ namespace Terrix.Game.GameRules
         {
             this.players = players.ToList();
             this.playersMap = this.players.ToDictionary(p => p.ID);
+        }
+
+        public void UpdatePlayersMap()
+        {
+            playersMap = players.ToDictionary(p => p.ID);
         }
     }
 }

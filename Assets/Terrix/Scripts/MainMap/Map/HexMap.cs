@@ -52,11 +52,14 @@ namespace Terrix.Map
             Hexes = new Hex[size.x, size.y, size.z];
         }
 
-        public HexMap(Hex[,,] hexes, Hex[] canCaptureHexes)
-        {
+        public HexMap(Hex[,,] hexes)
+        { 
             Hexes = hexes;
             Size = new Vector3Int(hexes.GetLength(0), hexes.GetLength(1), hexes.GetLength(2));
-            CanCaptureHexes = canCaptureHexes.ToHashSet();
+            foreach (var hex in hexes)
+            {
+                hex.HexMap = this;
+            }
         }
     }
 }

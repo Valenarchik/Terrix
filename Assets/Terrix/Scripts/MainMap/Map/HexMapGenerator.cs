@@ -20,7 +20,7 @@ namespace Terrix.Map
 
         private IGameDataProvider gameDataProvider;
         private IPlayersProvider players;
-        
+
         private Settings settings;
 
         public HexMapGeneratorSettingsSO DefaultSettingsSo => initialSettingsSo;
@@ -30,7 +30,7 @@ namespace Terrix.Map
             this.gameDataProvider = gameData ?? throw new ArgumentNullException(nameof(gameData));
             this.players = players ?? throw new ArgumentNullException(nameof(players));
         }
-        
+
         public HexMap GenerateMap(Settings initSettings)
         {
             ValidateSettings(initSettings);
@@ -41,9 +41,15 @@ namespace Terrix.Map
 
             return map;
         }
+        
 
         public void UpdateMap(HexMap map)
         {
+            // Жёсткий костыль
+            if (gameDataProvider is null)
+            {
+                gameDataProvider = new GameDataProvider();
+            }
             TileChangeData[] tileData = new TileChangeData[map.Size.x * map.Size.y];
             for (int y = 0; y < map.Size.y; y++)
             {
@@ -98,13 +104,14 @@ namespace Terrix.Map
                         transform = Matrix4x4.identity
                     };
 
-                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position, tilemap.CellToWorld(position), map, gameDataProvider, players);
+                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position,
+                        tilemap.CellToWorld(position), map, gameDataProvider, players);
                     map[hex.Position.x, hex.Position.y, 0] = hex;
                 }
             }
         }
 
-        private void GenerateData(out TileChangeData[] tileChangeData, out Hex[,,] map)
+        private void GenerateData(out TileChangeData[] tileChangeData, out HexMap map)
         {
             if (settings.NoiseType is HexMapGeneratorSettingsSO.NoiseType.StaticMap)
             {
@@ -116,11 +123,11 @@ namespace Terrix.Map
             tileChangeData = new TileChangeData[settings.Width * settings.Height];
 
             var mapSize = settings.Transpose
-                ? new Vector2Int(settings.Height, settings.Width)
-                : new Vector2Int(settings.Width, settings.Height);
+                ? new Vector3Int(settings.Height, settings.Width, 1)
+                : new Vector3Int(settings.Width, settings.Height, 1);
 
-            map = new Hex[mapSize.x, mapSize.y, 1];
-            var matrix = GeneratePerlinMatrix(mapSize, settings.PerlinMainZoom);
+            map = new HexMap(mapSize);
+            var matrix = GeneratePerlinMatrix((Vector2Int)mapSize, settings.PerlinMainZoom);
             var landDictionary = new Dictionary<HexType, float>();
             foreach (var landHexType in settings.LandHexTypes)
             {
@@ -162,7 +169,8 @@ namespace Terrix.Map
                         transform = Matrix4x4.identity
                     };
 
-                    var hex = new Hex(data.HexType, position);
+                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position,
+                        tilemap.CellToWorld(position), map, gameDataProvider, players);
                     map[hex.Position.x, hex.Position.y, 0] = hex;
                 }
             }
@@ -171,7 +179,7 @@ namespace Terrix.Map
         private Settings.HexData FindData(float pixelHeight)
         {
             //TODO решение потенциальной проблемы
-            // pixelHeight = Mathf.Clamp01(pixelHeight);
+            pixelHeight = Mathf.Clamp01(pixelHeight);
             var nearestValue = settings.HexDatas
                 .Select((data, i) => (data, i))
                 .OrderBy(data => Math.Abs(data.data.Height - pixelHeight))

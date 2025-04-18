@@ -44,7 +44,7 @@ namespace Terrix.Networking
             LobbySearchingState = isCustom
                 ? new LobbyState(this, LobbyStateType.Searching)
                 : new LobbyTimerState(this,LobbyStateType.Searching , 90);
-            LobbyBeforeStartingState = new LobbyTimerState(this, LobbyStateType.BeforeStarting, 5);
+            LobbyBeforeStartingState = new LobbyTimerState(this, LobbyStateType.BeforeStarting, 20);
             LobbyStartingState = new LobbyTimerState(this, LobbyStateType.Starting, 30);
             LobbyPlayingState = new LobbyState(this, LobbyStateType.Playing);
             LobbyEndedState = new LobbyState(this, LobbyStateType.Ended);

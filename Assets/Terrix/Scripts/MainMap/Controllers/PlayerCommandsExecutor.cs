@@ -75,8 +75,8 @@ namespace Terrix.Controllers
             {
                 return map.HasHex(pos) &&
                        OwnerCheck(map[pos]) &&
-                       map[pos].GetHexData(gameData).CanCapture &&
-                       map[pos].GetNeighbours(map).All(OwnerCheck);
+                       map[pos].GetHexData().CanCapture &&
+                       map[pos].GetNeighbours().All(OwnerCheck);
             }
 
             bool OwnerCheck(Hex hex)
@@ -199,9 +199,10 @@ namespace Terrix.Controllers
         }
 
         //[Server]
+        [ServerRpc (RequireOwnership = false)]
         private void ExecuteAttack(AttackMessage msg)
         {
-            var attack = attackMassageEncoder.Decode(msg);
+             var attack = attackMassageEncoder.Decode(msg);
             attackInvoker.AddAttack(attack);
         }
         

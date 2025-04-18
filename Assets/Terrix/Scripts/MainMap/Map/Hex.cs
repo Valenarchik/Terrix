@@ -10,16 +10,17 @@ namespace Terrix.Map
 {
     public class Hex : IEquatable<Hex>
     {
-        private readonly HexMap hexMap;
+        public HexMap HexMap { get; set; }
         private readonly IGameDataProvider gameData;
         private readonly IPlayersProvider players;
 
-        private Hex[] neighbours;
-        
+        public Hex[] Neighbours { get; private set; }
+
         public HexType HexType { get; }
         public Vector3Int Position { get; }
         public Vector3 WorldPosition { get; }
         public int? PlayerId { get; set; }
+        public IPlayersProvider Players => players;
 
         public Hex(
             HexType hexType,
@@ -33,35 +34,51 @@ namespace Terrix.Map
             Position = position;
             WorldPosition = worldPosition;
             PlayerId = null;
-            this.hexMap = hexMap;
+            this.HexMap = hexMap;
             this.gameData = gameData;
             this.players = players;
         }
 
         public IEnumerable<Hex> GetNeighbours()
         {
-            if (neighbours == null)
+            if (Neighbours == null)
             {
-                neighbours = MapUtilities.GetHexNeighborsPositions(Position)
-                    .Where(pos => hexMap.HasHex(pos))
-                    .Select(pos => hexMap[pos])
+                Neighbours = MapUtilities.GetHexNeighborsPositions(Position)
+                    .Where(pos => HexMap.HasHex(pos))
+                    .Select(pos => HexMap[pos])
                     .ToArray();
             }
-            
-            return neighbours;
+
+            return Neighbours;
         }
 
         public GameHexData GetHexData()
         {
             return gameData.Get().CellsStats[HexType];
         }
+
         //TODO возможно нужна переработка
-        public Hex(HexType hexType, Vector3Int position, Vector3Int[] neighboursPositions, int? playerId)
+        public Hex(HexType hexType, Vector3Int position, Vector3 worldPosition,
+            int? playerId)
         {
             HexType = hexType;
             Position = position;
-            NeighboursPositions = neighboursPositions;
+            WorldPosition = worldPosition;
             PlayerId = playerId;
+            this.gameData = new GameDataProvider();
+            // this.Neighbours = neighbours;
+        }
+        public Hex(HexType hexType, Vector3Int position, Vector3 worldPosition,
+            int? playerId,
+            IPlayersProvider players)
+        {
+            HexType = hexType;
+            Position = position;
+            WorldPosition = worldPosition;
+            PlayerId = playerId;
+            this.gameData = new GameDataProvider();
+            this.players = players;
+            // this.Neighbours = neighbours;
         }
 
         public float GetCost()
@@ -71,7 +88,6 @@ namespace Terrix.Map
 
         public float GetCost(int? playerId)
         {
-
             if (playerId == null)
             {
                 return gameData.Get().BaseCostOfNeutralLends * GetHexData().Resist;

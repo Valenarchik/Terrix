@@ -30,7 +30,6 @@ namespace Terrix.Game.GameRules
         [SerializeField] private AllCountriesHandler allCountriesHandler;
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
         [SerializeField] private CountryController countryController;
-        [SerializeField] private MainMapCameraController cameraController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
         [SerializeField] private LeaderboardUI leaderboardUI;
 
@@ -54,15 +53,16 @@ namespace Terrix.Game.GameRules
 
         private void TickGenerator_OnUpdated()
         {
-            UpdatePlayersInfo_ToObserver(players);
+            UpdatePlayersInfo_ToObserver(new NetworkSerialization.PlayersCountryMapData(players, map));
         }
 
         [ObserversRpc]
-        private void UpdatePlayersInfo_ToObserver(IPlayersProvider playersProvider)
+        private void UpdatePlayersInfo_ToObserver(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
         {
-            players = playersProvider;
-            countryController.UpdateCountries_OnClient(players);
-            allCountriesDrawer.UpdateScore_OnClient(players);
+            players = playersCountryMapData.IPlayersProvider;
+            map = playersCountryMapData.HexMap;
+            countryController.UpdateData_OnClient(playersCountryMapData);
+            allCountriesDrawer.UpdateScore_OnClient(playersCountryMapData);
             leaderboardUI.UpdateInfo(players);
         }
 
@@ -137,7 +137,8 @@ namespace Terrix.Game.GameRules
                 serverSettings.CountryDrawerSettings.Zones[bot.ID].PlayerName = bot.PlayerName;
             }
 
-            Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings, players);
+            Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings,
+                new NetworkSerialization.PlayersCountryMapData(players, map));
 
             phaseManager.NextPhase();
             ChangePhase();
@@ -168,18 +169,19 @@ namespace Terrix.Game.GameRules
             gameDataProvider = new GameDataProvider();
             //TODO Страрая карта
             // map = mapGenerator.GenerateMap(settings.MapSettings);
-            
+
             // events = new GameEvents();
             // attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
-            playersFactory = new PlayersFactory(gameDataProvider, map);
+            playersFactory = new PlayersFactory(gameDataProvider);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
             mapGenerator.Initialize(gameDataProvider, players);
             map = mapGenerator.GenerateMap(serverSettings.MapSettings);
-            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map, gameDataProvider);
+            // countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map,
+            //     gameDataProvider);
 
             attackInvoker = new AttackInvoker();
-            
+
             gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
             referee = gameRefereeFactory.Create();
             countriesCollector = new CountriesCollector(players);
@@ -187,7 +189,8 @@ namespace Terrix.Game.GameRules
             allCountriesHandler.Initialize(players.GetAll().Select(p => p.Country).ToArray());
 
             attackMassageEncoder = new AttackMassageEncoder(players, map);
-            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider, attackMassageEncoder, attackInvoker);
+            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider, attackMassageEncoder,
+                attackInvoker);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -237,14 +240,16 @@ namespace Terrix.Game.GameRules
             events = new GameEvents();
             phaseManager = new PhaseManager();
             cameraController.Initialize(events);
-            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider);
+            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider,
+                new AttackMassageEncoder(players, map), new AttackInvoker());
             events.StartGame();
         }
 
         [ObserversRpc]
         private void Initialize_InitialPhase_ToObserver(AllCountriesDrawer.Settings countriesDrawerSettings,
-            IPlayersProvider iPlayersProvider)
+            NetworkSerialization.PlayersCountryMapData playersCountryMapData)
         {
+            var iPlayersProvider = playersCountryMapData.IPlayersProvider;
             players = iPlayersProvider;
             var playerColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].Color;
             if (playerColor != null)
@@ -291,7 +296,7 @@ namespace Terrix.Game.GameRules
                 fontSize = 20
             };
 
-            GUI.Label(new Rect(0, 0, 300, 25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
+            // GUI.Label(new Rect(0, 0, 300, 25), $"CurrentPhase is {phaseManager.CurrentPhase}", labelStyle);
             GUI.Label(new Rect(0, 25, 300, 25), $"Time is {Time.time:F2}", labelStyle);
         }
 #endif

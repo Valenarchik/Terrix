@@ -16,7 +16,7 @@ namespace Terrix.Controllers
             private Hex[] dragHexes;
             private float attackPoints;
             private int? attackTarget;
-            
+
             private bool drag;
             private Vector3Int startDragHexPosition;
 
@@ -76,9 +76,9 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (CountryController.IsNotOur(cellPosition))
                 {
-                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition, out attackTarget, out attackPoints);
+                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition,
+                        out attackTarget, out attackPoints);
                     CountryController.UpdateDragZone(dragHexes, newDragHexes);
-                    var score = CountryController.country.Population;
                     dragHexes = newDragHexes;
                 }
             }
@@ -108,7 +108,12 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (cellPosition == startDragHexPosition)
                 {
+                    Debug.Log("Started drag");
                     drag = true;
+                }
+                else
+                {
+                    Debug.Log("Not started drag");
                 }
             }
 
@@ -123,11 +128,6 @@ namespace Terrix.Controllers
                 var newDragHexes = Array.Empty<Hex>();
                 CountryController.UpdateDragZone(dragHexes, newDragHexes);
                 CountryController.StartAttack(attackTarget, attackPoints, dragHexes);
-                var score = CountryController.country.Population;
-                // TODO изменить
-                var newUpdateData = CountryController.GetUpdateDataActual(newDragHexes, dragHexes);
-                CountryController.countriesDrawer.UpdateZone_ToServer(newUpdateData, score);
-                //
                 dragHexes = newDragHexes;
                 CountryController.cameraController.EnableDrag = true;
                 startDragHexPosition = DefaultStartDragHexPosition;

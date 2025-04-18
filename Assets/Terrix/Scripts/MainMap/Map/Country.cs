@@ -32,7 +32,7 @@ namespace Terrix.Map
         public int TotalCellsCount { get; private set; }
         public float DensePopulation { get; private set; }
         public IEnumerable<Hex> Cells => cellsSet;
-        public Player Owner { get; private set; }
+        public Player Owner { get; set; }
         public event Action<UpdateCellsData> OnCellsUpdate;
         
         public Country([NotNull] IGameDataProvider gameDataProvider, [NotNull] Player owner)
@@ -49,11 +49,12 @@ namespace Terrix.Map
         }
 
         //TODO возможно ошибка
-        public Country([NotNull] IGameDataProvider gameDataProvider, IEnumerable<Hex> cellsSet, float population,
+        public Country(IEnumerable<Hex> cellsSet, float population,
             int totalCellsCount, float densePopulation)
         {
-            this.gameDataProvider = gameDataProvider;
-            CellsSet = cellsSet.ToHashSet();
+            this.gameDataProvider = new GameDataProvider();
+            // this.gameDataProvider = gameDataProvider;
+            this.cellsSet = cellsSet.ToHashSet();
             cellsByTypeCount = Enum.GetValues(typeof(HexType))
                 .OfType<HexType>()
                 .ToDictionary(type => type, _ => 0);
@@ -109,6 +110,7 @@ namespace Terrix.Map
 
         public void Remove(IEnumerable<Hex> removed)
         {
+            Debug.Log("Removed");
             RemoveAndAdd(removed, Enumerable.Empty<Hex>());
         }
 
@@ -127,7 +129,7 @@ namespace Terrix.Map
             changeData.AddRange(addedSet.Select(hex => new CellChangeData(hex, UpdateCellMode.Add)));
 
             var data = new UpdateCellsData(PlayerId, changeData.ToArray());
-
+            Debug.Log($"{PlayerId}: {removedHexes.Count()} {addedHexes.Count()}");
             UpdateCells(data);
         }
 
@@ -173,6 +175,8 @@ namespace Terrix.Map
 
         public HashSet<Hex> GetInnerBorder()
         {
+            //TODO костыль
+            innerBorderUpdated = true;
             if (innerBorderUpdated)
             {
                 innerBorder.Clear();
