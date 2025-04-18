@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Terrix.DTO;
-using Terrix.Entities;
+﻿using Terrix.DTO;
 
 namespace Terrix.Game.GameRules
 {

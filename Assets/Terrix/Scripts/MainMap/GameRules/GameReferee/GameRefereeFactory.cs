@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using Terrix.DTO;
-using Terrix.Entities;
 
 namespace Terrix.Game.GameRules
 {

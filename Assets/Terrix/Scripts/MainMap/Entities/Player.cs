@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Terrix.DTO;
+﻿using Terrix.DTO;
 using Terrix.Map;
 using UnityEngine;
 
@@ -8,7 +7,7 @@ namespace Terrix.Entities
     public class Player : Entity<int>
     {
         public PlayerType PlayerType { get; }
-        [MaybeNull] public Country Country { get; set; }
+        public Country Country { get; set; }
         public string PlayerName { get; set; }
         public Color PlayerColor { get; set; }
 
