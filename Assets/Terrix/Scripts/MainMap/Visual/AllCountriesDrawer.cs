@@ -4,6 +4,7 @@ using FishNet.Object;
 using JetBrains.Annotations;
 using Terrix.Game.GameRules;
 using Terrix.Map;
+using Terrix.Networking;
 using UnityEngine;
 
 namespace Terrix.Visual
@@ -64,7 +65,7 @@ namespace Terrix.Visual
             dragZoneDrawer.UpdateZone(updateData, score);
         }
 
-        public void UpdateScore_OnClient(IPlayersProvider players)
+        public void UpdateScore_OnClient(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
         {
             foreach (var drawer in drawersByIds)
             {
@@ -73,7 +74,7 @@ namespace Terrix.Visual
                     return;
                 }
 
-                drawer.Value.UpdateScore(players.Find(drawer.Key).Country.Population);
+                drawer.Value.UpdateScore(playersCountryMapData.IPlayersProvider.Find(drawer.Key).Country.Population);
             }
         }
 

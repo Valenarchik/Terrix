@@ -47,6 +47,7 @@ namespace Terrix.Visual
 
         public void UpdateZone([NotNull] Country.UpdateCellsData data, float? score)
         {
+            Debug.Log($"Changed {data.PlayerId}");
             if (data == null)
             {
                 throw new ArgumentNullException(nameof(data));

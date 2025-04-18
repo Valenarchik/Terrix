@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 using Priority_Queue;
 using FishNet.Object;
 using Terrix.DTO;
+using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
 using Terrix.Settings;
@@ -26,11 +27,7 @@ namespace Terrix.Controllers
         [SerializeField] private MainMapCameraController cameraController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
         [SerializeField] private AllCountriesDrawer countriesDrawer;
-
-        [Header("Stretch borders")]
-        [SerializeField] private float alpha = 1.2f;
-
-        [SerializeField] private float beta = 10f;
+        [SerializeField] private BorderStretcher borderStretcher;
 
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
@@ -43,9 +40,10 @@ namespace Terrix.Controllers
 
         private IPhaseManager phaseManager;
         private GameEvents gameEvents;
-        private IPlayersProvider playersProvider;
+        private IPlayersProvider players;
         private HexMap map;
         private IGameDataProvider gameDataProvider;
+        private Player player;
         private Country country;
 
 
@@ -61,11 +59,12 @@ namespace Terrix.Controllers
 
             this.phaseManager = phaseManager ?? throw new ArgumentNullException(nameof(phaseManager));
             this.gameEvents = gameEvents ?? throw new ArgumentNullException(nameof(gameEvents));
-            this.playersProvider = playersProvider ?? throw new ArgumentNullException(nameof(playersProvider));
+            this.players = playersProvider ?? throw new ArgumentNullException(nameof(playersProvider));
             this.map = map ?? throw new ArgumentNullException(nameof(map));
             this.gameDataProvider = gameDataProvider ?? throw new ArgumentNullException(nameof(gameDataProvider));
 
-            this.country = this.playersProvider.Find(playerId).Country;
+            this.player = this.players.Find(playerId);
+            this.country = this.player.Country;
             this.gameEvents.OnGameReady(OnGameReady);
         }
 
@@ -149,17 +148,17 @@ namespace Terrix.Controllers
             }
         }
 
-        private bool IsBorder(Vector3Int pos)
+        private bool IsOurBorder(Vector3Int pos)
         {
-            return map.HasHex(pos) && map[pos].GetNeighbours(map).Any(hex => hex.PlayerId == null);
+            return map.TryGetHex(pos, out var hex) && country.GetInnerBorder().Contains(hex);
         }
 
         private bool IsNotOur(Vector3Int pos)
         {
-            return map.HasHex(pos) && map[pos].PlayerId != playerId;
+            return map.TryGetHex(pos, out var hex) && hex.PlayerId != playerId;
         }
 
-        private Country.UpdateCellsData GetUpdateData(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
+        private void UpdateDragZone(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
         {
             var changeData = new List<Country.CellChangeData>();
 
@@ -173,8 +172,10 @@ namespace Terrix.Controllers
                 changeData.Add(new Country.CellChangeData(addedHex, Country.UpdateCellMode.Add));
             }
 
-            return new Country.UpdateCellsData(AllCountriesDrawer.DRAG_ZONE_ID, changeData.ToArray());
+            var data = new Country.UpdateCellsData(AllCountriesDrawer.DRAG_ZONE_ID, changeData.ToArray());
+            countriesDrawer.UpdateDragZone(data, country.Population);
         }
+
         //TODO метод для дебага. Нужно будет потом убрать
         private Country.UpdateCellsData GetUpdateDataActual(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
         {
@@ -193,82 +194,15 @@ namespace Terrix.Controllers
             return new Country.UpdateCellsData(country.PlayerId, changeData.ToArray());
         }
 
-        private Hex[] StretchBorders(
-            Vector3Int startPos,
-            Vector3Int endPos)
+        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget,
+            out float attackPoints)
         {
-            var gameData = gameDataProvider.Get();
-
-            var start = map[startPos];
-            var end = map[endPos];
-
-            var direction = tilemap.CellToWorld(end.Position) - tilemap.CellToWorld(start.Position);
-            var result = new List<Hex>();
-            var visited = new HashSet<Hex>();
-            var priorityQueue = new SimplePriorityQueue<Hex, float>();
-
-            foreach (var neighbour in start.GetNeighbours(map))
-            {
-                if (!country.Contains(neighbour) || !neighbour.GetHexData(gameData).CanCapture)
-                {
-                    priorityQueue.Enqueue(neighbour, 0);
-                }
-            }
-
-            var remainingPoints = country.Population;
-            var targetReached = false;
-
-            while (priorityQueue.Count > 0 && remainingPoints > 0 && !targetReached)
-            {
-                priorityQueue.TryDequeue(out var cell);
-                if (visited.Contains(cell) || country.Contains(cell))
-                {
-                    continue;
-                }
-
-                var cellCost = cell.GetCost(playersProvider, gameData);
-                if (cellCost > remainingPoints)
-                {
-                    continue;
-                }
-
-                result.Add(cell);
-
-                if (end.Equals(cell))
-                {
-                    targetReached = true;
-                }
-
-                remainingPoints -= cellCost;
-                visited.Add(cell);
-
-
-                foreach (var neighbour in cell.GetNeighbours(map))
-                {
-                    if (country.Contains(neighbour) || visited.Contains(neighbour) ||
-                        !neighbour.GetHexData(gameData).CanCapture)
-                    {
-                        continue;
-                    }
-
-                    var priority = CalculatePriority(neighbour);
-                    priorityQueue.Enqueue(neighbour, -priority);
-                }
-            }
-
-            return result.ToArray();
-
-            float CalculatePriority(Hex current)
-            {
-                var delta = tilemap.CellToWorld(current.Position) - tilemap.CellToWorld(start.Position);
-
-                var projection = Vector3.Dot(delta.normalized, direction.normalized);
-
-                var distance = delta.magnitude;
-                var distanceFactor = 1f / (1f + distance);
-
-                return projection * alpha + distanceFactor * beta;
-            }
+            return borderStretcher.StretchBorders(startPos,
+                endPos,
+                map,
+                country,
+                out attackTarget,
+                out attackPoints);
         }
 
         private Vector3Int GetCellPosition(Vector2 pointPos)
@@ -279,20 +213,26 @@ namespace Terrix.Controllers
         [ObserversRpc]
         public void UpdateCountries_ToObserver(Dictionary<int, Country> countries)
         {
-            foreach (var currentPlayer in playersProvider.GetAll())
+            foreach (var currentPlayer in players.GetAll())
             {
                 currentPlayer.Country = countries[currentPlayer.ID];
                 currentPlayer.Country.Owner = currentPlayer;
                 // .First(currentCountry => currentCountry.PlayerId == currentPlayer.ID);
             }
 
-            country = playersProvider.Find(playerId).Country;
+            country = players.Find(playerId).Country;
         }
 
         public void UpdateCountries_OnClient(IPlayersProvider playersProvider)
         {
-            this.playersProvider = playersProvider;
+            this.players = playersProvider;
             country = playersProvider.Find(playerId).Country;
+        }
+
+        private void StartAttack(int? targetId, float points, IEnumerable<Hex> territory)
+        {
+            var target = targetId.HasValue ? players.Find(targetId.Value) : null;
+            commandsExecutor.ExecuteAttack(new Attack(Guid.NewGuid(), player, target, points, territory.ToHashSet()));
         }
     }
 }

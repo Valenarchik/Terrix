@@ -14,6 +14,9 @@ namespace Terrix.Controllers
             private Vector2 pointPosition;
 
             private Hex[] dragHexes;
+            private float attackPoints;
+            private int? attackTarget;
+
             private bool drag;
             private Vector3Int startDragHexPosition;
 
@@ -73,10 +76,9 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (CountryController.IsNotOur(cellPosition))
                 {
-                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition);
-                    var updateData = CountryController.GetUpdateData(dragHexes, newDragHexes);
-                    var score = CountryController.country.Population;
-                    CountryController.countriesDrawer.UpdateDragZone(updateData, score);
+                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition,
+                        out attackTarget, out attackPoints);
+                    CountryController.UpdateDragZone(dragHexes, newDragHexes);
                     dragHexes = newDragHexes;
                 }
             }
@@ -89,7 +91,7 @@ namespace Terrix.Controllers
                 }
 
                 var cellPosition = GetCellPosition();
-                if (CountryController.IsBorder(cellPosition))
+                if (CountryController.IsOurBorder(cellPosition))
                 {
                     startDragHexPosition = cellPosition;
                     CountryController.cameraController.EnableDrag = false;
@@ -106,7 +108,12 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (cellPosition == startDragHexPosition)
                 {
+                    Debug.Log("Started drag");
                     drag = true;
+                }
+                else
+                {
+                    Debug.Log("Not started drag");
                 }
             }
 
@@ -119,13 +126,8 @@ namespace Terrix.Controllers
 
                 drag = false;
                 var newDragHexes = Array.Empty<Hex>();
-                var updateData = CountryController.GetUpdateData(dragHexes, newDragHexes);
-                var score = CountryController.country.Population;
-                CountryController.countriesDrawer.UpdateDragZone(updateData, score);
-                // TODO убрать
-                var newUpdateData = CountryController.GetUpdateDataActual(newDragHexes, dragHexes);
-                CountryController.countriesDrawer.UpdateZone_ToServer(newUpdateData, score);
-                //
+                CountryController.UpdateDragZone(dragHexes, newDragHexes);
+                CountryController.StartAttack(attackTarget, attackPoints, dragHexes);
                 dragHexes = newDragHexes;
                 CountryController.cameraController.EnableDrag = true;
                 startDragHexPosition = DefaultStartDragHexPosition;

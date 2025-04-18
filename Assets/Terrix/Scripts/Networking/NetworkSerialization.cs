@@ -6,6 +6,7 @@ using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
+using Terrix.Network.DTO;
 using Terrix.Settings;
 using Terrix.Visual;
 using UnityEngine;
@@ -17,65 +18,49 @@ namespace Terrix.Networking
         public static void WriteHexMap(this Writer writer, HexMap value)
         {
             writer.Write(value.Hexes.ToArray());
-            writer.Write(value.CanCaptureHexes.ToArray());
             writer.WriteVector3Int(value.Size);
         }
 
         public static HexMap ReadHexMap(this Reader reader)
         {
             var hexes = reader.Read<Hex[]>();
-            var canCaptureHexes = reader.Read<Hex[]>();
             var size = reader.ReadVector3Int();
             var matrix = hexes.ToMatrix(size.x, size.y, size.z);
-            return new HexMap(matrix, canCaptureHexes);
+            var hexMap = new HexMap(matrix);
+            foreach (var hex in hexMap.Hexes)
+            {
+                hex.HexMap = hexMap;
+            }
+
+            return new HexMap(matrix);
         }
 
         public static void WriteHex(this Writer writer, Hex value)
         {
             writer.Write(value.HexType);
             writer.WriteVector3Int(value.Position);
-            writer.Write(value.NeighboursPositions);
+            writer.WriteVector3(value.WorldPosition);
             writer.Write(value.PlayerId);
         }
 
         public static Hex ReadHex(this Reader reader)
         {
-            return new Hex(reader.Read<HexType>(), reader.ReadVector3Int(), reader.Read<Vector3Int[]>(),
+            return new Hex(reader.Read<HexType>(), reader.ReadVector3Int(), reader.ReadVector3(),
                 reader.Read<int?>());
-        }
-
-        public static void WriteHexData(this Writer writer, HexData value)
-        {
-            writer.Write(value.HexType);
-            writer.Write(value.Income);
-            writer.Write(value.Resist);
-            writer.Write(value.CanCapture);
-            writer.Write(value.IsSeeTile);
-        }
-
-        public static HexData ReadHexData(this Reader reader)
-        {
-            return new HexData(reader.Read<HexType>(), reader.Read<float>(), reader.Read<float>(), reader.ReadBoolean(),
-                reader.ReadBoolean());
         }
 
         public static void WriteCountry(this Writer writer, Country value)
         {
-            writer.Write(value.GameDataProvider);
-            writer.WriteList(value.CellsSet.ToList());
+            writer.WriteList(value.Cells.ToList());
             writer.Write(value.Population);
             writer.WriteInt32(value.TotalCellsCount);
             writer.Write(value.DensePopulation);
-            // writer.Write(value.Map);
-            // writer.Write(value.Owner);
         }
 
         public static Country ReadCountry(this Reader reader)
         {
-            // return new Country(reader.Read<IGameDataProvider>(), reader.Read<Player>());
-            return new Country(reader.Read<IGameDataProvider>(),
+            return new Country(
                 reader.ReadListAllocated<Hex>(), reader.Read<float>(), reader.ReadInt32(), reader.Read<float>());
-            // reader.Read<HexMap>())
         }
 
         public static void WriteIGameDataProvider(this Writer writer, IGameDataProvider value)
@@ -165,36 +150,6 @@ namespace Terrix.Networking
                 reader.ReadString(), reader.ReadColor());
             player.Country.Owner = player;
             return player;
-        }
-
-        public static void WriteIPlayersProvider(this Writer writer, IPlayersProvider value)
-        {
-            if (value is PlayersProvider playersProvider)
-            {
-                writer.WriteUInt8Unpacked(1);
-                writer.Write(playersProvider);
-            }
-        }
-
-        public static IPlayersProvider ReadIPlayersProvider(this Reader reader)
-        {
-            var classType = reader.ReadUInt8Unpacked();
-            if (classType == 1)
-            {
-                return reader.Read<PlayersProvider>();
-            }
-
-            return default;
-        }
-
-        public static void WritePlayersProvider(this Writer writer, PlayersProvider value)
-        {
-            writer.WriteList(value.Players);
-        }
-
-        public static PlayersProvider ReadPlayersProvider(this Reader reader)
-        {
-            return new PlayersProvider(reader.ReadListAllocated<Player>());
         }
 
 
@@ -302,6 +257,189 @@ namespace Terrix.Networking
             }
 
             return result.ToArray();
+        }
+
+        public class PlayersCountryMapData
+        {
+            public IPlayersProvider IPlayersProvider;
+            public HexMap HexMap;
+
+            public PlayersCountryMapData(IPlayersProvider playersProvider, HexMap hexMap)
+            {
+                IPlayersProvider = playersProvider;
+                HexMap = hexMap;
+            }
+        }
+
+        public static void WritePlayersCountryMapData(this Writer writer,
+            PlayersCountryMapData value)
+        {
+            var map = value.HexMap;
+            writer.WriteInt32(map.Hexes.Length);
+            writer.WriteVector3Int(map.Size);
+            foreach (var hex in map.Hexes.ToArray())
+            {
+                WriteHex(hex);
+            }
+
+            var players = value.IPlayersProvider.GetAll();
+            writer.WriteInt32(players.Length);
+            foreach (var player in players)
+            {
+                writer.WriteBoolean(player is null);
+                if (player is not null)
+                {
+                    if (player is Bot bot)
+                    {
+                        writer.WriteUInt8Unpacked(1);
+                        writer.WriteInt32(bot.ID);
+                        writer.Write(bot.PlayerType);
+                        var country = bot.Country;
+                        var hexes = country.Cells;
+                        writer.WriteInt32(hexes.Count());
+
+                        foreach (var hex in hexes)
+                        {
+                            // writer.Write(hex.HexType);
+                            writer.WriteVector3Int(hex.Position);
+                            // writer.WriteVector3(hex.WorldPosition);
+                            // writer.Write(hex.PlayerId);
+                            // writer.Write(hex.Players); //TODO брать 
+                        }
+
+                        // writer.WriteList(country.Cells.ToList());
+                        writer.Write(country.Population);
+                        writer.WriteInt32(country.TotalCellsCount);
+                        writer.Write(country.DensePopulation);
+                        writer.WriteString(bot.PlayerName);
+                        writer.WriteColor(bot.PlayerColor);
+                    }
+                    else
+                    {
+                        writer.WriteUInt8Unpacked(2);
+                        writer.WriteInt32(player.ID);
+                        writer.Write(player.PlayerType);
+                        var country = player.Country;
+
+                        var hexes = country.Cells;
+                        writer.WriteInt32(hexes.Count());
+                        foreach (var hex in hexes)
+                        {
+                            writer.WriteVector3Int(hex.Position);
+
+                            // WriteHex(hex);
+                            // writer.Write(hex.Players); //TODO брать 
+                        }
+
+                        // writer.WriteList(country.Cells.ToList());
+                        writer.Write(country.Population);
+                        writer.WriteInt32(country.TotalCellsCount);
+                        writer.Write(country.DensePopulation);
+                        writer.WriteString(player.PlayerName);
+                        writer.WriteColor(player.PlayerColor);
+                    }
+                }
+            }
+
+            void WriteHex(Hex hex)
+            {
+                writer.Write(hex.HexType);
+                writer.WriteVector3Int(hex.Position);
+                writer.WriteVector3(hex.WorldPosition);
+                writer.Write(hex.PlayerId);
+            }
+            // writer.Write((PlayersProvider)value.IPlayersProvider);
+        }
+
+        public static PlayersCountryMapData ReadPlayersCountryMapData(this Reader reader)
+        {
+            // var players = new List<Player>();
+            var playersProvider = new PlayersProvider(new List<Player>());
+            var mapLength = reader.ReadInt32();
+            var mapSize = reader.ReadVector3Int();
+            var hexes = new Hex[mapLength];
+            for (int i = 0; i < mapLength; i++)
+            {
+                var hex = GetHex();
+                hexes[i] = hex;
+            }
+
+            var hexMap = new HexMap(hexes.ToMatrix(mapSize.x, mapSize.y, mapSize.z));
+
+            var playersCount = reader.ReadInt32();
+            for (int i = 0; i < playersCount; i++)
+            {
+                if (reader.ReadBoolean())
+                {
+                    continue;
+                }
+
+                var classType = reader.ReadUInt8Unpacked();
+                if (classType == 1)
+                {
+                    var bot = new Bot(reader.ReadInt32(), reader.Read<PlayerType>(), GetCountry(),
+                        reader.ReadString(), reader.ReadColor());
+                    bot.Country.Owner = bot;
+                    playersProvider.Players.Add(bot);
+                }
+                else
+                {
+                    var player = new Player(reader.ReadInt32(), reader.Read<PlayerType>(), GetCountry(),
+                        reader.ReadString(), reader.ReadColor());
+                    player.Country.Owner = player;
+                    playersProvider.Players.Add(player);
+                }
+            }
+
+            playersProvider.UpdatePlayersMap();
+            return new PlayersCountryMapData(playersProvider, hexMap);
+
+            Country GetCountry()
+            {
+                var hexes = new Hex[reader.ReadInt32()];
+                for (int i = 0; i < hexes.Count(); i++)
+                {
+                    hexes[i] = GetHexFormMap();
+                }
+
+                var population = reader.Read<float>();
+                var totalCellsCount = reader.ReadInt32();
+                var densePopulation = reader.Read<float>();
+                return new Country(hexes, population, totalCellsCount, densePopulation);
+            }
+
+            Hex GetHex()
+            {
+                var hexType = reader.Read<HexType>();
+                var position = reader.ReadVector3Int();
+                var worldPosition = reader.ReadVector3();
+                var id = reader.Read<int?>();
+                return new Hex(hexType, position, worldPosition, id, playersProvider);
+            }
+
+            Hex GetHexFormMap()
+            {
+                // var hexType = reader.Read<HexType>();
+                var position = reader.ReadVector3Int();
+                // var worldPosition = reader.ReadVector3();
+                // var id = reader.Read<int?>();
+                return hexMap.FindHex(position);
+            }
+        }
+
+        public static void WriteAttackMessage(this Writer writer, AttackMessage value)
+        {
+            writer.Write(value.ID);
+            writer.WriteInt32(value.Owner);
+            writer.Write(value.Target);
+            writer.Write(value.Points);
+            writer.Write(value.Territory);
+        }
+
+        public static AttackMessage ReadAttackMessage(this Reader reader)
+        {
+            return new AttackMessage(reader.Read<Guid>(), reader.ReadInt32(), reader.Read<int?>(), reader.Read<float>(),
+                reader.Read<Vector3Int[]>());
         }
     }
 }
