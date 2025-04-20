@@ -10,7 +10,7 @@ namespace Terrix.Visual
     public class CountryDrawer : MonoBehaviour
     {
         [SerializeField] private Tilemap zoneTilemap;
-        [SerializeField] private Tile zoneTile;
+        [SerializeField] private TileBase zoneTile;
 
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private int playerId = int.MinValue;
