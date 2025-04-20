@@ -54,28 +54,37 @@ namespace Terrix.Visual
             drawersByIds[updateData.PlayerId].UpdateZone(updateData, score);
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        public void UpdateZone_ToServer(Country.UpdateCellsData updateData, float score)
-        {
-            UpdateZone_ToObserver(updateData, score);
-        }
+        // [ServerRpc(RequireOwnership = false)]
+        // public void UpdateZone_ToServer(Country.UpdateCellsData updateData, float score)
+        // {
+        //     UpdateZone_ToObserver(updateData, score);
+        // }
 
         public void UpdateDragZone(Country.UpdateCellsData updateData, float score)
         {
             dragZoneDrawer.UpdateZone(updateData, score);
         }
 
-        public void UpdateScore_OnClient(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
+        // public void UpdateScore_OnClient(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
+        public void UpdateScore_OnClient(SimplifiedCountry[] simplifiedCountries)
         {
-            foreach (var drawer in drawersByIds)
+            foreach (var simplifiedCountry in simplifiedCountries)
             {
-                if (drawer.Key == -1)
+                if (simplifiedCountry.PlayerId == -1)
                 {
                     return;
                 }
-
-                drawer.Value.UpdateScore(playersCountryMapData.IPlayersProvider.Find(drawer.Key).Country.Population);
+                drawersByIds[simplifiedCountry.PlayerId].UpdateScore(simplifiedCountry.Population);
             }
+            // foreach (var drawer in drawersByIds)
+            // {
+            //     if (drawer.Key == -1)
+            //     {
+            //         return;
+            //     }
+            //
+            //     drawer.Value.UpdateScore(playersCountryMapData.IPlayersProvider.Find(drawer.Key).Country.Population);
+            // }
         }
 
         public class Settings

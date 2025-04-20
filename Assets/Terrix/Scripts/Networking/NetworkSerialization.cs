@@ -441,5 +441,51 @@ namespace Terrix.Networking
             return new AttackMessage(reader.Read<Guid>(), reader.ReadInt32(), reader.Read<int?>(), reader.Read<float>(),
                 reader.Read<Vector3Int[]>());
         }
+
+        public static void WriteSimplifiedCountry(this Writer writer, SimplifiedCountry value)
+        {
+            writer.WriteInt32(value.PlayerId);
+            writer.Write(value.Population);
+            writer.WriteInt32(value.CellsCount);
+        }
+
+        public static SimplifiedCountry ReadSimplifiedCountry(this Reader reader)
+        {
+            return new SimplifiedCountry(reader.ReadInt32(), reader.Read<float>(), reader.ReadInt32());
+        }
+
+        public static void WriteSimplifiedHex(this Writer writer, SimplifiedHex value)
+        {
+            writer.WriteVector3Int(value.Position);
+            writer.Write(value.PlayerId);
+        }
+
+        public static SimplifiedHex ReadSimplifiedHex(this Reader reader)
+        {
+            return new SimplifiedHex(reader.ReadVector3Int(), reader.Read<int?>());
+        }
+
+        public static void WriteUpdateSimplifiedCellsData(this Writer writer, Country.UpdateSimplifiedCellsData value)
+        {
+            writer.WriteInt32(value.PlayerId);
+            writer.WriteList(value.ChangeData);
+        }
+
+        public static Country.UpdateSimplifiedCellsData ReadUpdateSimplifiedCellsData(this Reader reader)
+        {
+            return new Country.UpdateSimplifiedCellsData(reader.ReadInt32(),
+                reader.ReadListAllocated<Country.SimplifiedCellChangeData>());
+        }
+
+        public static void WriteSimplifiedCellChangeData(this Writer writer, Country.SimplifiedCellChangeData value)
+        {
+            writer.WriteVector3Int(value.Position);
+            writer.Write(value.Mode);
+        }
+
+        public static Country.SimplifiedCellChangeData ReadSimplifiedCellChangeData(this Reader reader)
+        {
+            return new Country.SimplifiedCellChangeData(reader.ReadVector3Int(), reader.Read<Country.UpdateCellMode>());
+        }
     }
 }

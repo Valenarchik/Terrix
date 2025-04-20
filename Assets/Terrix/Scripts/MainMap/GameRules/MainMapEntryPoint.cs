@@ -6,6 +6,7 @@ using FishNet.Object;
 using Terrix.Controllers;
 using System.Linq;
 using FishNet.Transporting;
+using MoreLinq.Extensions;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Map;
@@ -41,7 +42,7 @@ namespace Terrix.Game.GameRules
         private HexMap map;
         private ICountriesCollector countriesCollector;
         private IGameReferee referee;
-        private IAttackInvoker attackInvoker;
+        private AttackInvoker attackInvoker;
         private IPhaseManager phaseManager;
         private IPlayersProvider players;
         private Dictionary<NetworkConnection, int> playersIds = new();
@@ -53,16 +54,70 @@ namespace Terrix.Game.GameRules
 
         private void TickGenerator_OnUpdated()
         {
-            UpdatePlayersInfo_ToObserver(new NetworkSerialization.PlayersCountryMapData(players, map));
+            UpdateCountryHexes(attackInvoker.ChangedCellsDatas.Values.ToList());
+            UpdateCountriesPopulation_ToObserver(players.GetAll().Select(player => player.Country)
+                .Select(country => new SimplifiedCountry(country.PlayerId, country.Population, country.TotalCellsCount))
+                .ToArray());
         }
 
         [ObserversRpc]
-        private void UpdatePlayersInfo_ToObserver(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
+        public void UpdateCountryHexes(List<Country.UpdateSimplifiedCellsData> updateSimplifiedCellsDatas)
         {
-            players = playersCountryMapData.IPlayersProvider;
-            map = playersCountryMapData.HexMap;
-            countryController.UpdateData_OnClient(playersCountryMapData);
-            allCountriesDrawer.UpdateScore_OnClient(playersCountryMapData);
+            foreach (var updateSimplifiedCellsData in updateSimplifiedCellsDatas)
+            {
+                var addedHexes = new List<Hex>();
+                var removedHexes = new List<Hex>();
+                foreach (var simplifiedCellChangeData in updateSimplifiedCellsData.ChangeData)
+                {
+                    switch (simplifiedCellChangeData.Mode)
+                    {
+                        case Country.UpdateCellMode.Add:
+                            addedHexes.Add(map.FindHex(simplifiedCellChangeData.Position));
+                            break;
+                        case Country.UpdateCellMode.Remove:
+                            removedHexes.Add(map.FindHex(simplifiedCellChangeData.Position));
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
+
+                players.Find(updateSimplifiedCellsData.PlayerId).Country.RemoveAndAdd(removedHexes, addedHexes, false);
+            }
+
+            // var dictionary = new Dictionary<int, List<Hex>>();
+            // foreach (var simplifiedHex in simplifiedHexes)
+            // {
+            //     // map.FindHex(simplifiedHex.Position).PlayerId = simplifiedHex.PlayerId;
+            //     if (simplifiedHex.PlayerId is null)
+            //     {
+            //         continue;
+            //     }
+            //
+            //     dictionary.TryAdd((int)simplifiedHex.PlayerId, new List<Hex>());
+            //     dictionary[(int)simplifiedHex.PlayerId].Add(map.FindHex(simplifiedHex.Position));
+            // }
+            //
+            // foreach (var id in dictionary.Keys)
+            // {
+            //     players.Find(id).Country.Add(dictionary[id]);
+            // }
+        }
+
+        [ObserversRpc]
+        private void UpdateCountriesPopulation_ToObserver(
+            SimplifiedCountry[] simplifiedCountries)
+        {
+            foreach (var simplifiedCountry in simplifiedCountries)
+            {
+                players.Find(simplifiedCountry.PlayerId).Country
+                    .SetPopulation(simplifiedCountry.Population, simplifiedCountry.CellsCount);
+            }
+
+            // players = playersCountryMapData.IPlayersProvider;
+            // map = playersCountryMapData.HexMap;
+            // countryController.UpdateData_OnClient(simplifiedHex);
+            allCountriesDrawer.UpdateScore_OnClient(simplifiedCountries);
             leaderboardUI.UpdateInfo(players);
         }
 
@@ -154,9 +209,18 @@ namespace Terrix.Game.GameRules
                 attackInvoker,
                 referee
             });
-            countryController.UpdateCountries_ToObserver(
-                allCountriesHandler.Countries.ToDictionary(country => country.PlayerId));
+            // countryController.UpdateCountries_ToObserver(
+            //     allCountriesHandler.Countries.ToDictionary(country => country.PlayerId));
+            UpdatePlayersCountryMapData_ToObserver(new NetworkSerialization.PlayersCountryMapData(players, map));
         }
+
+        [ObserversRpc]
+        private void UpdatePlayersCountryMapData_ToObserver(
+            NetworkSerialization.PlayersCountryMapData playersCountryMapData)
+        {
+            countryController.UpdateData_OnClient(playersCountryMapData);
+        }
+
 
         [ObserversRpc]
         private void ChangePhase()
@@ -167,19 +231,11 @@ namespace Terrix.Game.GameRules
         private void Initialize_OnServer(ServerSettings settings)
         {
             gameDataProvider = new GameDataProvider();
-            //TODO Страрая карта
-            // map = mapGenerator.GenerateMap(settings.MapSettings);
-
-            // events = new GameEvents();
-            // attackInvoker = new AttackInvoker();
             phaseManager = new PhaseManager();
             playersFactory = new PlayersFactory(gameDataProvider);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
             mapGenerator.Initialize(gameDataProvider, players);
             map = mapGenerator.GenerateMap(serverSettings.MapSettings);
-            // countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map,
-            //     gameDataProvider);
-
             attackInvoker = new AttackInvoker();
 
             gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
@@ -251,6 +307,7 @@ namespace Terrix.Game.GameRules
         {
             var iPlayersProvider = playersCountryMapData.IPlayersProvider;
             players = iPlayersProvider;
+            map = playersCountryMapData.HexMap;
             var playerColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].Color;
             if (playerColor != null)
             {

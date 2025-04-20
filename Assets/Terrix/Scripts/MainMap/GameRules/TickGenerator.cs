@@ -48,9 +48,8 @@ namespace Terrix.Game.GameRules
                 foreach (var handler in tickHandlersOrder)
                 {
                     handler.HandleTick();
-                    OnUpdated?.Invoke();
                 }
-
+                OnUpdated?.Invoke();
                 var gameData = gameDataProvider.Get();
                 yield return new WaitForSeconds(gameData.TickDurationInSeconds);
             }

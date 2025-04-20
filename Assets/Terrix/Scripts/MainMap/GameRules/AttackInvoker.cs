@@ -16,6 +16,8 @@ namespace Terrix.Game.GameRules
         private readonly List<Attack> attacksOrder = new();
         private readonly Dictionary<Guid, Attack> attacksMap = new();
         private readonly Dictionary<Guid, AttackState> attacksStates = new();
+        // public List<SimplifiedHex> ChangedHexes { get; private set; } = new();
+        public Dictionary<int, Country.UpdateSimplifiedCellsData> ChangedCellsDatas { get; private set; } = new();
 
         public void AddAttack(Attack attack)
         {
@@ -39,6 +41,7 @@ namespace Terrix.Game.GameRules
 
         public void HandleTick()
         {
+            ChangedCellsDatas.Clear();
             Attacks();
         }
 
@@ -72,7 +75,7 @@ namespace Terrix.Game.GameRules
                 FinishAttack(attackState.Attack);
                 return;
             }
-            
+
             var totalCost = intersection.Sum(h => h.GetCost());
 
             if (totalCost > attackState.CurrentPoints)
@@ -87,18 +90,34 @@ namespace Terrix.Game.GameRules
             {
                 attackState.Attack.Target.Country.Remove(intersection);
             }
-            
+
             attackState.Attack.Owner.Country.Add(intersection);
+
+            if (attackState.Attack.Target is not null)
+            {
+                var targetId = attackState.Attack.Target.ID;
+                ChangedCellsDatas.TryAdd(targetId,
+                    new Country.UpdateSimplifiedCellsData(targetId, new List<Country.SimplifiedCellChangeData>()));
+                ChangedCellsDatas[targetId].ChangeData.AddRange(intersection.Select(hex =>
+                    new Country.SimplifiedCellChangeData(hex.Position, Country.UpdateCellMode.Remove)));
+            }
+
+            var attackerId = attackState.Attack.Owner.ID;
+
+            ChangedCellsDatas.TryAdd(attackerId,
+                new Country.UpdateSimplifiedCellsData(attackerId, new List<Country.SimplifiedCellChangeData>()));
+            ChangedCellsDatas[attackerId].ChangeData.AddRange(intersection.Select(hex =>
+                new Country.SimplifiedCellChangeData(hex.Position, Country.UpdateCellMode.Add)));
         }
 
         private void FinishAttack(Attack attack)
         {
             var state = attacksStates[attack.ID];
             attack.Owner.Country.AddConstIncome(state.CurrentPoints);
-            
+
             RemoveAttackInternal(attack);
         }
-        
+
         private class AttackState
         {
             public Attack Attack { get; }

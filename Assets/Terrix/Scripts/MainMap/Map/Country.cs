@@ -19,8 +19,8 @@ namespace Terrix.Map
 
         private readonly Dictionary<HexType, int> cellsByTypeCount;
 
-        private readonly HashSet<Hex> cellsSet = new ();
-        
+        public HashSet<Hex> cellsSet = new();
+
         private bool innerBorderUpdated;
         private readonly HashSet<Hex> innerBorder = new();
 
@@ -34,7 +34,7 @@ namespace Terrix.Map
         public IEnumerable<Hex> Cells => cellsSet;
         public Player Owner { get; set; }
         public event Action<UpdateCellsData> OnCellsUpdate;
-        
+
         public Country([NotNull] IGameDataProvider gameDataProvider, [NotNull] Player owner)
         {
             this.gameDataProvider = gameDataProvider;
@@ -84,6 +84,13 @@ namespace Terrix.Map
             CalculateDensePopulation();
         }
 
+        public void SetPopulation(float population, int cellsCount)
+        {
+            TotalCellsCount = cellsCount;
+            Population = population;
+            CalculateDensePopulation();
+        }
+
         private void CalculateDensePopulation()
         {
             if (TotalCellsCount != 0)
@@ -119,7 +126,7 @@ namespace Terrix.Map
             RemoveAndAdd(cellsSet, addedHexesAfterClear);
         }
 
-        public void RemoveAndAdd(IEnumerable<Hex> removedHexes, IEnumerable<Hex> addedHexes)
+        public void RemoveAndAdd(IEnumerable<Hex> removedHexes, IEnumerable<Hex> addedHexes, bool onServer = true)
         {
             var removedSet = removedHexes.ToHashSet();
             var addedSet = addedHexes.ToHashSet();
@@ -130,10 +137,10 @@ namespace Terrix.Map
 
             var data = new UpdateCellsData(PlayerId, changeData.ToArray());
             Debug.Log($"{PlayerId}: {removedHexes.Count()} {addedHexes.Count()}");
-            UpdateCells(data);
+            UpdateCells(data, onServer);
         }
 
-        public void UpdateCells([NotNull] UpdateCellsData data)
+        public void UpdateCells([NotNull] UpdateCellsData data, bool onServer)
         {
             ValidateUpdateCellsData(data);
 
@@ -169,8 +176,10 @@ namespace Terrix.Map
 
             innerBorderUpdated = true;
             outerBorderUpdated = true;
-            
-            OnCellsUpdate?.Invoke(data);
+            if (onServer)
+            {
+                OnCellsUpdate?.Invoke(data);
+            }
         }
 
         public HashSet<Hex> GetInnerBorder()
@@ -201,7 +210,7 @@ namespace Terrix.Map
                 {
                     outerBorder.Add(hex);
                 }
-            
+
                 outerBorder.ExceptWith(cellsSet);
             }
 
@@ -245,6 +254,30 @@ namespace Terrix.Map
             }
         }
 
+        public class UpdateSimplifiedCellsData
+        {
+            public int PlayerId { get; }
+            public List<SimplifiedCellChangeData> ChangeData { get; }
+
+            public UpdateSimplifiedCellsData(int playerId, List<SimplifiedCellChangeData> changeData)
+            {
+                PlayerId = playerId;
+                ChangeData = changeData ?? throw new ArgumentNullException(nameof(changeData));
+            }
+        }
+
+        public struct SimplifiedCellChangeData
+        {
+            public Vector3Int Position { get; set; }
+            public UpdateCellMode Mode { get; set; }
+
+            public SimplifiedCellChangeData(Vector3Int positon, UpdateCellMode mode)
+            {
+                Position = positon;
+                Mode = mode;
+            }
+        }
+
         public enum UpdateCellMode
         {
             Add,
@@ -259,6 +292,20 @@ namespace Terrix.Map
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+    }
+
+    public class SimplifiedCountry
+    {
+        public int PlayerId { get; private set; }
+        public float Population { get; private set; }
+        public int CellsCount { get; private set; }
+
+        public SimplifiedCountry(int playerId, float population, int cellsCount)
+        {
+            PlayerId = playerId;
+            Population = population;
+            CellsCount = cellsCount;
         }
     }
 }

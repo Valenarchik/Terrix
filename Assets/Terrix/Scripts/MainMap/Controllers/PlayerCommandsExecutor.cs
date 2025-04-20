@@ -20,13 +20,14 @@ namespace Terrix.Controllers
     //На клиенте тоже, только пустышка нужна
     public class PlayerCommandsExecutor : NetworkBehaviour
     {
+        [SerializeField] private MainMapEntryPoint mainMapEntryPoint;
         private HexMap map;
         private IPhaseManager phaseManager;
         private IPlayersProvider playerProvider;
         private IGameDataProvider gameDataProvider;
         private IAttackMassageEncoder attackMassageEncoder;
         private IAttackInvoker attackInvoker;
-        
+
         private bool initialized;
 
         private TaskCompletionSource<bool> tcs;
@@ -44,7 +45,7 @@ namespace Terrix.Controllers
             this.gameDataProvider = gameDataProvider;
             this.attackMassageEncoder = attackMassageEncoder;
             this.attackInvoker = attackInvoker;
-            
+
             initialized = true;
         }
 
@@ -155,7 +156,7 @@ namespace Terrix.Controllers
         private void ChooseInitialCountryPosition(Player player, Vector3Int pos, out Hex[] captureHexes)
         {
             var country = player.Country;
-            var hexes = new List<Hex>(1 + 6) {map[pos]};
+            var hexes = new List<Hex>(1 + 6) { map[pos] };
             foreach (var hex in map[pos].GetNeighbours())
             {
                 if (hex.GetHexData().CanCapture)
@@ -166,7 +167,16 @@ namespace Terrix.Controllers
 
             captureHexes = hexes.ToArray();
             country.ClearAndAdd(hexes.ToArray());
+            mainMapEntryPoint.UpdateCountryHexes(new List<Country.UpdateSimplifiedCellsData>()
+            {
+                new(country.PlayerId,
+                    hexes.Select(hex => new Country.SimplifiedCellChangeData(hex.Position, Country.UpdateCellMode.Add))
+                        .ToList())
+            });
+            // new List<Country.SimplifiedCellChangeData>()))}hexes.Select(hex => new SimplifiedHex(hex.Position, player.ID))
+            // .ToArray());
         }
+
 
         // [Server]
         public void ChooseRandomInitialCountryPosition(IEnumerable<Player> players,
@@ -191,6 +201,7 @@ namespace Terrix.Controllers
         }
 
         #region Attack
+
         //[Client]
         public void ExecuteAttack([NotNull] Attack attack)
         {
@@ -199,15 +210,15 @@ namespace Terrix.Controllers
         }
 
         //[Server]
-        [ServerRpc (RequireOwnership = false)]
+        [ServerRpc(RequireOwnership = false)]
         private void ExecuteAttack(AttackMessage msg)
         {
-             var attack = attackMassageEncoder.Decode(msg);
+            var attack = attackMassageEncoder.Decode(msg);
             attackInvoker.AddAttack(attack);
         }
-        
+
         #endregion
-        
+
         private void ValidateInitialization()
         {
             if (!initialized)

@@ -211,18 +211,18 @@ namespace Terrix.Controllers
             return MapUtilities.GetMousePosition(pointPos, camera, tilemap);
         }
 
-        [ObserversRpc]
-        public void UpdateCountries_ToObserver(Dictionary<int, Country> countries)
-        {
-            foreach (var currentPlayer in players.GetAll())
-            {
-                currentPlayer.Country = countries[currentPlayer.ID];
-                currentPlayer.Country.Owner = currentPlayer;
-                // .First(currentCountry => currentCountry.PlayerId == currentPlayer.ID);
-            }
-
-            country = players.Find(playerId).Country;
-        }
+        // [ObserversRpc]
+        // public void UpdateCountries_ToObserver(Dictionary<int, Country> countries)
+        // {
+        //     foreach (var currentPlayer in players.GetAll())
+        //     {
+        //         currentPlayer.Country = countries[currentPlayer.ID];
+        //         currentPlayer.Country.Owner = currentPlayer;
+        //         // .First(currentCountry => currentCountry.PlayerId == currentPlayer.ID);
+        //     }
+        //
+        //     country = players.Find(playerId).Country;
+        // }
 
         // public void UpdateCountries_OnClient(IPlayersProvider playersProvider)
         // {
@@ -231,9 +231,10 @@ namespace Terrix.Controllers
         // }
 
         public void UpdateData_OnClient(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
+        // public void UpdateData_OnClient(SimplifiedHex simplifiedHex)
         {
-            players = playersCountryMapData.IPlayersProvider;
-            map = playersCountryMapData.HexMap;
+            // players = playersCountryMapData.IPlayersProvider;
+            // map = playersCountryMapData.HexMap;
             country = players.Find(playerId).Country;
         }
 
