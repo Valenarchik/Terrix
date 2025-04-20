@@ -18,8 +18,6 @@ namespace Terrix.Game.GameRules
     public class MainMapEntryPoint : MonoSingleton<MainMapEntryPoint>
     {
         [Header("References")]
-        [SerializeField] private HexMapGenerator mapGenerator;
-
         [SerializeField] private TickGenerator tickGenerator;
         [SerializeField] private AllCountriesHandler allCountriesHandler;
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
@@ -27,6 +25,11 @@ namespace Terrix.Game.GameRules
         [SerializeField] private MainMapCameraController cameraController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
 
+        [Header("MapReferences")]
+        [SerializeField] private HexMapGenerator mapGenerator;
+        [SerializeField] private HexMapRenderer mapRenderer;
+        [SerializeField] private HexMapGeneratorSettingsSO defaultMapGenerationSettings;
+        
         private IGameDataProvider gameDataProvider;
         private IPlayersFactory playersFactory;
         private IGameRefereeFactory gameRefereeFactory;
@@ -56,7 +59,7 @@ namespace Terrix.Game.GameRules
             
             // временно
             var serverSettings = new ServerSettings(
-                mapGenerator.DefaultSettingsSo.Get(),
+                defaultMapGenerationSettings.Get(),
                 new GameReferee.Settings(GameModeType.FFA, 0.05f),
                 new PlayersAndBots(1, 100),
                 new AllCountriesDrawer.Settings
@@ -82,7 +85,11 @@ namespace Terrix.Game.GameRules
         private IEnumerator GamePipeline(ServerSettings serverSettings, ClientSettings clientSettings)
         {
             Initialize(serverSettings, clientSettings);
+            
+            mapRenderer.RenderMap(map);
+            
             var gameData = gameDataProvider.Get();
+            
             game.StartGame();
 
             phaseManager.NextPhase();

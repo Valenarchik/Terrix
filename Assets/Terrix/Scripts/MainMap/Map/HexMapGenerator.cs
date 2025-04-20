@@ -4,56 +4,50 @@ using System.Linq;
 using CustomUtilities.Extensions;
 using JetBrains.Annotations;
 using Terrix.DTO;
+using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Settings;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 namespace Terrix.Map
 {
-    public class HexMapGenerator : MonoBehaviour
+    public class HexMapGenerator: MonoBehaviour
     {
-        [SerializeField] private Tilemap tilemap;
-        [SerializeField] private HexMapGeneratorSettingsSO initialSettingsSo;
-
+        [SerializeField] private Grid grid;
+        
         private IGameDataProvider gameDataProvider;
         private IPlayersProvider players;
         
         private Settings settings;
-
-        public HexMapGeneratorSettingsSO DefaultSettingsSo => initialSettingsSo;
 
         public void Initialize([NotNull] IGameDataProvider gameData, [NotNull] IPlayersProvider players)
         {
             this.gameDataProvider = gameData ?? throw new ArgumentNullException(nameof(gameData));
             this.players = players ?? throw new ArgumentNullException(nameof(players));
         }
-        
-        public HexMap GenerateMap(Settings initSettings)
+
+        public void InitializeMocks()
         {
-            ValidateSettings(initSettings);
-            this.settings = AssignSettings(initSettings);
-
-            GenerateData(out var tileData, out var map);
-            tilemap.SetTiles(tileData, true);
-
-            return map;
+            this.gameDataProvider = new GameDataProvider();
+            this.players = new PlayersProvider(Enumerable.Empty<Player>());
         }
-
-        private void GenerateData(out TileChangeData[] tileChangeData, out HexMap map)
+        
+        public HexMap GenerateMap(Settings settings)
         {
+            ValidateSettings(settings);
+            this.settings = AssignSettings(settings);
+
             var gameData = gameDataProvider.Get();
             var texture2DWidth = settings.Texture2D.width;
             var texture2DHeight = settings.Texture2D.height;
 
             var pixels = settings.Texture2D.GetPixels();
-            tileChangeData = new TileChangeData[texture2DWidth * texture2DHeight];
 
             var mapSize = settings.Transpose
                 ? new Vector3Int(texture2DHeight, texture2DWidth, 1)
                 : new Vector3Int(texture2DWidth, texture2DHeight, 1);
 
-            map = new HexMap(mapSize);
+            var map = new HexMap(mapSize);
 
             for (var y = 0; y < texture2DHeight; y++)
             {
@@ -65,18 +59,12 @@ namespace Terrix.Map
                     var data = FindData(pixelHeight);
                     var position = settings.Transpose ? new Vector3Int(y, x, 0) : new Vector3Int(x, y, 0);
 
-                    tileChangeData[i] = new TileChangeData
-                    {
-                        position = new Vector3Int(position.x, position.y),
-                        tile = data.Tile,
-                        color = Color.white,
-                        transform = Matrix4x4.identity
-                    };
-
-                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position, tilemap.CellToWorld(position), map, gameDataProvider, players);
+                    var hex = new Hex(gameData.CellsStats[data.HexType].HexType, position, grid.CellToWorld(position), map, gameDataProvider, players);
                     map[hex.Position.x, hex.Position.y, 0] = hex;
                 }
             }
+
+            return map;
         }
 
         private Settings.HexData FindData(float pixelHeight)
@@ -123,13 +111,11 @@ namespace Terrix.Map
             {
                 public HexType HexType { get; set; }
                 public float Height { get; set; }
-                public Tile Tile { get; set; }
 
-                public HexData(HexType hexType, float height, Tile tile)
+                public HexData(HexType hexType, float height)
                 {
                     HexType = hexType;
                     Height = height;
-                    Tile = tile;
                 }
             }
         }

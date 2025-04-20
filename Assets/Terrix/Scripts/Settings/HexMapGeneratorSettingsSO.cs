@@ -21,7 +21,6 @@ namespace Terrix.Settings
         {
             public HexType HexType;
             [Range(0, 1)] public float Height;
-            public Tile Tile;
         }
 
         public HexMapGenerator.Settings Get()
@@ -32,7 +31,7 @@ namespace Terrix.Settings
         private List<HexMapGenerator.Settings.HexData> GetHexData()
         {
             return HexDatas
-                .Select(data => new HexMapGenerator.Settings.HexData(data.HexType, data.Height, data.Tile))
+                .Select(data => new HexMapGenerator.Settings.HexData(data.HexType, data.Height))
                 .ToList();
         }
     }
