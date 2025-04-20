@@ -41,10 +41,10 @@ namespace Terrix.Game.GameRules
                 }
                 else
                 {
-                    losePercent = (float) player.Country.MaxCellsCount / player.Country.MaxCellsCount;
+                    losePercent = (float) player.Country.TotalCellsCount / player.Country.MaxCellsCount;
                 }
 
-                if (losePercent > settings.PercentOfLose)
+                if (losePercent < settings.PercentOfLose)
                 {
                     yield return player;
                 }

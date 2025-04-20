@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Linq;
 using CustomUtilities.DataStructures;
+using CustomUtilities.Extensions;
 using Terrix.Controllers;
 using Terrix.DTO;
 using Terrix.Entities;
@@ -41,21 +42,31 @@ namespace Terrix.Game.GameRules
 
         private void Start()
         {
+            var zones = Enumerable.Range(0, 101)
+                .Select(i =>
+                {
+                    var randomColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+                    
+                    return new ZoneData(i)
+                    {
+                        Color = randomColor.WithAlpha(0.5f),
+                        BorderColor = randomColor
+                    };
+                }).ToArray();
+            
             // временно
             var serverSettings = new ServerSettings(
                 mapGenerator.DefaultSettingsSo.Get(),
                 new GameReferee.Settings(GameModeType.FFA, 0.05f),
                 new PlayersAndBots(1, 100),
-                new AllCountriesDrawer.Settings(Enumerable.Range(0, 101)
-                    .Select(i => new ZoneData(i)
+                new AllCountriesDrawer.Settings
+                {
+                    Zones = zones,
+                    DragZone = new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID)
                     {
-                        Color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f))
-                    })
-                    .ToArray(),
-                    new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID)
-                    {
-                        Color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f))
-                    })
+                        Color = zones[0].Color.Value
+                    }   
+                }
             );
 
             var clientSettings = new ClientSettings(0);

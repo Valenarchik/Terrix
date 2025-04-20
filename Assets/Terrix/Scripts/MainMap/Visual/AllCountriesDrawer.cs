@@ -56,14 +56,8 @@ namespace Terrix.Visual
         
         public class Settings
         {
-            public ZoneData[] Zones { get; }
-            public ZoneData DragZone { get; }
-            
-            public Settings(ZoneData[] zones, ZoneData dragZone)
-            {
-                Zones = zones;
-                DragZone = dragZone;
-            }
+            public ZoneData[] Zones { get; set; }
+            public ZoneData DragZone { get; set; }
         }
     }
 }

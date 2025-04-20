@@ -8,6 +8,7 @@ namespace Terrix.Visual
         public Texture2D Texture { get; set; } = null;
         public Color? Color { get; set; } = null;
         public Vector2? TileSizeModifier { get; set; } = null;
+        public Color? BorderColor { get; set; } = null;
         
         public ZoneData(int playerId)
         {
