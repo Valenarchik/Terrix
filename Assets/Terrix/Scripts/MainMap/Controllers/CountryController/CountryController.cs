@@ -37,7 +37,7 @@ namespace Terrix.Controllers
         private Dictionary<CountryControllerStateType, CountryControllerState> states;
 
         private IPhaseManager phaseManager;
-        private GameEvents gameEvents;
+        private IGame game;
         private IPlayersProvider players;
         private HexMap map;
         private IGameDataProvider gameDataProvider;
@@ -47,7 +47,7 @@ namespace Terrix.Controllers
 
         public void Initialize(int playerId,
             [NotNull] IPhaseManager phaseManager,
-            [NotNull] GameEvents gameEvents,
+            [NotNull] IGame game,
             [NotNull] IPlayersProvider playersProvider,
             [NotNull] HexMap map,
             [NotNull] IGameDataProvider gameDataProvider)
@@ -56,7 +56,7 @@ namespace Terrix.Controllers
             gameObject.name = $"{nameof(CountryController)}_{playerId}";
 
             this.phaseManager = phaseManager ?? throw new ArgumentNullException(nameof(phaseManager));
-            this.gameEvents = gameEvents ?? throw new ArgumentNullException(nameof(gameEvents));
+            this.game = game ?? throw new ArgumentNullException(nameof(game));
             this.players = playersProvider ?? throw new ArgumentNullException(nameof(playersProvider));
             this.map = map ?? throw new ArgumentNullException(nameof(map));
             this.gameDataProvider = gameDataProvider ?? throw new ArgumentNullException(nameof(gameDataProvider));
@@ -91,7 +91,7 @@ namespace Terrix.Controllers
             };
             stateMachine.Initialize(states[CountryControllerStateType.Idle]);
 
-            gameEvents.OnGameReady(OnGameReady);
+            game.OnGameStarted(OnGameReady);
         }
 
         private void Update()

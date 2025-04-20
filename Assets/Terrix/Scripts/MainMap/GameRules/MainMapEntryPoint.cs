@@ -30,7 +30,7 @@ namespace Terrix.Game.GameRules
         private IPlayersFactory playersFactory;
         private IGameRefereeFactory gameRefereeFactory;
 
-        private GameEvents events;
+        private IGame game;
         private HexMap map;
         private ICountriesCollector countriesCollector;
         private IGameReferee referee;
@@ -44,7 +44,7 @@ namespace Terrix.Game.GameRules
             // временно
             var serverSettings = new ServerSettings(
                 mapGenerator.DefaultSettingsSo.Get(),
-                new GameReferee.Settings(GameModeType.FFA),
+                new GameReferee.Settings(GameModeType.FFA, 0.05f),
                 new PlayersAndBots(1, 100),
                 new AllCountriesDrawer.Settings(Enumerable.Range(0, 101)
                     .Select(i => new ZoneData(i)
@@ -72,7 +72,7 @@ namespace Terrix.Game.GameRules
         {
             Initialize(serverSettings, clientSettings);
             var gameData = gameDataProvider.Get();
-            events.StartGame();
+            game.StartGame();
 
             phaseManager.NextPhase();
             BotsChooseRandomPositions();
@@ -80,33 +80,38 @@ namespace Terrix.Game.GameRules
             NotInitializedPlayersChooseRandomPositions();
 
             phaseManager.NextPhase();
-            tickGenerator.Initialize(new ITickHandler[]
+            tickGenerator.InitializeLoop(new TickGenerator.TickHandlerTuple[]
             {
-                countriesCollector,
-                attackInvoker,
-                referee
+                new(countriesCollector, gameData.TickHandlers[TickHandlerType.CountriesCollectorHandler]),
+                new(attackInvoker, gameData.TickHandlers[TickHandlerType.AttackHandler]),
+                new(referee, gameData.TickHandlers[TickHandlerType.RefereeHandler])
             });
+
+            // Ждем пока игра не закончится
+            yield return new WaitWhile(() => !game.GameOver);
+            phaseManager.NextPhase();
+            tickGenerator.StopLoop();
         }
 
         private void Initialize(ServerSettings serverSettings, ClientSettings clientSettings)
         {
             gameDataProvider = new GameDataProvider();
-            events = new GameEvents();
+            game = new Game();
             phaseManager = new PhaseManager();
             
 
             allCountriesDrawer.Initialize(serverSettings.CountryDrawerSettings);
-            cameraController.Initialize(events);
+            cameraController.Initialize(game);
 
             playersFactory = new PlayersFactory(gameDataProvider);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
             mapGenerator.Initialize(gameDataProvider, players);
             map = mapGenerator.GenerateMap(serverSettings.MapSettings);
-            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, events, players, map, gameDataProvider);
+            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, game, players, map, gameDataProvider);
 
             attackInvoker = new AttackInvoker();
             
-            gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players);
+            gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players, game);
             referee = gameRefereeFactory.Create();
             countriesCollector = new CountriesCollector(players);
 

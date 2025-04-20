@@ -7,20 +7,20 @@ namespace Terrix.Settings
 {
     public interface IGameDataProvider
     {
-        public GameData Get();
+        public GameSettings Get();
     }
     
     public class GameDataProvider: IGameDataProvider
     {
-        public GameData Get()
+        public GameSettings Get()
         {
             if (!Application.isPlaying)
             {
                 var gameRoot = Object.FindFirstObjectByType<GameRoot>() ?? throw new Exception($"{nameof(GameRoot)} не найден на сцене!");
-                return gameRoot.GameDataSo.Get();
+                return gameRoot.GameSettingsSo.Get();
             }
             
-            return GameRoot.Instance.GameDataSo.Get();
+            return GameRoot.Instance.GameSettingsSo.Get();
         }
     }
 }

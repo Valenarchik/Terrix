@@ -1,55 +1,46 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using Terrix.Settings;
+using System.Linq;
+using JetBrains.Annotations;
+using Terrix.DTO;
 using UnityEngine;
 
 namespace Terrix.Game.GameRules
 {
     public class TickGenerator: MonoBehaviour
     {
-        private readonly IGameDataProvider gameDataProvider = new GameDataProvider();
-
-        private readonly List<ITickHandler> tickHandlersOrder = new();
-
-        public void Initialize(IEnumerable<ITickHandler> tickHandlers)
+        public void InitializeLoop(IEnumerable<TickHandlerTuple> tickHandlerTuples)
         {
-            foreach (var tickHandler in tickHandlers)
+            foreach (var tuple in tickHandlerTuples.OrderBy(i => i.Settings.Priority))
             {
-                if(tickHandler != null)
-                {
-                    tickHandlersOrder.Add(tickHandler);
-                }
+                StartCoroutine(Loop(tuple));
             }
-
-            StartCoroutine(Loop());
         }
 
-        public void AddLast(ITickHandler tickHandler)
+        public void StopLoop()
         {
-            if (tickHandler == null)
-            {
-                return;
-            }
-            
-            tickHandlersOrder.Add(tickHandler);
+            StopAllCoroutines();
         }
-
-        public bool Remove(ITickHandler tickHandler)
-        {
-            return tickHandlersOrder.Remove(tickHandler);
-        }
-
-        private IEnumerator Loop()
+        
+        private IEnumerator Loop(TickHandlerTuple tickHandlerTuple)
         {
             while (true)
             {
-                foreach (var handler in tickHandlersOrder)
-                {
-                    handler.HandleTick();
-                }
-
-                var gameData = gameDataProvider.Get();
-                yield return new WaitForSeconds(gameData.TickDurationInSeconds);
+                tickHandlerTuple.Handler.HandleTick();
+                yield return new WaitForSeconds(tickHandlerTuple.Settings.TickDelta.Seconds);
+            }
+        }
+        
+        public class TickHandlerTuple
+        {
+            public ITickHandler Handler { get; }
+            public TickHandlerSettings Settings { get; }
+            
+            public TickHandlerTuple([NotNull] ITickHandler handler, [NotNull] TickHandlerSettings settings)
+            {
+                Handler = handler ?? throw new ArgumentNullException(nameof(handler));
+                Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             }
         }
     }

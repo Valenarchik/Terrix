@@ -28,7 +28,7 @@ namespace Terrix.Game.GameRules
             {
                 attacksOrder.Add(attack);
                 attacksStates.Add(attack.ID, new AttackState(attack, attack.Points));
-                attack.Owner.Country.AddConstIncome(attack.Points);
+                attack.Owner.Country.Population += attack.Points;
             }
         }
 
@@ -94,7 +94,7 @@ namespace Terrix.Game.GameRules
         private void FinishAttack(Attack attack)
         {
             var state = attacksStates[attack.ID];
-            attack.Owner.Country.AddConstIncome(state.CurrentPoints);
+            attack.Owner.Country.Population += state.CurrentPoints;
             
             RemoveAttackInternal(attack);
         }

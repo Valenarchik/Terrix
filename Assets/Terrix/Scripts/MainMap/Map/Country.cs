@@ -23,11 +23,23 @@ namespace Terrix.Map
 
         private bool outerBorderUpdated;
         private readonly HashSet<Hex> outerBorder = new();
+        private float population;
 
         public int PlayerId => Owner.ID;
-        public float Population { get; private set; }
+
+        public float Population
+        {
+            get => population;
+            set
+            {
+                population = value;
+                AssignPopulation();
+            }
+        }
+
         public int TotalCellsCount { get; private set; }
         public float DensePopulation { get; private set; }
+        public int MaxCellsCount { get; set; }
         public IEnumerable<Hex> Cells => cellsSet;
         public Player Owner { get; private set; }
         public event Action<UpdateCellsData> OnCellsUpdate;
@@ -43,6 +55,7 @@ namespace Terrix.Map
 
             Population = gameDataProvider.Get().StartCountryPopulation;
             DensePopulation = 0;
+            MaxCellsCount = 0;
         }
 
         public bool Contains(Hex cell)
@@ -55,32 +68,13 @@ namespace Terrix.Map
             var gameData = gameDataProvider.Get();
             var cellsStats = gameData.CellsStats;
 
+            var sum = 0f;
             foreach (var (cellType, count) in cellsByTypeCount)
             {
-                Population += cellsStats[cellType].Income * count;
+                sum += cellsStats[cellType].Income * count;
             }
 
-            Population = Mathf.Clamp(Population, 0, TotalCellsCount * gameData.MaxDensePopulation);
-            CalculateDensePopulation();
-        }
-
-        private void CalculateDensePopulation()
-        {
-            if (TotalCellsCount != 0)
-            {
-                DensePopulation = Population / TotalCellsCount;
-            }
-            else
-            {
-                DensePopulation = 0;
-            }
-        }
-
-        public void AddConstIncome(float income)
-        {
-            Population += income;
-            Population = Mathf.Clamp(Population, 0, TotalCellsCount * gameDataProvider.Get().MaxDensePopulation);
-            CalculateDensePopulation();
+            Population += sum;
         }
 
         public void Add(IEnumerable<Hex> added)
@@ -96,6 +90,11 @@ namespace Terrix.Map
         public void ClearAndAdd(IEnumerable<Hex> addedHexesAfterClear)
         {
             RemoveAndAdd(cellsSet, addedHexesAfterClear);
+        }
+
+        public void Clear()
+        {
+            ClearAndAdd(ArraySegment<Hex>.Empty);
         }
 
         public void RemoveAndAdd(IEnumerable<Hex> removedHexes, IEnumerable<Hex> addedHexes)
@@ -146,7 +145,9 @@ namespace Terrix.Map
 
             innerBorderUpdated = true;
             outerBorderUpdated = true;
-            
+
+            MaxCellsCount = Mathf.Max(TotalCellsCount, MaxCellsCount);
+            AssignPopulation();
             OnCellsUpdate?.Invoke(data);
         }
 
@@ -196,6 +197,31 @@ namespace Terrix.Map
             }
         }
 
+        private void AssignPopulation()
+        {
+            var gameData = gameDataProvider.Get();
+            population = Mathf.Clamp(population, 0, TotalCellsCount * gameData.MaxDensePopulation);
+                
+            if (TotalCellsCount != 0)
+            {
+                DensePopulation = Population / TotalCellsCount;
+            }
+            else
+            {
+                DensePopulation = 0;
+            }
+        }
+        
+        public IEnumerator<Hex> GetEnumerator()
+        {
+            return cellsSet.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
         public class UpdateCellsData
         {
             public int PlayerId { get; }
@@ -224,16 +250,6 @@ namespace Terrix.Map
         {
             Add,
             Remove
-        }
-
-        public IEnumerator<Hex> GetEnumerator()
-        {
-            return cellsSet.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

@@ -6,9 +6,9 @@ namespace Terrix.Game.GameRules
 {
     public interface IPlayersProvider
     {
-        Player[] GetAll();
+        IEnumerable<Player> GetAll();
         Player Find(int id);
-        Player[] Find(IEnumerable<int> ids);
+        IEnumerable<Player> Find(IEnumerable<int> ids);
     }
 
     public class PlayersProvider : IPlayersProvider
@@ -16,16 +16,16 @@ namespace Terrix.Game.GameRules
         private readonly List<Player> players;
         private readonly Dictionary<int, Player> playersMap;
 
-        public Player[] GetAll() => players.ToArray();
+        public IEnumerable<Player> GetAll() => players;
         public Player Find(int id)
         {
             playersMap.TryGetValue(id, out var p);
             return p;
         }
 
-        public Player[] Find(IEnumerable<int> ids)
+        public IEnumerable<Player> Find(IEnumerable<int> ids)
         {
-            return ids.Where(id => playersMap.ContainsKey(id)).Select(id => playersMap[id]).ToArray();
+            return ids.Where(id => playersMap.ContainsKey(id)).Select(id => playersMap[id]);
         }
 
         public PlayersProvider(IEnumerable<Player> players)
