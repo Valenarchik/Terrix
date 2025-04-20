@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Terrix.Map;
+using UnityEngine;
 
 namespace Terrix.Game.GameRules
 {
@@ -83,9 +84,11 @@ namespace Terrix.Game.GameRules
 
             attackState.CurrentPoints -= totalCost;
 
-            if (attackState.Attack.Target is not null)
+            var attackTarget = attackState.Attack.Target;
+            if (attackTarget is not null)
             {
-                attackState.Attack.Target.Country.Remove(intersection);
+                attackTarget.Country.Population -= intersection.Count * attackTarget.Country.DensePopulation;
+                attackTarget.Country.Remove(intersection);
             }
             
             attackState.Attack.Owner.Country.Add(intersection);

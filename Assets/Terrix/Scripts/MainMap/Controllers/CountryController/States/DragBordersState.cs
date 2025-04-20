@@ -1,4 +1,5 @@
 ﻿using System;
+using CustomUtilities.Extensions;
 using Terrix.Map;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -77,6 +78,7 @@ namespace Terrix.Controllers
                 if (CountryController.IsNotOur(cellPosition))
                 {
                     var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition, out attackTarget, out attackPoints);
+                    
                     CountryController.UpdateDragZone(dragHexes, newDragHexes);
                     dragHexes = newDragHexes;
                 }

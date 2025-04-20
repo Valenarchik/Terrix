@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Priority_Queue;
-using Terrix.DTO;
-using Terrix.Game.GameRules;
 using Terrix.Map;
 using UnityEngine;
 
@@ -37,7 +35,7 @@ namespace Terrix.Controllers
                 .First();
 
             attackTarget = seed.PlayerId;
-            
+            visited.Add(seed);
             priorityQueue.Enqueue(seed, 0);
         
             var remainingPoints = country.Population;
@@ -45,41 +43,36 @@ namespace Terrix.Controllers
         
             while (priorityQueue.Count > 0 && remainingPoints > 0 && !targetReached)
             {
-                priorityQueue.TryDequeue(out var cell);
-                if (visited.Contains(cell) || country.Contains(cell))
+                var cell = priorityQueue.Dequeue();
+
+                if (!country.Contains(cell) && cell.GetHexData().CanCapture && attackTarget == cell.PlayerId)
                 {
-                    continue;
+                    var cellCost = cell.GetCost();
+                    if (cellCost > remainingPoints)
+                    {
+                        continue;
+                    }
+                    
+                    result.Add(cell);
+                    remainingPoints -= cellCost;
                 }
-        
-                var cellCost = cell.GetCost();
-                if (cellCost > remainingPoints)
-                {
-                    continue;
-                }
-        
-                result.Add(cell);
-        
+                
                 if (end.Equals(cell))
                 {
                     targetReached = true;
+                    continue;
                 }
-                
-                remainingPoints -= cellCost;
-                visited.Add(cell);
-                
                 
                 foreach (var neighbour in cell.GetNeighbours())
                 {
-                    if (country.Contains(neighbour) 
-                        || visited.Contains(neighbour) 
-                        || !neighbour.GetHexData().CanCapture
-                        || attackTarget != neighbour.PlayerId)
+                    if (visited.Contains(neighbour))
                     {
                         continue;
                     }
         
                     var priority = CalculatePriority(neighbour);
                     priorityQueue.Enqueue(neighbour, -priority);
+                    visited.Add(neighbour);
                 }
             }
 

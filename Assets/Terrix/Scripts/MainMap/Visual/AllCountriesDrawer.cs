@@ -13,6 +13,7 @@ namespace Terrix.Visual
         
         [Header("Prefabs")]
         [SerializeField] private CountryDrawer countryDrawerPrefab;
+        [SerializeField] private CountryDrawer dragZoneDrawerPrefab;
         
         [Header("References")]
         [SerializeField] private ZoneMaterialFactory zoneMaterialFactory;
@@ -40,7 +41,7 @@ namespace Terrix.Visual
             }
 
             var dragZoneMaterial = zoneMaterialFactory.Create(settings.DragZone);
-            dragZoneDrawer = Instantiate(countryDrawerPrefab, playerInstantiateRoot.transform, true);
+            dragZoneDrawer = Instantiate(dragZoneDrawerPrefab, playerInstantiateRoot.transform, true);
             dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.PlayerId, dragZoneMaterial, settings.Zones.Length));
         }
 

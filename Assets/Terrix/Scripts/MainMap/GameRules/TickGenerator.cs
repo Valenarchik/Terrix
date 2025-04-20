@@ -28,7 +28,7 @@ namespace Terrix.Game.GameRules
             while (true)
             {
                 tickHandlerTuple.Handler.HandleTick();
-                yield return new WaitForSeconds(tickHandlerTuple.Settings.TickDelta.Seconds);
+                yield return new WaitForSeconds((float)tickHandlerTuple.Settings.TickDelta.TotalSeconds);
             }
         }
         

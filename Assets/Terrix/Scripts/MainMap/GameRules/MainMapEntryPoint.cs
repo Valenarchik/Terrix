@@ -87,7 +87,7 @@ namespace Terrix.Game.GameRules
 
             phaseManager.NextPhase();
             BotsChooseRandomPositions();
-            yield return new WaitForSeconds(gameData.TimeForChooseFirstCountryPosition.Seconds);
+            yield return new WaitForSeconds((float) gameData.TimeForChooseFirstCountryPosition.TotalSeconds);
             NotInitializedPlayersChooseRandomPositions();
 
             phaseManager.NextPhase();
