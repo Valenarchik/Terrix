@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Object;
 using JetBrains.Annotations;
+using Priority_Queue;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Game.GameRules;
@@ -173,8 +174,6 @@ namespace Terrix.Controllers
                     hexes.Select(hex => new Country.SimplifiedCellChangeData(hex.Position, Country.UpdateCellMode.Add))
                         .ToList())
             });
-            // new List<Country.SimplifiedCellChangeData>()))}hexes.Select(hex => new SimplifiedHex(hex.Position, player.ID))
-            // .ToArray());
         }
 
 
@@ -224,6 +223,119 @@ namespace Terrix.Controllers
             if (!initialized)
             {
                 throw new InvalidOperationException($"{nameof(PlayerCommandsExecutor)} | не проинициализирован!");
+            }
+        }
+
+        // public void StartBotsCoroutine()
+        // {
+        //     StartCoroutine()
+        // }
+        private void BotsLogic()
+        {
+            var bots = playerProvider.GetAll().Where(player => player.PlayerType is PlayerType.Bot);
+            foreach (var bot in bots)
+            {
+                var outerBorder = bot.Country.GetOuterBorder();
+                var neighbours = outerBorder.SelectMany(hex => hex.GetNeighbours())
+                    .Except(bot.Country.GetInnerBorder());
+                if (neighbours.Any(hex => hex.PlayerId is not null))
+                {
+                    //Атаковать игрока
+                }
+                else
+                {
+                    var randomHex = outerBorder.RandomElement();
+                    var randomTarget = randomHex.GetNeighbours().Except(outerBorder)
+                        .Except(bot.Country.GetInnerBorder()).RandomElement();
+                    var hexes = StretchBorders(randomHex, randomTarget, bot.Country, out var attackTarget,
+                        out var attackPoints);
+                    attackInvoker.AddAttack(new Attack(new Guid(), bot, playerProvider.Find(attackTarget.Value), attackPoints,
+                        hexes.ToHashSet()));
+                }
+            }
+        }
+
+        public Hex[] StretchBorders(
+            Hex startHex,
+            Hex endHex,
+            Country country,
+            out int? attackTarget,
+            out float attackPoints)
+        {
+            var direction = (endHex.WorldPosition - startHex.WorldPosition).normalized;
+            var result = new List<Hex>();
+            var visited = new HashSet<Hex>();
+            var priorityQueue = new SimplePriorityQueue<Hex, float>();
+
+            var seed = startHex.GetNeighbours()
+                .Where(neighbour => !country.Contains(neighbour) || !neighbour.GetHexData().CanCapture)
+                .Select(hex => new { Hex = hex, Direction = (hex.WorldPosition - startHex.WorldPosition).normalized })
+                .OrderByDescending(hex => Vector3.Dot(hex.Direction, direction))
+                .Select(hex => hex.Hex)
+                .First();
+
+            attackTarget = seed.PlayerId;
+
+            priorityQueue.Enqueue(seed, 0);
+
+            var remainingPoints = country.Population;
+            var targetReached = false;
+
+            while (priorityQueue.Count > 0 && remainingPoints > 0 && !targetReached)
+            {
+                priorityQueue.TryDequeue(out var cell);
+                if (visited.Contains(cell) || country.Contains(cell))
+                {
+                    continue;
+                }
+
+                var cellCost = cell.GetCost();
+                if (cellCost > remainingPoints)
+                {
+                    continue;
+                }
+
+                result.Add(cell);
+
+                if (endHex.Equals(cell))
+                {
+                    targetReached = true;
+                }
+
+                remainingPoints -= cellCost;
+                visited.Add(cell);
+
+
+                foreach (var neighbour in cell.GetNeighbours())
+                {
+                    if (country.Contains(neighbour)
+                        || visited.Contains(neighbour)
+                        || !neighbour.GetHexData().CanCapture
+                        || attackTarget != neighbour.PlayerId)
+                    {
+                        continue;
+                    }
+
+                    var priority = CalculatePriority(neighbour);
+                    priorityQueue.Enqueue(neighbour, -priority);
+                }
+            }
+
+            attackPoints = country.Population - remainingPoints;
+            return result.ToArray();
+
+            float CalculatePriority(Hex current)
+            {
+                var alpha = 1.2f;
+                var beta = 10f;
+                var delta = current.WorldPosition - startHex.WorldPosition;
+
+                var projection = Vector3.Dot(delta.normalized, direction);
+
+                var distance = delta.magnitude;
+                var distanceFactor = 1f / (1f + distance);
+
+                return projection * alpha + distanceFactor * beta;
             }
         }
     }

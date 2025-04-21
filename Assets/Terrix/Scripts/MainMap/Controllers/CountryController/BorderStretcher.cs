@@ -28,19 +28,13 @@ namespace Terrix.Controllers
             var result = new List<Hex>();
             var visited = new HashSet<Hex>();
             var priorityQueue = new SimplePriorityQueue<Hex, float>();
-
-            var seeds = start.GetNeighbours()
+            
+            var seed = start.GetNeighbours()
                 .Where(neighbour => !country.Contains(neighbour) || !neighbour.GetHexData().CanCapture)
-                .Select(hex => new { Hex = hex, Direction = (hex.WorldPosition - start.WorldPosition).normalized })
+                .Select(hex => new {Hex = hex, Direction = (hex.WorldPosition - start.WorldPosition).normalized})
                 .OrderByDescending(hex => Vector3.Dot(hex.Direction, direction))
-                .Select(hex => hex.Hex);
-            var seed = seeds.First();
-            // var seed = start.GetNeighbours()
-            //     .Where(neighbour => !country.Contains(neighbour) || !neighbour.GetHexData().CanCapture)
-            //     .Select(hex => new {Hex = hex, Direction = (hex.WorldPosition - start.WorldPosition).normalized})
-            //     .OrderByDescending(hex => Vector3.Dot(hex.Direction, direction))
-            //     .Select(hex=> hex.Hex)
-            //     .First();
+                .Select(hex=> hex.Hex)
+                .First();
 
             attackTarget = seed.PlayerId;
             

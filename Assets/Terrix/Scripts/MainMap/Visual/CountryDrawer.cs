@@ -62,9 +62,6 @@ namespace Terrix.Visual
             zoneTilemap.SetTiles(changeData, true);
             zoneTilemap.CompressBounds();
             var cellBounds = zoneTilemap.cellBounds;
-            // playerNameText.rectTransform.position = new Vector3(cellBounds.center.y * grid.cellSize.y * 0.75f,
-            //     cellBounds.center.x * grid.cellSize.x);
-            // playerNameText.rectTransform.sizeDelta = new Vector2(cellBounds.size.x, cellBounds.size.y);
             if (score is null || playerId == -1)
             {
                 return;

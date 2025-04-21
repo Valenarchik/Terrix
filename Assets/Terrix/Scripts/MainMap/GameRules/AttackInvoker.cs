@@ -30,7 +30,7 @@ namespace Terrix.Game.GameRules
             {
                 attacksOrder.Add(attack);
                 attacksStates.Add(attack.ID, new AttackState(attack, attack.Points));
-                attack.Owner.Country.AddConstIncome(attack.Points);
+                attack.Owner.Country.AddConstIncome(-attack.Points);
             }
         }
 
