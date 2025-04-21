@@ -6,28 +6,26 @@ namespace Terrix.Game.GameRules
 {
     public interface IPlayersProvider
     {
-        Player[] GetAll();
+        IEnumerable<Player> GetAll();
         Player Find(int id);
-        Player[] Find(IEnumerable<int> ids);
+        IEnumerable<Player> Find(IEnumerable<int> ids);
     }
 
     public class PlayersProvider : IPlayersProvider
     {
         private readonly List<Player> players;
-        public List<Player> Players => players;
-        private Dictionary<int, Player> playersMap;
+        private readonly Dictionary<int, Player> playersMap;
 
-        public Player[] GetAll() => players.ToArray();
-
+        public IEnumerable<Player> GetAll() => players;
         public Player Find(int id)
         {
             playersMap.TryGetValue(id, out var p);
             return p;
         }
 
-        public Player[] Find(IEnumerable<int> ids)
+        public IEnumerable<Player> Find(IEnumerable<int> ids)
         {
-            return ids.Where(id => playersMap.ContainsKey(id)).Select(id => playersMap[id]).ToArray();
+            return ids.Where(id => playersMap.ContainsKey(id)).Select(id => playersMap[id]);
         }
 
         public PlayersProvider(IEnumerable<Player> players)
@@ -35,10 +33,10 @@ namespace Terrix.Game.GameRules
             this.players = players.ToList();
             this.playersMap = this.players.ToDictionary(p => p.ID);
         }
-
-        public void UpdatePlayersMap()
-        {
-            playersMap = players.ToDictionary(p => p.ID);
-        }
+        //мб убрать
+        // public void UpdatePlayersMap()
+        // {
+        //     playersMap = players.ToDictionary(p => p.ID);
+        // }
     }
 }

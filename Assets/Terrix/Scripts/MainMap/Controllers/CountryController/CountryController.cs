@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using CustomUtilities.Attributes;
 using JetBrains.Annotations;
-using Priority_Queue;
 using FishNet.Object;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Game.GameRules;
 using Terrix.Map;
-using Terrix.Networking;
 using Terrix.Settings;
 using Terrix.Visual;
 using UnityEngine;
@@ -40,7 +38,7 @@ namespace Terrix.Controllers
         private Dictionary<CountryControllerStateType, CountryControllerState> states;
 
         private IPhaseManager phaseManager;
-        private GameEvents gameEvents;
+        private IGame game;
         private IPlayersProvider players;
         private HexMap map;
         private IGameDataProvider gameDataProvider;
@@ -50,7 +48,7 @@ namespace Terrix.Controllers
 
         public void Initialize(int playerId,
             [NotNull] IPhaseManager phaseManager,
-            [NotNull] GameEvents gameEvents,
+            [NotNull] IGame game,
             [NotNull] IPlayersProvider playersProvider,
             [NotNull] HexMap map,
             [NotNull] IGameDataProvider gameDataProvider)
@@ -59,29 +57,29 @@ namespace Terrix.Controllers
             gameObject.name = $"{nameof(CountryController)}_{playerId}";
 
             this.phaseManager = phaseManager ?? throw new ArgumentNullException(nameof(phaseManager));
-            this.gameEvents = gameEvents ?? throw new ArgumentNullException(nameof(gameEvents));
+            this.game = game ?? throw new ArgumentNullException(nameof(game));
             this.players = playersProvider ?? throw new ArgumentNullException(nameof(playersProvider));
             this.map = map ?? throw new ArgumentNullException(nameof(map));
             this.gameDataProvider = gameDataProvider ?? throw new ArgumentNullException(nameof(gameDataProvider));
 
             this.player = this.players.Find(playerId);
             this.country = this.player.Country;
-            this.gameEvents.OnGameReady(OnGameReady);
+            this.game.OnGameReady(OnGameReady);
         }
 
         public void OnChooseCountryPosition(InputAction.CallbackContext context)
         {
-            stateMachine?.CurrentState.OnChooseCountryPosition(context);
+            stateMachine.CurrentState.OnChooseCountryPosition(context);
         }
 
         public void OnPoint(InputAction.CallbackContext context)
         {
-            stateMachine?.CurrentState.OnPoint(context); //Ошибка
+            stateMachine.CurrentState.OnPoint(context);
         }
 
         public void OnDragBorders(InputAction.CallbackContext context)
         {
-            stateMachine?.CurrentState.OnDragBorders(context);
+            stateMachine.CurrentState.OnDragBorders(context);
         }
 
         public override void OnStartClient()
@@ -177,26 +175,7 @@ namespace Terrix.Controllers
             countriesDrawer.UpdateDragZone(data, country.Population);
         }
 
-        //TODO метод для дебага. Нужно будет потом убрать
-        private Country.UpdateCellsData GetUpdateDataActual(Hex[] previousDragZoneHexes, Hex[] currentDragZoneHexes)
-        {
-            var changeData = new List<Country.CellChangeData>();
-
-            foreach (var removedHex in previousDragZoneHexes.Except(currentDragZoneHexes))
-            {
-                changeData.Add(new Country.CellChangeData(removedHex, Country.UpdateCellMode.Remove));
-            }
-
-            foreach (var addedHex in currentDragZoneHexes.Except(previousDragZoneHexes))
-            {
-                changeData.Add(new Country.CellChangeData(addedHex, Country.UpdateCellMode.Add));
-            }
-
-            return new Country.UpdateCellsData(country.PlayerId, changeData.ToArray());
-        }
-
-        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget,
-            out float attackPoints)
+        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget, out float attackPoints)
         {
             return borderStretcher.StretchBorders(startPos,
                 endPos,
@@ -209,33 +188,6 @@ namespace Terrix.Controllers
         private Vector3Int GetCellPosition(Vector2 pointPos)
         {
             return MapUtilities.GetMousePosition(pointPos, camera, tilemap);
-        }
-
-        // [ObserversRpc]
-        // public void UpdateCountries_ToObserver(Dictionary<int, Country> countries)
-        // {
-        //     foreach (var currentPlayer in players.GetAll())
-        //     {
-        //         currentPlayer.Country = countries[currentPlayer.ID];
-        //         currentPlayer.Country.Owner = currentPlayer;
-        //         // .First(currentCountry => currentCountry.PlayerId == currentPlayer.ID);
-        //     }
-        //
-        //     country = players.Find(playerId).Country;
-        // }
-
-        // public void UpdateCountries_OnClient(IPlayersProvider playersProvider)
-        // {
-        //     this.players = playersProvider;
-        //     country = playersProvider.Find(playerId).Country;
-        // }
-
-        public void UpdateData_OnClient(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
-        // public void UpdateData_OnClient(SimplifiedHex simplifiedHex)
-        {
-            // players = playersCountryMapData.IPlayersProvider;
-            // map = playersCountryMapData.HexMap;
-            country = players.Find(playerId).Country;
         }
 
         private void StartAttack(int? targetId, float points, IEnumerable<Hex> territory)

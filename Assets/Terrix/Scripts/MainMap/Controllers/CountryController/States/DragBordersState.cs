@@ -1,4 +1,5 @@
 ﻿using System;
+using CustomUtilities.Extensions;
 using Terrix.Map;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -7,7 +8,7 @@ namespace Terrix.Controllers
 {
     public partial class CountryController
     {
-        private class DragBordersState : CountryControllerState
+        private class DragBordersState: CountryControllerState
         {
             private static readonly Vector3Int DefaultStartDragHexPosition = new(-1, -1, -1);
 
@@ -50,6 +51,8 @@ namespace Terrix.Controllers
                         StartDrag();
                         break;
                     }
+                    case InputActionPhase.Waiting:
+                    case InputActionPhase.Disabled:
                     case InputActionPhase.Canceled:
                     {
                         FinishDrag();
@@ -76,8 +79,8 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (CountryController.IsNotOur(cellPosition))
                 {
-                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition,
-                        out attackTarget, out attackPoints);
+                    var newDragHexes = CountryController.StretchBorders(startDragHexPosition, cellPosition, out attackTarget, out attackPoints);
+                    
                     CountryController.UpdateDragZone(dragHexes, newDragHexes);
                     dragHexes = newDragHexes;
                 }
@@ -108,12 +111,7 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (cellPosition == startDragHexPosition)
                 {
-                    Debug.Log("Started drag");
                     drag = true;
-                }
-                else
-                {
-                    Debug.Log("Not started drag");
                 }
             }
 

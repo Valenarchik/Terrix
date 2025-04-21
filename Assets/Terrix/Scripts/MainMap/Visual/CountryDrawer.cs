@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Linq;
 using JetBrains.Annotations;
 using CustomUtilities.Attributes;
-using NUnit.Framework.Constraints;
-using Terrix.DTO;
 using Terrix.Map;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 
 namespace Terrix.Visual
@@ -16,10 +12,10 @@ namespace Terrix.Visual
     {
         [SerializeField] private Grid grid;
         [SerializeField] private Tilemap zoneTilemap;
-        [SerializeField] private Tile zoneTile;
         [SerializeField] private TextMeshPro playerNameText;
         [SerializeField] private TextMeshPro playerScoreText;
         [SerializeField] private RectTransform playerInfoHolder;
+        [SerializeField] private TileBase zoneTile;
 
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private int playerId = int.MinValue;
@@ -41,7 +37,6 @@ namespace Terrix.Visual
             var tilemapRenderer = zoneTilemap.GetComponent<TilemapRenderer>();
             tilemapRenderer.sharedMaterial = zoneMaterial;
             tilemapRenderer.sortingOrder = settings.SortingOrder;
-            // playerInfoHolder.gameObject.SetActive(true);
             playerNameText.text = settings.PlayerName;
         }
 

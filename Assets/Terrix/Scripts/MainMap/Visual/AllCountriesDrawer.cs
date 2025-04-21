@@ -16,7 +16,8 @@ namespace Terrix.Visual
 
         [Header("Prefabs")]
         [SerializeField] private CountryDrawer countryDrawerPrefab;
-
+        [SerializeField] private CountryDrawer dragZoneDrawerPrefab;
+        
         [Header("References")]
         [SerializeField] private ZoneMaterialFactory zoneMaterialFactory;
         [SerializeField] private GameObject playerInstantiateRoot;
@@ -43,54 +44,35 @@ namespace Terrix.Visual
             }
 
             var dragZoneMaterial = zoneMaterialFactory.Create(settings.DragZone);
-            dragZoneDrawer = Instantiate(countryDrawerPrefab, playerInstantiateRoot.transform, true);
-            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.PlayerId, dragZoneMaterial,
-                settings.Zones.Length, ""));
+            dragZoneDrawer = Instantiate(dragZoneDrawerPrefab, playerInstantiateRoot.transform, true);
+            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.PlayerId, dragZoneMaterial, settings.Zones.Length, ""));
         }
-
         [ObserversRpc]
         public void UpdateZone_ToObserver(Country.UpdateCellsData updateData, float score)
         {
             drawersByIds[updateData.PlayerId].UpdateZone(updateData, score);
         }
 
-        // [ServerRpc(RequireOwnership = false)]
-        // public void UpdateZone_ToServer(Country.UpdateCellsData updateData, float score)
-        // {
-        //     UpdateZone_ToObserver(updateData, score);
-        // }
 
-        public void UpdateDragZone(Country.UpdateCellsData updateData, float score)
+        public void UpdateDragZone(Country.UpdateCellsData updateData)
         {
             dragZoneDrawer.UpdateZone(updateData, score);
         }
-
-        // public void UpdateScore_OnClient(NetworkSerialization.PlayersCountryMapData playersCountryMapData)
         public void UpdateScore_OnClient(SimplifiedCountry[] simplifiedCountries)
         {
             foreach (var simplifiedCountry in simplifiedCountries)
             {
-                if (simplifiedCountry.PlayerId == -1)
+                if (simplifiedCountry.PlayerId == DRAG_ZONE_ID)
                 {
                     return;
                 }
                 drawersByIds[simplifiedCountry.PlayerId].UpdateScore(simplifiedCountry.Population);
             }
-            // foreach (var drawer in drawersByIds)
-            // {
-            //     if (drawer.Key == -1)
-            //     {
-            //         return;
-            //     }
-            //
-            //     drawer.Value.UpdateScore(playersCountryMapData.IPlayersProvider.Find(drawer.Key).Country.Population);
-            // }
         }
-
         public class Settings
         {
-            public ZoneData[] Zones { get; }
-            public ZoneData DragZone { get; }
+            public ZoneData[] Zones { get;  set; }
+            public ZoneData DragZone { get; set;}
 
             public Settings(ZoneData[] zones, ZoneData dragZone)
             {

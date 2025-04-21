@@ -1,7 +1,12 @@
+using System;
+using System.Linq;
+using Terrix.DTO;
+using Terrix.Entities;
 using Terrix.Game.GameRules;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
+// ReSharper disable ParameterHidesMember
 
 namespace Terrix.Controllers
 {
@@ -29,7 +34,9 @@ namespace Terrix.Controllers
         private Vector3 difference;
         private bool drag;
 
-        private GameEvents gameEvents;
+        private IGame game;
+        private IPhaseManager phaseManager;
+        private Player localPlayer;
 
         public bool Enable { get; set; }
         public bool EnableDrag { get; set; } = true;
@@ -64,12 +71,33 @@ namespace Terrix.Controllers
 
             drag = !context.canceled;
         }
-
-        //TODO переделать
-        public void Initialize(GameEvents gameEvents)
+        
+        public void Initialize(IGame game, IPhaseManager phaseManager, Player localPlayer)
         {
-            this.gameEvents = gameEvents;
-            this.gameEvents.OnGameReady(OnGameReady);
+            this.game = game;
+            this.phaseManager = phaseManager;
+            this.localPlayer = localPlayer;
+            
+            game.OnGameStarted(OnGameReady);
+            phaseManager.PhaseChanged += OnPhaseChanged;
+        }
+
+        private void OnPhaseChanged()
+        {
+            switch (phaseManager.CurrentPhase)
+            {
+                case GamePhaseType.Uninitialized:
+                    break;
+                case GamePhaseType.Initial:
+                    break;
+                case GamePhaseType.Main:
+                {
+                    MoveCameraOverPlayer();
+                    break;
+                }
+                case GamePhaseType.Finish:
+                    break;
+            }
         }
 
         private void OnGameReady()
@@ -176,6 +204,18 @@ namespace Terrix.Controllers
         {
             zoomValue = Mathf.Clamp(zoomValue, minZoomValue, maxZoomValue);
             return zoomValue;
+        }
+
+        private void MoveCameraOverPlayer()
+        {
+            var playerPosition = localPlayer.Country.Cells
+                .Select(cell => cell.WorldPosition)
+                .Aggregate((p1, p2) => p1 + p2) / localPlayer.Country.TotalCellsCount;
+            
+            var cameraPosition = new Vector3(playerPosition.x, playerPosition.y, camera.transform.position.z);
+            camera.transform.position = cameraPosition;
+            
+            ZoomValue = minZoomValue;
         }
     }
 }

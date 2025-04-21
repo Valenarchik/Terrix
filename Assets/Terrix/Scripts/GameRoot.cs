@@ -6,7 +6,7 @@ namespace Terrix
 {
     public class GameRoot: DontDestroyOnLoadMonoSingleton<GameRoot>
     {
-        [SerializeField] private GameDataSO gameDataSo;
-        public GameDataSO GameDataSo => gameDataSo;
+        [SerializeField] private GameSettingsSO gameSettingsSo;
+        public GameSettingsSO GameSettingsSo => gameSettingsSo;
     }
 }

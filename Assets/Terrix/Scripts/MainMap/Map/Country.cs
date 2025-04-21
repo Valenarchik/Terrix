@@ -13,25 +13,35 @@ namespace Terrix.Map
     public class Country : IEnumerable<Hex>
     {
         private readonly IGameDataProvider gameDataProvider;
-        public IGameDataProvider GameDataProvider => gameDataProvider;
-        private readonly HexMap map;
-        public HexMap Map => map;
 
         private readonly Dictionary<HexType, int> cellsByTypeCount;
 
-        public HashSet<Hex> cellsSet = new();
-
+        private readonly HashSet<Hex> cellsSet = new ();
+        
         private bool innerBorderUpdated;
         private readonly HashSet<Hex> innerBorder = new();
 
         private bool outerBorderUpdated;
         private readonly HashSet<Hex> outerBorder = new();
+        private float population;
 
         public int PlayerId => Owner.ID;
-        public float Population { get; private set; }
+
+        public float Population
+        {
+            get => population;
+            set
+            {
+                population = value;
+                AssignPopulation();
+            }
+        }
+
         public int TotalCellsCount { get; private set; }
         public float DensePopulation { get; private set; }
+        public int MaxCellsCount { get; set; }
         public IEnumerable<Hex> Cells => cellsSet;
+        // сменить на приватный set
         public Player Owner { get; set; }
         public event Action<UpdateCellsData> OnCellsUpdate;
 
@@ -46,6 +56,7 @@ namespace Terrix.Map
 
             Population = gameDataProvider.Get().StartCountryPopulation;
             DensePopulation = 0;
+            MaxCellsCount = 0;
         }
 
         //TODO возможно ошибка
@@ -75,39 +86,19 @@ namespace Terrix.Map
             var gameData = gameDataProvider.Get();
             var cellsStats = gameData.CellsStats;
 
+            var sum = 0f;
             foreach (var (cellType, count) in cellsByTypeCount)
             {
-                Population += cellsStats[cellType].Income * count;
+                sum += cellsStats[cellType].Income * count;
             }
 
-            Population = Mathf.Clamp(Population, 0, TotalCellsCount * gameData.MaxDensePopulation);
-            CalculateDensePopulation();
+            Population += sum;
         }
-
-        public void SetPopulation(float population, int cellsCount)
+        //TODO переписать
+        public void SetPopulation_(float population, int cellsCount)
         {
             TotalCellsCount = cellsCount;
             Population = population;
-            CalculateDensePopulation();
-        }
-
-        private void CalculateDensePopulation()
-        {
-            if (TotalCellsCount != 0)
-            {
-                DensePopulation = Population / TotalCellsCount;
-            }
-            else
-            {
-                DensePopulation = 0;
-            }
-        }
-
-        public void AddConstIncome(float income)
-        {
-            Population += income;
-            Population = Mathf.Clamp(Population, 0, TotalCellsCount * gameDataProvider.Get().MaxDensePopulation);
-            CalculateDensePopulation();
         }
 
         public void Add(IEnumerable<Hex> added)
@@ -117,7 +108,6 @@ namespace Terrix.Map
 
         public void Remove(IEnumerable<Hex> removed)
         {
-            Debug.Log("Removed");
             RemoveAndAdd(removed, Enumerable.Empty<Hex>());
         }
 
@@ -126,7 +116,12 @@ namespace Terrix.Map
             RemoveAndAdd(cellsSet, addedHexesAfterClear);
         }
 
-        public void RemoveAndAdd(IEnumerable<Hex> removedHexes, IEnumerable<Hex> addedHexes, bool onServer = true)
+        public void Clear()
+        {
+            ClearAndAdd(ArraySegment<Hex>.Empty);
+        }
+
+        public void RemoveAndAdd(IEnumerable<Hex> removedHexes, IEnumerable<Hex> addedHexes)
         {
             var removedSet = removedHexes.ToHashSet();
             var addedSet = addedHexes.ToHashSet();
@@ -136,11 +131,11 @@ namespace Terrix.Map
             changeData.AddRange(addedSet.Select(hex => new CellChangeData(hex, UpdateCellMode.Add)));
 
             var data = new UpdateCellsData(PlayerId, changeData.ToArray());
-            Debug.Log($"{PlayerId}: {removedHexes.Count()} {addedHexes.Count()}");
-            UpdateCells(data, onServer);
+
+            UpdateCells(data);
         }
 
-        public void UpdateCells([NotNull] UpdateCellsData data, bool onServer)
+        public void UpdateCells([NotNull] UpdateCellsData data)
         {
             ValidateUpdateCellsData(data);
 
@@ -176,16 +171,16 @@ namespace Terrix.Map
 
             innerBorderUpdated = true;
             outerBorderUpdated = true;
-            if (onServer)
-            {
-                OnCellsUpdate?.Invoke(data);
-            }
+
+            MaxCellsCount = Mathf.Max(TotalCellsCount, MaxCellsCount);
+            AssignPopulation();
+            OnCellsUpdate?.Invoke(data);
         }
 
         public HashSet<Hex> GetInnerBorder()
         {
-            //TODO костыль
-            innerBorderUpdated = true;
+            //TODO бывший костыль
+            // innerBorderUpdated = true;
             if (innerBorderUpdated)
             {
                 innerBorder.Clear();
@@ -228,6 +223,31 @@ namespace Terrix.Map
             {
                 throw new InvalidOperationException($"{nameof(Country)}.{nameof(UpdateCells)} | Не верно указан id!");
             }
+        }
+
+        private void AssignPopulation()
+        {
+            var gameData = gameDataProvider.Get();
+            population = Mathf.Clamp(population, 0, TotalCellsCount * gameData.MaxDensePopulation);
+                
+            if (TotalCellsCount != 0)
+            {
+                DensePopulation = Population / TotalCellsCount;
+            }
+            else
+            {
+                DensePopulation = 0;
+            }
+        }
+        
+        public IEnumerator<Hex> GetEnumerator()
+        {
+            return cellsSet.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         public class UpdateCellsData
@@ -282,16 +302,6 @@ namespace Terrix.Map
         {
             Add,
             Remove
-        }
-
-        public IEnumerator<Hex> GetEnumerator()
-        {
-            return cellsSet.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 

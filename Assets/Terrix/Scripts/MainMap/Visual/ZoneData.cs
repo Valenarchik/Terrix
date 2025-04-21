@@ -10,6 +10,8 @@ namespace Terrix.Visual
         public Vector2? TileSizeModifier { get; set; } = null;
         public string PlayerName { get; set; }
 
+        public Color? BorderColor { get; set; } = null;
+        
         public ZoneData(int playerId)
         {
             PlayerId = playerId;
