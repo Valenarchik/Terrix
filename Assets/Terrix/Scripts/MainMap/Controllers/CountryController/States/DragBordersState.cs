@@ -51,6 +51,8 @@ namespace Terrix.Controllers
                         StartDrag();
                         break;
                     }
+                    case InputActionPhase.Waiting:
+                    case InputActionPhase.Disabled:
                     case InputActionPhase.Canceled:
                     {
                         FinishDrag();

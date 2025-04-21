@@ -119,7 +119,6 @@ namespace Terrix.Game.GameRules
             
 
             allCountriesDrawer.Initialize(serverSettings.CountryDrawerSettings);
-            cameraController.Initialize(game);
 
             playersFactory = new PlayersFactory(gameDataProvider);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
@@ -137,6 +136,8 @@ namespace Terrix.Game.GameRules
 
             attackMassageEncoder = new AttackMassageEncoder(players, map);
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider, attackMassageEncoder, attackInvoker);
+            
+            cameraController.Initialize(game, phaseManager, players.Find(clientSettings.LocalPlayerId));
         }
 
         // [Server]
