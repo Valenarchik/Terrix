@@ -1,4 +1,5 @@
 ﻿using System;
+using Terrix.Entities;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -10,6 +11,7 @@ namespace Terrix.Networking
         [SerializeField] private TextMeshProUGUI rankText;
         [SerializeField] private TextMeshProUGUI playerNameText;
         [SerializeField] private TextMeshProUGUI scoreText;
+        private Player player;
         public RectTransform RectTransform { get; private set; }
 
         private void Awake()
@@ -17,19 +19,30 @@ namespace Terrix.Networking
             RectTransform = GetComponent<RectTransform>();
         }
 
-        public void Initialize(string playerName, Color color)
+        // public void Initialize(string playerName, Color color)
+        // {
+        //     playerNameText.text = playerName;
+        //     rankText.text = RectTransform.GetSiblingIndex().ToString();
+        //     rankText.color = color;
+        //     playerNameText.color = color;
+        //     scoreText.color = color;
+        // }
+        public void Initialize(Player player, int index)
         {
-            playerNameText.text = playerName;
-            rankText.text = RectTransform.GetSiblingIndex().ToString();
+            this.player = player;
+            playerNameText.text = player.PlayerName;
+            rankText.text = $"#{index}";
+            scoreText.text = "0";
+            var color = player.PlayerColor;
             rankText.color = color;
             playerNameText.color = color;
             scoreText.color = color;
         }
 
-        public void UpdateInfo(float points)
+        public void UpdateInfo(int order)
         {
-            rankText.text = $"#{RectTransform.GetSiblingIndex() + 1}";
-            scoreText.text = points.ToString();
+            rankText.text = $"#{order}";
+            scoreText.text = ((int)player.Country.Population).ToString();
         }
     }
 }

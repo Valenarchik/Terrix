@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using FishNet.Object;
 using JetBrains.Annotations;
+using Terrix.Controllers;
 using Terrix.Game.GameRules;
 using Terrix.Map;
+using Terrix.Network.DTO;
 using Terrix.Networking;
 using UnityEngine;
 
 namespace Terrix.Visual
 {
+    //На сервере тоже
     // Только на клиенте
     public class AllCountriesDrawer : NetworkBehaviour
     {
@@ -17,8 +20,9 @@ namespace Terrix.Visual
         [Header("Prefabs")]
         [SerializeField] private CountryDrawer countryDrawerPrefab;
         [SerializeField] private CountryDrawer dragZoneDrawerPrefab;
-        
+
         [Header("References")]
+        [SerializeField] private PlayerCommandsExecutor playerCommandsExecutor;
         [SerializeField] private ZoneMaterialFactory zoneMaterialFactory;
         [SerializeField] private GameObject playerInstantiateRoot;
 
@@ -45,8 +49,10 @@ namespace Terrix.Visual
 
             var dragZoneMaterial = zoneMaterialFactory.Create(settings.DragZone);
             dragZoneDrawer = Instantiate(dragZoneDrawerPrefab, playerInstantiateRoot.transform, true);
-            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.PlayerId, dragZoneMaterial, settings.Zones.Length, ""));
+            dragZoneDrawer.Initialize(new CountryDrawer.Settings(settings.DragZone.PlayerId, dragZoneMaterial,
+                settings.Zones.Length, ""));
         }
+
         [ObserversRpc]
         public void UpdateZone_ToObserver(Country.UpdateCellsData updateData, float score)
         {
@@ -54,10 +60,11 @@ namespace Terrix.Visual
         }
 
 
-        public void UpdateDragZone(Country.UpdateCellsData updateData)
+        public void UpdateDragZone(Country.UpdateCellsData updateData, float score)
         {
             dragZoneDrawer.UpdateZone(updateData, score);
         }
+
         public void UpdateScore_OnClient(SimplifiedCountry[] simplifiedCountries)
         {
             foreach (var simplifiedCountry in simplifiedCountries)
@@ -66,13 +73,15 @@ namespace Terrix.Visual
                 {
                     return;
                 }
+
                 drawersByIds[simplifiedCountry.PlayerId].UpdateScore(simplifiedCountry.Population);
             }
         }
+
         public class Settings
         {
-            public ZoneData[] Zones { get;  set; }
-            public ZoneData DragZone { get; set;}
+            public ZoneData[] Zones { get; set; }
+            public ZoneData DragZone { get; set; }
 
             public Settings(ZoneData[] zones, ZoneData dragZone)
             {

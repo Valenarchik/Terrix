@@ -14,6 +14,8 @@ namespace Terrix.Networking
         [SerializeField] private TextMeshProUGUI idText;
         [SerializeField] private Lobby lobby;
         [SerializeField] private Button exitButton;
+        [SerializeField] private GameObject winPanel;
+        [SerializeField] private GameObject losePanel;
         private string stateString;
 
         private void Start()
@@ -85,6 +87,18 @@ namespace Terrix.Networking
         {
             playersCountText.text =
                 $"Число игроков в комнате: {lobby.PlayersCurrentCount.ToString()}/ {lobby.PlayersMaxCount.ToString()}";
+        }
+
+        public void WinGame()
+        {
+            winPanel.SetActive(true);
+            exitButton.gameObject.SetActive(true);
+        }
+
+        public void LoseGame()
+        {
+            losePanel.SetActive(true);
+            exitButton.gameObject.SetActive(true);
         }
     }
 }

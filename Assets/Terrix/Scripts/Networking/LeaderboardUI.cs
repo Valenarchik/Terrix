@@ -1,11 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using AYellowpaper.SerializedCollections;
-using Terrix.Entities;
 using Terrix.Game.GameRules;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Terrix.Networking
 {
@@ -13,30 +9,52 @@ namespace Terrix.Networking
     {
         [SerializeField] private PlayerInfoUI playerInfoUIPrefab;
         private Dictionary<int, PlayerInfoUI> playersInfos = new();
+        private IPlayersProvider playersProvider;
 
         public void Initialize(IPlayersProvider playersProvider)
         {
+            this.playersProvider = playersProvider;
+            var index = 1;
             foreach (var player in playersProvider.GetAll())
             {
                 var playerInfoUI = Instantiate(playerInfoUIPrefab, transform);
-                playerInfoUI.Initialize(player.PlayerName, player.PlayerColor);
+                playerInfoUI.Initialize(player, index);
+                // playerInfoUI.Initialize(player.PlayerName, player.PlayerColor);
                 playersInfos.Add(player.ID, playerInfoUI);
+                index++;
             }
         }
 
-        public void UpdateInfo(IPlayersProvider playersProvider)
+        public void UpdateInfo()
         {
-            var players = playersProvider.GetAll();
-            foreach (var pair in playersInfos
-                         .OrderByDescending(pair => playersProvider.Find(pair.Key).Country.Population))
+            // var players = playersProvider.GetAll().ToArray();
+            var defaultLeaderboardLength = 10;
+            var sortedPlayersInfos = playersInfos.OrderByDescending(pair => playersProvider
+                .Find(pair.Key).Country.Population).ToArray();
+            var currentLeaderboardLength = Mathf.Min(defaultLeaderboardLength, sortedPlayersInfos.Length);
+            for (int i = 0; i < currentLeaderboardLength; i++)
             {
-                pair.Value.RectTransform.SetAsLastSibling();
+                sortedPlayersInfos[i].Value.RectTransform.SetSiblingIndex(i);
+                sortedPlayersInfos[i].Value.UpdateInfo(i + 1);
             }
 
-            for (var i = 0; i < players.Length; i++)
+            for (int i = currentLeaderboardLength; i < sortedPlayersInfos.Length; i++)
             {
-                playersInfos[i].UpdateInfo(players[i].Country.Population);
+                sortedPlayersInfos[i].Value.gameObject.SetActive(false);
             }
+
+            // foreach (var pair in playersInfos.OrderByDescending(pair =>
+            //              playersProvider.Find(pair.Key).Country.Population))
+            // {
+            //     pair.Value.RectTransform.SetAsLastSibling();
+            //     pair.Value.UpdateInfo();
+            // }
+            //
+            // //
+            // for (var i = 0; i < players.Length; i++)
+            // {
+            //     playersInfos[i].UpdateInfo();
+            // }
         }
     }
 }

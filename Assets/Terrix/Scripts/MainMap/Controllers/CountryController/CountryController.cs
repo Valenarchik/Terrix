@@ -64,22 +64,22 @@ namespace Terrix.Controllers
 
             this.player = this.players.Find(playerId);
             this.country = this.player.Country;
-            this.game.OnGameReady(OnGameReady);
+            this.game.OnGameStarted(OnGameStart);
         }
 
         public void OnChooseCountryPosition(InputAction.CallbackContext context)
         {
-            stateMachine.CurrentState.OnChooseCountryPosition(context);
+            stateMachine?.CurrentState.OnChooseCountryPosition(context);
         }
 
         public void OnPoint(InputAction.CallbackContext context)
         {
-            stateMachine.CurrentState.OnPoint(context);
+            stateMachine?.CurrentState.OnPoint(context);
         }
 
         public void OnDragBorders(InputAction.CallbackContext context)
         {
-            stateMachine.CurrentState.OnDragBorders(context);
+            stateMachine?.CurrentState.OnDragBorders(context);
         }
 
         public override void OnStartClient()
@@ -99,7 +99,7 @@ namespace Terrix.Controllers
             stateMachine?.CurrentState.Update();
         }
 
-        private void OnGameReady()
+        private void OnGameStart()
         {
             phaseManager.PhaseChanged += OnPhaseChanged;
             ActualizePhase(phaseManager.CurrentPhase);
@@ -126,6 +126,7 @@ namespace Terrix.Controllers
                     break;
                 case GamePhaseType.Finish:
                     ChangeState(CountryControllerStateType.Idle);
+                    Debug.Log("Game ended");
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(phaseType), phaseType, null);

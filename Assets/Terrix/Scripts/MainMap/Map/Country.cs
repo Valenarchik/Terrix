@@ -274,48 +274,12 @@ namespace Terrix.Map
             }
         }
 
-        public class UpdateSimplifiedCellsData
-        {
-            public int PlayerId { get; }
-            public List<SimplifiedCellChangeData> ChangeData { get; }
-
-            public UpdateSimplifiedCellsData(int playerId, List<SimplifiedCellChangeData> changeData)
-            {
-                PlayerId = playerId;
-                ChangeData = changeData ?? throw new ArgumentNullException(nameof(changeData));
-            }
-        }
-
-        public struct SimplifiedCellChangeData
-        {
-            public Vector3Int Position { get; set; }
-            public UpdateCellMode Mode { get; set; }
-
-            public SimplifiedCellChangeData(Vector3Int positon, UpdateCellMode mode)
-            {
-                Position = positon;
-                Mode = mode;
-            }
-        }
+        
 
         public enum UpdateCellMode
         {
             Add,
             Remove
-        }
-    }
-
-    public class SimplifiedCountry
-    {
-        public int PlayerId { get; private set; }
-        public float Population { get; private set; }
-        public int CellsCount { get; private set; }
-
-        public SimplifiedCountry(int playerId, float population, int cellsCount)
-        {
-            PlayerId = playerId;
-            Population = population;
-            CellsCount = cellsCount;
         }
     }
 }

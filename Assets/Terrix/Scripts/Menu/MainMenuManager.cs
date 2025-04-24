@@ -25,16 +25,13 @@ public class MainMenuManager : NetworkBehaviour
 
     public void StartDefaultGame()
     {
-        // throw new Exception("Button was clicked on client");
-        Debug_OnServer();
         PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
         BootstrapNetworkManager.Instance.CreateOrJoinDefaultLobby_OnClient();
-        // throw new Exception("Button was clicked on client");
+    }
+    public void StartAloneGame()
+    {
+        PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
+        BootstrapNetworkManager.Instance.CreateOrJoinDefaultLobby_OnClient();
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void Debug_OnServer()
-    {
-        Debug.Log("Button was clicked on server");
-    }
 }

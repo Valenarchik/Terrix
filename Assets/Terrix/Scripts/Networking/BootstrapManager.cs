@@ -17,6 +17,6 @@ public class BootstrapManager : MonoBehaviour
     private void GoToMenu()
     {
         SceneManager.LoadScene(Terrix.Networking.Scenes.MenuScene, LoadSceneMode.Additive);
+        // SceneManager.LoadScene(Terrix.Networking.Scenes.GameScene, LoadSceneMode.Additive);
     }
-
 }

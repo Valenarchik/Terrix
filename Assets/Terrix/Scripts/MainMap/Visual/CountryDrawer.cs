@@ -38,7 +38,19 @@ namespace Terrix.Visual
             tilemapRenderer.sharedMaterial = zoneMaterial;
             tilemapRenderer.sortingOrder = settings.SortingOrder;
             playerNameText.text = settings.PlayerName;
+            // playerInfoHolder.gameObject.SetActive(true);
         }
+
+        public void SetInfoHolderActive(bool value = true)
+        {
+            playerInfoHolder.gameObject.SetActive(value);
+        }
+
+        // public void InitializeDragZone([NotNull] Settings settings)
+        // {
+        //     Initialize(settings);
+        //     playerInfoHolder.gameObject.SetActive(false);
+        // }
 
         public void UpdateZone([NotNull] Country.UpdateCellsData data, float? score)
         {
@@ -70,7 +82,7 @@ namespace Terrix.Visual
 
         public void UpdateScore(float score)
         {
-            playerScoreText.text = score.ToString();
+            playerScoreText.text = ((int)score).ToString();
         }
 
         private TileChangeData[] GenerateData(Country.UpdateCellsData data)

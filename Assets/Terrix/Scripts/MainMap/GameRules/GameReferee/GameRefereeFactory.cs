@@ -12,23 +12,23 @@ namespace Terrix.Game.GameRules
     {
         private readonly GameReferee.Settings settings;
         private readonly IPlayersProvider playersProvider;
-        private readonly IGame events;
+        private readonly IGame game;
 
         public GameRefereeFactory(
             GameReferee.Settings settings,
             IPlayersProvider playersProvider,
-            IGame events) 
+            IGame game) 
         {
             this.settings = settings;
             this.playersProvider = playersProvider;
-            this.events = events;
+            this.game = game;
         }
 
         public GameReferee Create()
         {
             return settings.Type switch
             {
-                GameModeType.FFA => new FFAGameReferee(settings, playersProvider, events),
+                GameModeType.FFA => new FFAGameReferee(settings, playersProvider, game),
                 _ => throw new ArgumentOutOfRangeException()
             };
         }

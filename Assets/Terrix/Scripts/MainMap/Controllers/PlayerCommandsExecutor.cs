@@ -168,12 +168,6 @@ namespace Terrix.Controllers
 
             captureHexes = hexes.ToArray();
             country.ClearAndAdd(hexes.ToArray());
-            mainMapEntryPoint.UpdateCountryHexes(new List<Country.UpdateSimplifiedCellsData>()
-            {
-                new(country.PlayerId,
-                    hexes.Select(hex => new Country.SimplifiedCellChangeData(hex.Position, Country.UpdateCellMode.Add))
-                        .ToList())
-            });
         }
 
 

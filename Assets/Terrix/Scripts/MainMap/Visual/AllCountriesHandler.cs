@@ -1,24 +1,73 @@
 ﻿using System;
 using System.Linq;
+using FishNet.Object;
 using JetBrains.Annotations;
+using Terrix.Game.GameRules;
 using Terrix.Map;
+using Terrix.Network.DTO;
+using Terrix.Networking;
 using UnityEngine;
 
 namespace Terrix.Visual
 {
-    // Только на сервере
-    public class AllCountriesHandler : MonoBehaviour
+    // Только на сервере и на клиенте
+    public class AllCountriesHandler : NetworkBehaviour
     {
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
+        [SerializeField] private TickGenerator tickGenerator;
+        [SerializeField] private LeaderboardUI leaderboardUI;
+
+
+        private IPlayersProvider players;
+        private HexMap hexMap;
+
 
         private Country[] countries;
-        public Country[] Countries => countries;
         private bool initialize;
         private bool handle;
 
-        public void Initialize([NotNull] Country[] countries)
+
+        public override void OnStartServer()
         {
-            this.countries = countries ?? throw new ArgumentNullException(nameof(countries));
+            tickGenerator.OnUpdated += TickGenerator_OnUpdated;
+        }
+
+        private void TickGenerator_OnUpdated()
+        {
+            UpdateCountriesPopulation_ToObserver(players.GetAll().Select(player => player.Country)
+                .Select(country => new SimplifiedCountry(country.PlayerId, country.Population, country.TotalCellsCount))
+                .ToArray());
+        }
+
+        [ObserversRpc]
+        private void UpdateCountriesPopulation_ToObserver(
+            SimplifiedCountry[] simplifiedCountries)
+        {
+            foreach (var simplifiedCountry in simplifiedCountries)
+            {
+                players.Find(simplifiedCountry.PlayerId).Country.Population = simplifiedCountry.Population;
+            }
+
+            allCountriesDrawer.UpdateScore_OnClient(simplifiedCountries);
+            leaderboardUI.UpdateInfo();
+        }
+        [ObserversRpc]
+        private void UpdatePlayersState(
+            SimplifiedCountry[] simplifiedCountries)
+        {
+            foreach (var simplifiedCountry in simplifiedCountries)
+            {
+                players.Find(simplifiedCountry.PlayerId).Country.Population = simplifiedCountry.Population;
+            }
+
+            allCountriesDrawer.UpdateScore_OnClient(simplifiedCountries);
+            leaderboardUI.UpdateInfo();
+        }
+
+        public void Initialize_OnServer([NotNull] IPlayersProvider players)
+        {
+            this.players = players ?? throw new ArgumentNullException(nameof(players));
+            this.countries = players.GetAll().Select(player => player.Country).ToArray();
 
 
             initialize = true;
@@ -26,9 +75,11 @@ namespace Terrix.Visual
             SubscribeCountryEvents();
         }
 
-        private void OnEnable()
+        public void Initialize_OnClient([NotNull] IPlayersProvider players, [NotNull] HexMap hexMap)
         {
-            SubscribeCountryEvents();
+            this.players = players ?? throw new ArgumentNullException(nameof(players));
+            this.hexMap = hexMap ?? throw new ArgumentNullException(nameof(players));
+            initialize = true;
         }
 
         private void OnDisable()
@@ -39,8 +90,22 @@ namespace Terrix.Visual
 
         private void CountryOnCellsUpdate(Country.UpdateCellsData data)
         {
+            UpdateCountries_ToObserver(data);
             allCountriesDrawer.UpdateZone_ToObserver(data,
                 countries.First(country => country.PlayerId == data.PlayerId).Population);
+        }
+
+        [ObserversRpc]
+        private void UpdateCountries_ToObserver(Country.UpdateCellsData data)
+        {
+            var hexes = data.ChangeData.Select(changeData => changeData.Hex).ToArray();
+            foreach (var hex in hexes)
+            {
+                hexMap.FindHex(hex.Position).PlayerId = hex.PlayerId;
+                hex.HexMap = hexMap;
+            }
+
+            players.Find(data.PlayerId).Country.UpdateCells(data);
         }
 
 

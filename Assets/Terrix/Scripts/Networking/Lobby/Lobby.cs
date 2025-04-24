@@ -24,6 +24,7 @@ namespace Terrix.Networking
         public event Action OnPlayersChanged;
         public event Action<LobbyStateType> OnStateChanged;
         public event Action<float> OnTimerChanged;
+        public event Action<NetworkConnection> OnPlayerExit;
 
         private void Update()
         {
@@ -93,13 +94,14 @@ namespace Terrix.Networking
             switch (args.ConnectionState)
             {
                 case RemoteConnectionState.Stopped:
-                    Players.Remove(conn);
-                    if (Players.Count == 0)
-                    {
-                        LobbyManager.Instance.RemoveDefaultLobby(Id);
-                    }
-
-                    UpdatePlayers_ToObserver(Players);
+                    RemovePlayerFromList_OnServer(conn);
+                    // Players.Remove(conn);
+                    // if (Players.Count == 0)
+                    // {
+                    //     LobbyManager.Instance.RemoveDefaultLobby(Id);
+                    // }
+                    //
+                    // UpdatePlayers_ToObserver(Players);
                     break;
                 case RemoteConnectionState.Started:
                     break;
@@ -125,10 +127,19 @@ namespace Terrix.Networking
         [ServerRpc(RequireOwnership = false)]
         void RemovePlayer_ToServer(NetworkConnection player)
         {
-            Players.Remove(player);
+            // Players.Remove(player);
+            var sud = new SceneUnloadData(new[] { Scenes.GameScene });
+            SceneManager.UnloadConnectionScenes(player, sud);
             var sld = new SceneLoadData(new[] { Scenes.MenuScene });
             SceneManager.LoadConnectionScenes(player, sld);
-            UpdatePlayers_ToObserver(Players);
+            RemovePlayerFromList_OnServer(player);
+            //
+            // if (Players.Count == 0)
+            // {
+            //     LobbyManager.Instance.RemoveDefaultLobby(Id);
+            // }
+            //
+            // UpdatePlayers_ToObserver(Players);
         }
 
         [TargetRpc]
@@ -189,8 +200,18 @@ namespace Terrix.Networking
 
         public void RemoveThisPlayer_OnClient()
         {
-            Debug.Log("Clicked");
             RemovePlayer_ToServer(NetworkManager.ClientManager.Connection);
+        }
+
+        private void RemovePlayerFromList_OnServer(NetworkConnection player)
+        {
+            Players.Remove(player);
+            if (Players.Count == 0)
+            {
+                LobbyManager.Instance.RemoveDefaultLobby(Id);
+            }
+            UpdatePlayers_ToObserver(Players);
+            OnPlayerExit?.Invoke(player);
         }
     }
 }

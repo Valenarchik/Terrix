@@ -41,8 +41,8 @@ public class BootstrapNetworkManager : NetworkBehaviour
     public void CreateOrJoinDefaultLobby_OnClient()
     {
         var player = NetworkManager.ClientManager.Connection; //иногда ошибка
-        CreateOrJoinDefaultLobby_ToServer(player);
         CloseScenes(new[] { Scenes.MenuScene });
+        CreateOrJoinDefaultLobby_ToServer(player);
     }
 
     public void CreateCustomLobby_OnClient()

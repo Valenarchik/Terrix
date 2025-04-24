@@ -11,7 +11,7 @@ namespace Terrix.Visual
         public string PlayerName { get; set; }
 
         public Color? BorderColor { get; set; } = null;
-        
+
         public ZoneData(int playerId)
         {
             PlayerId = playerId;
@@ -20,7 +20,10 @@ namespace Terrix.Visual
         public ZoneData(int id, Color color, string playerName)
         {
             PlayerId = id;
-            Color = color;
+            var mainColor = color;
+            mainColor.a = 0.3f;
+            Color = mainColor;
+            BorderColor = color;
             PlayerName = playerName;
         }
     }

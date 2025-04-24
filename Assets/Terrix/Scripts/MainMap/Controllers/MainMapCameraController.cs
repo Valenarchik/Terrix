@@ -92,7 +92,7 @@ namespace Terrix.Controllers
                     break;
                 case GamePhaseType.Main:
                 {
-                    MoveCameraOverPlayer();
+                    // MoveCameraOverPlayer();
                     break;
                 }
                 case GamePhaseType.Finish:

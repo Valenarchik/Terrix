@@ -26,11 +26,11 @@ namespace Terrix.Networking
             var hexes = reader.Read<Hex[]>();
             var size = reader.ReadVector3Int();
             var matrix = hexes.ToMatrix(size.x, size.y, size.z);
-            var hexMap = new HexMap(matrix);
-            foreach (var hex in hexMap.Hexes)
-            {
-                hex.HexMap = hexMap;
-            }
+            // var hexMap = new HexMap(matrix);
+            // foreach (var hex in hexMap.Hexes)
+            // {
+            //     hex.HexMap = hexMap;
+            // }
 
             return new HexMap(matrix);
         }
@@ -42,7 +42,7 @@ namespace Terrix.Networking
             writer.WriteVector3(value.WorldPosition);
             writer.Write(value.PlayerId);
         }
-
+        
         public static Hex ReadHex(this Reader reader)
         {
             return new Hex(reader.Read<HexType>(), reader.ReadVector3Int(), reader.ReadVector3(),
@@ -282,7 +282,7 @@ namespace Terrix.Networking
                 WriteHex(hex);
             }
 
-            var players = value.IPlayersProvider.GetAll();
+            var players = value.IPlayersProvider.GetAll().ToArray();
             writer.WriteInt32(players.Length);
             foreach (var player in players)
             {
@@ -353,7 +353,6 @@ namespace Terrix.Networking
 
         public static PlayersCountryMapData ReadPlayersCountryMapData(this Reader reader)
         {
-            // var players = new List<Player>();
             var playersProvider = new PlayersProvider(new List<Player>());
             var mapLength = reader.ReadInt32();
             var mapSize = reader.ReadVector3Int();
@@ -380,18 +379,17 @@ namespace Terrix.Networking
                     var bot = new Bot(reader.ReadInt32(), reader.Read<PlayerType>(), GetCountry(),
                         reader.ReadString(), reader.ReadColor());
                     bot.Country.Owner = bot;
-                    playersProvider.Players.Add(bot);
+                    playersProvider.AddPlayer(bot);
                 }
                 else
                 {
                     var player = new Player(reader.ReadInt32(), reader.Read<PlayerType>(), GetCountry(),
                         reader.ReadString(), reader.ReadColor());
                     player.Country.Owner = player;
-                    playersProvider.Players.Add(player);
+                    playersProvider.AddPlayer(player);
                 }
             }
 
-            playersProvider.UpdatePlayersMap();
             return new PlayersCountryMapData(playersProvider, hexMap);
 
             Country GetCountry()
@@ -419,10 +417,7 @@ namespace Terrix.Networking
 
             Hex GetHexFormMap()
             {
-                // var hexType = reader.Read<HexType>();
                 var position = reader.ReadVector3Int();
-                // var worldPosition = reader.ReadVector3();
-                // var id = reader.Read<int?>();
                 return hexMap.FindHex(position);
             }
         }
@@ -465,27 +460,27 @@ namespace Terrix.Networking
             return new SimplifiedHex(reader.ReadVector3Int(), reader.Read<int?>());
         }
 
-        public static void WriteUpdateSimplifiedCellsData(this Writer writer, Country.UpdateSimplifiedCellsData value)
+        public static void WriteUpdateSimplifiedCellsData(this Writer writer, UpdateSimplifiedCellsData value)
         {
             writer.WriteInt32(value.PlayerId);
             writer.WriteList(value.ChangeData);
         }
 
-        public static Country.UpdateSimplifiedCellsData ReadUpdateSimplifiedCellsData(this Reader reader)
+        public static UpdateSimplifiedCellsData ReadUpdateSimplifiedCellsData(this Reader reader)
         {
-            return new Country.UpdateSimplifiedCellsData(reader.ReadInt32(),
-                reader.ReadListAllocated<Country.SimplifiedCellChangeData>());
+            return new UpdateSimplifiedCellsData(reader.ReadInt32(),
+                reader.ReadListAllocated<SimplifiedCellChangeData>());
         }
 
-        public static void WriteSimplifiedCellChangeData(this Writer writer, Country.SimplifiedCellChangeData value)
+        public static void WriteSimplifiedCellChangeData(this Writer writer, SimplifiedCellChangeData value)
         {
             writer.WriteVector3Int(value.Position);
             writer.Write(value.Mode);
         }
 
-        public static Country.SimplifiedCellChangeData ReadSimplifiedCellChangeData(this Reader reader)
+        public static SimplifiedCellChangeData ReadSimplifiedCellChangeData(this Reader reader)
         {
-            return new Country.SimplifiedCellChangeData(reader.ReadVector3Int(), reader.Read<Country.UpdateCellMode>());
+            return new SimplifiedCellChangeData(reader.ReadVector3Int(), reader.Read<Country.UpdateCellMode>());
         }
     }
 }
