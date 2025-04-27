@@ -43,7 +43,9 @@ namespace Terrix.Settings
                     kvp => new TickHandlerSettings(
                         kvp.Key,
                         TimeSpan.FromSeconds(kvp.Value.TickDeltaInSeconds),
-                        kvp.Value.Priority)),
+                        kvp.Value.Priority,
+                        kvp.Value.EveryUpdate,
+                        kvp.Value.EveryFixedUpdate)),
                 BotSettings
             );
         }
@@ -68,7 +70,9 @@ namespace Terrix.Settings
     [Serializable]
     public class TickHandlerSettingsSerializable
     {
-        public float TickDeltaInSeconds = 1;
+        [ConditionallyVisible(nameof(EveryFixedUpdate), false)] public bool EveryUpdate;
+        [ConditionallyVisible(nameof(EveryUpdate), false)] public bool EveryFixedUpdate;
+        [ConditionallyVisible(nameof(EveryUpdate), false, nameof(EveryFixedUpdate), false)] public float TickDeltaInSeconds = 1;
         public int Priority = 0;
     }
 }

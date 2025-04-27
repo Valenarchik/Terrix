@@ -105,7 +105,7 @@ namespace Terrix.Controllers
             Enable = true;
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             if (!Enable)
             {
