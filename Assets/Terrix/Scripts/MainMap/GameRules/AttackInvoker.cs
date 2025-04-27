@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using Terrix.Map;
-using UnityEngine;
 
 namespace Terrix.Game.GameRules
 {
     public interface IAttackInvoker : ITickHandler
     {
+        public event Action<Attack> OnStartAttack;
+        public event Action<Attack> OnFinishAttack;
+        
         public void AddAttack(Attack attack);
-        public void RemoveAttack(Attack attack);
     }
 
     public class AttackInvoker : IAttackInvoker
@@ -17,10 +18,13 @@ namespace Terrix.Game.GameRules
         private readonly List<Attack> attacksOrder = new();
         private readonly Dictionary<Guid, Attack> attacksMap = new();
         private readonly Dictionary<Guid, AttackState> attacksStates = new();
+        
+        public event Action<Attack> OnStartAttack;
+        public event Action<Attack> OnFinishAttack;
 
         public void AddAttack(Attack attack)
         {
-            if (attack is null || attack.Territory.Count == 0)
+            if (attack is null || (!attack.IsGlobalAttack && attack.Territory.Count == 0))
             {
                 return;
             }
@@ -30,12 +34,8 @@ namespace Terrix.Game.GameRules
                 attacksOrder.Add(attack);
                 attacksStates.Add(attack.ID, new AttackState(attack, attack.Points));
                 attack.Owner.Country.Population += attack.Points;
+                OnStartAttack?.Invoke(attack);
             }
-        }
-
-        public void RemoveAttack(Attack attack)
-        {
-            RemoveAttackInternal(attack);
         }
 
         public void HandleTick()
@@ -51,22 +51,9 @@ namespace Terrix.Game.GameRules
             }
         }
 
-        private void RemoveAttackInternal(Attack attack)
-        {
-            if (attacksMap.Remove(attack.ID))
-            {
-                attacksOrder.Remove(attack);
-                attacksStates.Remove(attack.ID);
-            }
-        }
-
         private void AttackTick(AttackState attackState)
         {
-            // пересечение зоны атаки и внешней обводки
-            var intersection = attackState.Attack.Territory
-                .Where(h => h.GetHexData().CanCapture && h.PlayerId == attackState.Attack.Target?.ID)
-                .Intersect(attackState.Attack.Owner.Country.GetOuterBorder())
-                .ToHashSet();
+            var intersection = GetIntersection(attackState);
 
             if (intersection.Count == 0)
             {
@@ -94,12 +81,35 @@ namespace Terrix.Game.GameRules
             attackState.Attack.Owner.Country.Add(intersection);
         }
 
+        private static HashSet<Hex> GetIntersection(AttackState attackState)
+        {
+            return attackState.Attack.IsGlobalAttack
+                ? attackState.Attack.Owner.Country.GetOuterBorder()
+                    .Where(h => h.GetHexData().CanCapture && h.PlayerId == attackState.Attack.Target?.ID)
+                    .ToHashSet()
+                : attackState.Attack.Territory
+                    .Where(h => h.GetHexData().CanCapture && h.PlayerId == attackState.Attack.Target?.ID)
+                    .Intersect(attackState.Attack.Owner.Country.GetOuterBorder())
+                    .ToHashSet();
+        }
+
         private void FinishAttack(Attack attack)
         {
             var state = attacksStates[attack.ID];
             attack.Owner.Country.Population += state.CurrentPoints;
             
             RemoveAttackInternal(attack);
+            
+            OnFinishAttack?.Invoke(attack);
+        }
+        
+        private void RemoveAttackInternal(Attack attack)
+        {
+            if (attacksMap.Remove(attack.ID))
+            {
+                attacksOrder.Remove(attack);
+                attacksStates.Remove(attack.ID);
+            }
         }
         
         private class AttackState
