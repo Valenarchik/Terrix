@@ -13,6 +13,7 @@ namespace Terrix.MainMap.AI
 {
     public interface IBotsManager: ITickHandler
     {
+        public void AddBots(IEnumerable<Bot> botsEnumerable);
     }
 
     public class BotsManager: IBotsManager
@@ -65,7 +66,7 @@ namespace Terrix.MainMap.AI
                     bots.Add(bot.ID, new BotState
                     {
                         Bot = bot,
-                        Settings = gameDataProvider.Get().BotSettings,
+                        Settings = gameDataProvider.Get().BotSettings ?? throw new NullReferenceException(),
                         NextLaunch = DateTime.UtcNow
                     });
                 }
@@ -77,7 +78,7 @@ namespace Terrix.MainMap.AI
             foreach (var (id, botState) in bots)
             {
                 if (botState.Bot.PlayerState == PlayerState.InGame 
-                    && botState.NextLaunch > DateTime.UtcNow)
+                    && botState.NextLaunch <= DateTime.UtcNow)
                 {
                     LaunchBot(botState);
                     botState.NextLaunch = CalculateNextLaunchTime(botState);

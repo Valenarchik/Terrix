@@ -18,7 +18,7 @@ namespace Terrix.Settings
         public float TimeForChooseFirstCountryPositionInSeconds = 30;
         public float StartCountryPopulation = 100;
         public SerializedDictionary<TickHandlerType, TickHandlerSettingsSerializable> TickHandlers;
-        public BotSettings BotSettings { get; }
+        public BotSettings BotSettings;
 
         private GameSettings gameSettings;
 

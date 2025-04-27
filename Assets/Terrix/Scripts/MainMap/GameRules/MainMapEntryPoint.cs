@@ -100,11 +100,13 @@ namespace Terrix.Game.GameRules
             NotInitializedPlayersChooseRandomPositions();
 
             phaseManager.NextPhase();
+            botsManager.AddBots(players.GetAll().OfType<Bot>());
             tickGenerator.InitializeLoop(new TickGenerator.TickHandlerTuple[]
             {
                 new(countriesCollector, gameData.TickHandlers[TickHandlerType.CountriesCollectorHandler]),
                 new(attackInvoker, gameData.TickHandlers[TickHandlerType.AttackHandler]),
-                new(referee, gameData.TickHandlers[TickHandlerType.RefereeHandler])
+                new(referee, gameData.TickHandlers[TickHandlerType.RefereeHandler]),
+                new(botsManager, gameData.TickHandlers[TickHandlerType.BotsHandler])
             });
 
             // Ждем пока игра не закончится
