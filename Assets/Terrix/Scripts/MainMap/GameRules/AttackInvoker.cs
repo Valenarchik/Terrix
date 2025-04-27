@@ -33,7 +33,7 @@ namespace Terrix.Game.GameRules
             {
                 attacksOrder.Add(attack);
                 attacksStates.Add(attack.ID, new AttackState(attack, attack.Points));
-                attack.Owner.Country.Population += attack.Points;
+                attack.Owner.Country.Population -= attack.Points;
                 OnStartAttack?.Invoke(attack);
             }
         }

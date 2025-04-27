@@ -4,6 +4,7 @@ using System.Linq;
 using AYellowpaper.SerializedCollections;
 using CustomUtilities.Attributes;
 using Terrix.DTO;
+using Terrix.MainMap.AI;
 using UnityEngine;
 
 namespace Terrix.Settings
@@ -17,6 +18,7 @@ namespace Terrix.Settings
         public float TimeForChooseFirstCountryPositionInSeconds = 30;
         public float StartCountryPopulation = 100;
         public SerializedDictionary<TickHandlerType, TickHandlerSettingsSerializable> TickHandlers;
+        public BotSettings BotSettings { get; }
 
         private GameSettings gameSettings;
 
@@ -41,7 +43,8 @@ namespace Terrix.Settings
                     kvp => new TickHandlerSettings(
                         kvp.Key,
                         TimeSpan.FromSeconds(kvp.Value.TickDeltaInSeconds),
-                        kvp.Value.Priority))
+                        kvp.Value.Priority)),
+                BotSettings
             );
         }
     }

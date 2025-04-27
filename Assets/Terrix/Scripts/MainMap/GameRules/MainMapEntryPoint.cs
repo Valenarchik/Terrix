@@ -6,6 +6,7 @@ using CustomUtilities.Extensions;
 using Terrix.Controllers;
 using Terrix.DTO;
 using Terrix.Entities;
+using Terrix.MainMap.AI;
 using Terrix.Map;
 using Terrix.Network.DTO;
 using Terrix.Settings;
@@ -42,6 +43,7 @@ namespace Terrix.Game.GameRules
         private IPhaseManager phaseManager;
         private IPlayersProvider players;
         private IAttackMassageEncoder attackMassageEncoder;
+        private IBotsManager botsManager;
 
         private void Start()
         {
@@ -138,6 +140,8 @@ namespace Terrix.Game.GameRules
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider, attackMassageEncoder, attackInvoker);
             
             cameraController.Initialize(game, phaseManager, players.Find(clientSettings.LocalPlayerId));
+
+            botsManager = new BotsManager(attackInvoker, gameDataProvider, players);
         }
 
         // [Server]

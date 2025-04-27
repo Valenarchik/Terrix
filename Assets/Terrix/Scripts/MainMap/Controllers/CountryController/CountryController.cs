@@ -192,8 +192,16 @@ namespace Terrix.Controllers
 
         private void StartAttack(int? targetId, float points, IEnumerable<Hex> territory)
         {
-            var target = targetId.HasValue ? players.Find(targetId.Value) : null; 
-            commandsExecutor.ExecuteAttack(new Attack(Guid.NewGuid(), player, target, points, territory.ToHashSet()));
+            var target = targetId.HasValue ? players.Find(targetId.Value) : null;
+            var attack = new AttackBuilder
+            {
+                Owner = player,
+                Target = target,
+                Points = points,
+                Territory = territory.ToHashSet()
+            }.Build();
+            
+            commandsExecutor.ExecuteAttack(attack);
         }
     }
 }
