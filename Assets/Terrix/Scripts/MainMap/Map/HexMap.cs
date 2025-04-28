@@ -19,16 +19,6 @@ namespace Terrix.Map
             set => this[pos.x, pos.y, pos.z] = value;
         }
 
-        public Hex FindHex(Vector3Int pos)
-        {
-            if (HasHex(pos))
-            {
-                return this[pos];
-            }
-
-            return null;
-        }
-
         public bool TryGetHex(Vector3Int pos, out Hex hex)
         {
             if (HasHex(pos))

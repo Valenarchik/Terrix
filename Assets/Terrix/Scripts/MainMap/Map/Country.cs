@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using System.Linq;
+using MoreLinq;
 using Terrix.DTO;
 using Terrix.Entities;
 using Terrix.Settings;
@@ -17,12 +18,11 @@ namespace Terrix.Map
         private readonly Dictionary<HexType, int> cellsByTypeCount;
 
         private readonly HashSet<Hex> cellsSet = new ();
-        
-        private bool innerBorderUpdated;
         private readonly HashSet<Hex> innerBorder = new();
-
-        private bool outerBorderUpdated;
         private readonly HashSet<Hex> outerBorder = new();
+        
+        private readonly HashSet<Hex> updatedCells = new();
+        
         private float population;
 
         public int PlayerId => Owner.ID;
@@ -94,7 +94,7 @@ namespace Terrix.Map
 
         public void Clear()
         {
-            ClearAndAdd(ArraySegment<Hex>.Empty);
+            ClearAndAdd(Array.Empty<Hex>());
         }
 
         public void RemoveAndAdd(IEnumerable<Hex> removedHexes, IEnumerable<Hex> addedHexes)
@@ -127,6 +127,9 @@ namespace Terrix.Map
                             cellsByTypeCount[cell.HexType]++;
                             TotalCellsCount++;
                             cell.PlayerId = PlayerId;
+
+                            updatedCells.Add(cell);
+                            cell.GetNeighbours().ForEach(h => updatedCells.Add(h));
                         }
                         break;
                     }
@@ -137,52 +140,62 @@ namespace Terrix.Map
                             cellsByTypeCount[cell.HexType]--;
                             TotalCellsCount--;
                             cell.PlayerId = null;
+                            
+                            updatedCells.Add(cell);
+                            cell.GetNeighbours().ForEach(h => updatedCells.Add(h));
                         }
                         break;
                     }
                 }
             }
 
-            innerBorderUpdated = true;
-            outerBorderUpdated = true;
-
             MaxCellsCount = Mathf.Max(TotalCellsCount, MaxCellsCount);
             AssignPopulation();
             OnCellsUpdate?.Invoke(data);
         }
-
-        public HashSet<Hex> GetInnerBorder()
+        
+        public IReadOnlyCollection<Hex> GetInnerBorder()
         {
-            if (innerBorderUpdated)
-            {
-                innerBorder.Clear();
-                foreach (var cell in cellsSet)
-                {
-                    if (cell.GetNeighbours().Any(neighbor => !Contains(neighbor)))
-                    {
-                        innerBorder.Add(cell);
-                    }
-                }
-            }
-
-            return innerBorder.ToHashSet();
+            TryApplyUpdates();
+            return innerBorder;
         }
 
-        public HashSet<Hex> GetOuterBorder()
+        public IReadOnlyCollection<Hex> GetOuterBorder()
         {
-            if (outerBorderUpdated)
+            TryApplyUpdates();
+            return outerBorder;
+        }
+
+        private void TryApplyUpdates()
+        {
+            if (updatedCells.Count == 0)
             {
-                outerBorder.Clear();
-                foreach (var hex in GetInnerBorder().SelectMany(hex => hex.GetNeighbours()))
-                {
-                    outerBorder.Add(hex);
-                }
+                return;
+            } 
             
-                outerBorder.ExceptWith(cellsSet);
-            }
-
-            return outerBorder.ToHashSet();
+            updatedCells.ForEach(ApplyUpdatedCell);
+            updatedCells.Clear();
         }
+        
+        private void ApplyUpdatedCell(Hex cell)
+        {
+            if (cell.PlayerId == PlayerId && cell.GetNeighbours().Any(h => h.PlayerId != PlayerId))
+            {
+                innerBorder.Add(cell);
+                outerBorder.Remove(cell);
+            }
+            else if (cell.PlayerId != PlayerId && cell.GetNeighbours().Any(h => h.PlayerId == PlayerId))
+            {
+                innerBorder.Remove(cell);
+                outerBorder.Add(cell);
+            }
+            else
+            {
+                innerBorder.Remove(cell);
+                outerBorder.Remove(cell);
+            }
+        }
+
 
         private void ValidateUpdateCellsData(UpdateCellsData data)
         {
