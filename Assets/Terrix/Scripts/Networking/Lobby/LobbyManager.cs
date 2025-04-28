@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using FishNet.Object;
+using Terrix.Game.GameRules;
 using Terrix.Networking;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,17 +9,18 @@ using Random = UnityEngine.Random;
 
 public class LobbyManager : NetworkBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     [SerializeField] private int playersMaxCount;
     [SerializeField] private int playersAndBotsMaxCount;
     public int PlayersMaxCount => playersMaxCount;
     public int PlayersAndBotsMaxCount => playersAndBotsMaxCount;
     private Dictionary<int, Lobby> defaultLobbies = new();
-    private Dictionary<int, CustomLobby> customLobbies = new();
+    private Dictionary<int, Lobby> customLobbies = new();
+    // private Dictionary<int, CustomLobby> customLobbies = new();
+    public Queue<LobbySettings> ServerSettingsQueue { get; private set; } = new();
     public static LobbyManager Instance { get; private set; }
 
     private void Awake() => Instance = this;
-    
+
     public bool TryGetAvailableLobby(out Lobby availableLobby)
     {
         foreach (var lobby in defaultLobbies.Values)
@@ -46,7 +48,8 @@ public class LobbyManager : NetworkBehaviour
         defaultLobbies = newLobbies;
     }
 
-    private void UpdateCustomLobbies_ToObserver(Dictionary<int, CustomLobby> newLobbies)
+    // private void UpdateCustomLobbies_ToObserver(Dictionary<int, CustomLobby> newLobbies)
+    private void UpdateCustomLobbies_ToObserver(Dictionary<int, Lobby> newLobbies)
     {
         customLobbies = newLobbies;
     }
@@ -57,7 +60,8 @@ public class LobbyManager : NetworkBehaviour
         UpdateDefaultLobbies_ToObserver(defaultLobbies);
     }
 
-    public void AddCustomLobby(int id, CustomLobby lobby)
+    // public void AddCustomLobby(int id, CustomLobby lobby)
+    public void AddCustomLobby(int id, Lobby lobby)
     {
         customLobbies.Add(id, lobby);
         UpdateCustomLobbies_ToObserver(customLobbies);
@@ -69,7 +73,7 @@ public class LobbyManager : NetworkBehaviour
         UpdateDefaultLobbies_ToObserver(defaultLobbies);
     }
 
-    public int GetFreeId()
+    public int GetDefaultFreeId()
     {
         var id = GetLastId() + 1;
         while (defaultLobbies.ContainsKey(id))

@@ -19,14 +19,6 @@ namespace Terrix.Networking
             RectTransform = GetComponent<RectTransform>();
         }
 
-        // public void Initialize(string playerName, Color color)
-        // {
-        //     playerNameText.text = playerName;
-        //     rankText.text = RectTransform.GetSiblingIndex().ToString();
-        //     rankText.color = color;
-        //     playerNameText.color = color;
-        //     scoreText.color = color;
-        // }
         public void Initialize(Player player, int index)
         {
             this.player = player;

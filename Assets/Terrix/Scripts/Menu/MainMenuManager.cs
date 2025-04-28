@@ -11,16 +11,25 @@ public class MainMenuManager : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI errorMessage;
     [SerializeField] private Image colorPreviewImage;
     [SerializeField] private TMP_InputField playerInput;
-    // [SerializeField] private PlayerDataHolder playerDataHolder;
+    [SerializeField] private CustomLobbySettingsUI customLobbySettingsUI;
+    [SerializeField] private EnterCustomLobbyUI enterCustomLobbyUI;
 
     public void CreateCustomLobby()
     {
-        BootstrapNetworkManager.Instance.CreateCustomLobby_OnClient();
+        PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
+        BootstrapNetworkManager.Instance.CreateCustomLobby_OnClient(customLobbySettingsUI.GetLobbySettings());
     }
 
     public void JoinCustomLobby()
     {
-        BootstrapNetworkManager.Instance.TryJoinCustomLobby(int.Parse(lobbyInput.text));
+        var inputID = enterCustomLobbyUI.GetInputID();
+        if (inputID == 0)
+        {
+            return;
+        }
+
+        PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
+        BootstrapNetworkManager.Instance.TryJoinCustomLobby(inputID);
     }
 
     public void StartDefaultGame()
@@ -28,10 +37,4 @@ public class MainMenuManager : NetworkBehaviour
         PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
         BootstrapNetworkManager.Instance.CreateOrJoinDefaultLobby_OnClient();
     }
-    public void StartAloneGame()
-    {
-        PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
-        BootstrapNetworkManager.Instance.CreateOrJoinDefaultLobby_OnClient();
-    }
-
 }

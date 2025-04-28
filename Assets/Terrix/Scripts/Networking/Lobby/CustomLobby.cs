@@ -29,9 +29,9 @@ namespace Terrix.Networking
             }
         }
 
-        protected override int GetFreeId() => LobbyManager.Instance.GetCustomFreeId();
+        protected override int GetDefaultFreeId() => LobbyManager.Instance.GetCustomFreeId();
         protected override LobbyStateMachine CreateStateMachine() => new LobbyStateMachine(true);
-        protected override void AddLobbyToLobbyManager() => LobbyManager.Instance.AddCustomLobby(Id, this);
+        protected override void AddDefaultLobbyToLobbyManager() => LobbyManager.Instance.AddCustomLobby(Id, this);
 
 
         [ServerRpc(RequireOwnership = false)]

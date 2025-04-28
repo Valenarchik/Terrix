@@ -19,9 +19,19 @@ namespace Terrix.Networking
             {
                 var playerInfoUI = Instantiate(playerInfoUIPrefab, transform);
                 playerInfoUI.Initialize(player, index);
+                if (index > 10)
+                {
+                    playerInfoUI.gameObject.SetActive(false);
+                }
+
                 // playerInfoUI.Initialize(player.PlayerName, player.PlayerColor);
                 playersInfos.Add(player.ID, playerInfoUI);
                 index++;
+            }
+
+            for (int i = 0; i < playersInfos.Count; i++)
+            {
+                
             }
         }
 
@@ -36,6 +46,8 @@ namespace Terrix.Networking
             {
                 sortedPlayersInfos[i].Value.RectTransform.SetSiblingIndex(i);
                 sortedPlayersInfos[i].Value.UpdateInfo(i + 1);
+                sortedPlayersInfos[i].Value.gameObject.SetActive(true);
+
             }
 
             for (int i = currentLeaderboardLength; i < sortedPlayersInfos.Length; i++)
@@ -43,18 +55,6 @@ namespace Terrix.Networking
                 sortedPlayersInfos[i].Value.gameObject.SetActive(false);
             }
 
-            // foreach (var pair in playersInfos.OrderByDescending(pair =>
-            //              playersProvider.Find(pair.Key).Country.Population))
-            // {
-            //     pair.Value.RectTransform.SetAsLastSibling();
-            //     pair.Value.UpdateInfo();
-            // }
-            //
-            // //
-            // for (var i = 0; i < players.Length; i++)
-            // {
-            //     playersInfos[i].UpdateInfo();
-            // }
         }
     }
 }

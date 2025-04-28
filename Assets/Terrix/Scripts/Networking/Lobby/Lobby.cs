@@ -54,20 +54,36 @@ namespace Terrix.Networking
         {
             base.OnStartServer();
             NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
-            Id = GetFreeId();
+            // Id = GetFreeId();
             Scene = gameObject.scene;
             Players = new List<NetworkConnection>();
-            PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
-            PlayersAndBotsMaxCount = LobbyManager.Instance.PlayersAndBotsMaxCount;
+            if (LobbyManager.Instance.ServerSettingsQueue.TryDequeue(out var serverSettings))
+            {
+                Id = GeCustomFreeId();
+                PlayersMaxCount = serverSettings.PlayersCount;
+                PlayersAndBotsMaxCount = serverSettings.BotsCount + serverSettings.PlayersCount;
+                AddCustomLobbyToLobbyManager();
+            }
+            else
+            {
+                Id = GetDefaultFreeId();
+
+                PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
+                PlayersAndBotsMaxCount = LobbyManager.Instance.PlayersAndBotsMaxCount;
+                AddDefaultLobbyToLobbyManager();
+            }
+
             LobbyStateMachine = CreateStateMachine();
             LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
-            AddLobbyToLobbyManager();
+            // AddLobbyToLobbyManager();
         }
 
-        protected virtual int GetFreeId() => LobbyManager.Instance.GetFreeId();
+        protected virtual int GetDefaultFreeId() => LobbyManager.Instance.GetDefaultFreeId();
+        protected virtual int GeCustomFreeId() => LobbyManager.Instance.GetCustomFreeId();
 
         protected virtual LobbyStateMachine CreateStateMachine() => new LobbyStateMachine();
-        protected virtual void AddLobbyToLobbyManager() => LobbyManager.Instance.AddDefaultLobby(Id, this);
+        protected virtual void AddDefaultLobbyToLobbyManager() => LobbyManager.Instance.AddDefaultLobby(Id, this);
+        protected virtual void AddCustomLobbyToLobbyManager() => LobbyManager.Instance.AddCustomLobby(Id, this);
 
         public override void OnStartClient()
         {
@@ -210,6 +226,7 @@ namespace Terrix.Networking
             {
                 LobbyManager.Instance.RemoveDefaultLobby(Id);
             }
+
             UpdatePlayers_ToObserver(Players);
             OnPlayerExit?.Invoke(player);
         }

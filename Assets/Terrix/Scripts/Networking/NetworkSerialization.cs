@@ -42,7 +42,7 @@ namespace Terrix.Networking
             writer.WriteVector3(value.WorldPosition);
             writer.Write(value.PlayerId);
         }
-        
+
         public static Hex ReadHex(this Reader reader)
         {
             return new Hex(reader.Read<HexType>(), reader.ReadVector3Int(), reader.ReadVector3(),
@@ -481,6 +481,17 @@ namespace Terrix.Networking
         public static SimplifiedCellChangeData ReadSimplifiedCellChangeData(this Reader reader)
         {
             return new SimplifiedCellChangeData(reader.ReadVector3Int(), reader.Read<Country.UpdateCellMode>());
+        }
+
+        public static void WriteLobbySettings(this Writer writer, LobbySettings value)
+        {
+            writer.WriteInt32(value.PlayersCount);
+            writer.WriteInt32(value.BotsCount);
+        }
+
+        public static LobbySettings ReadLobbySettings(this Reader reader)
+        {
+            return new LobbySettings(reader.ReadInt32(), reader.ReadInt32() );
         }
     }
 }
