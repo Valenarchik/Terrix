@@ -99,7 +99,7 @@ namespace Terrix.Controllers
             stateMachine?.CurrentState.Update();
         }
 
-        private void OnGameStart()
+        private void OnGameReady()
         {
             phaseManager.PhaseChanged += OnPhaseChanged;
             ActualizePhase(phaseManager.CurrentPhase);
@@ -126,7 +126,6 @@ namespace Terrix.Controllers
                     break;
                 case GamePhaseType.Finish:
                     ChangeState(CountryControllerStateType.Idle);
-                    Debug.Log("Game ended");
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(phaseType), phaseType, null);
@@ -194,7 +193,15 @@ namespace Terrix.Controllers
         private void StartAttack(int? targetId, float points, IEnumerable<Hex> territory)
         {
             var target = targetId.HasValue ? players.Find(targetId.Value) : null;
-            commandsExecutor.ExecuteAttack(new Attack(Guid.NewGuid(), player, target, points, territory.ToHashSet()));
+            var attack = new AttackBuilder
+            {
+                Owner = player,
+                Target = target,
+                Points = points,
+                Territory = territory.ToHashSet()
+            }.Build();
+            
+            commandsExecutor.ExecuteAttack(attack);
         }
     }
 }

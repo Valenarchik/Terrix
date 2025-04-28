@@ -13,14 +13,16 @@ namespace Terrix.Network.DTO
         public int Owner { get; }
         public int? Target { get; }
         public float Points { get; }
+        public bool IsGlobalAttack { get; set; }
         public Vector3Int[] Territory { get; }
 
-        public AttackMessage(Guid id, int owner, int? target, float points, Vector3Int[] territory) : base(id)
+        public AttackMessage(Guid id, int owner, int? target, float points, Vector3Int[] territory, bool isGlobalAttack) : base(id)
         {
             Owner = owner;
             Target = target;
             Points = points;
             Territory = territory;
+            IsGlobalAttack = isGlobalAttack;
         }
     }
 
@@ -53,7 +55,8 @@ namespace Terrix.Network.DTO
                 attack.Owner.ID,
                 attack.Target?.ID,
                 attack.Points,
-                attack.Territory.Where(h => h.PlayerId == attack.Target?.ID).Select(h => h.Position).ToArray());
+                attack.Territory?.Where(h => h.PlayerId == attack.Target?.ID).Select(h => h.Position).ToArray(),
+                attack.IsGlobalAttack);
         }
 
         public Attack Decode([NotNull] AttackMessage attackMessage)
@@ -65,14 +68,15 @@ namespace Terrix.Network.DTO
 
             var owner = players.Find(attackMessage.Owner);
             var target = attackMessage.Target.HasValue ? players.Find(attackMessage.Target.Value) : null;
-            var territory = attackMessage.Territory.Where(v => map.HasHex(v)).Select(v => map[v]).ToHashSet();
+            var territory = attackMessage.Territory?.Where(v => map.HasHex(v)).Select(v => map[v]).ToHashSet();
 
             return new Attack(
                 attackMessage.ID,
                 owner,
                 target,
                 attackMessage.Points,
-                territory);
+                territory,
+                attackMessage.IsGlobalAttack);
         }
     }
 }

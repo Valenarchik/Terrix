@@ -55,6 +55,7 @@ namespace Terrix.Game.GameRules
         private ClientSettings clientSettings;
 
         private IAttackMassageEncoder attackMassageEncoder;
+        private IBotsManager botsManager;
 
         public override void OnStartServer()
         {
@@ -149,11 +150,13 @@ namespace Terrix.Game.GameRules
             phaseManager.NextPhase();
             ChangePhase();
 
+            botsManager.AddBots(players.GetAll().OfType<Bot>());
             tickGenerator.InitializeLoop(new TickGenerator.TickHandlerTuple[]
             {
                 new(countriesCollector, gameData.TickHandlers[TickHandlerType.CountriesCollectorHandler]),
                 new(attackInvoker, gameData.TickHandlers[TickHandlerType.AttackHandler]),
-                new(referee, gameData.TickHandlers[TickHandlerType.RefereeHandler])
+                new(referee, gameData.TickHandlers[TickHandlerType.RefereeHandler]),
+                new(botsManager, gameData.TickHandlers[TickHandlerType.BotsHandler])
             });
             // Ждем пока игра не закончится
             yield return new WaitWhile(() => !game.GameOver);
@@ -190,6 +193,7 @@ namespace Terrix.Game.GameRules
             attackMassageEncoder = new AttackMassageEncoder(players, map);
             commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider, attackMassageEncoder,
                 attackInvoker);
+            botsManager = new BotsManager(attackInvoker, gameDataProvider, players);
         }
 
         [ServerRpc(RequireOwnership = false)]

@@ -4,6 +4,7 @@
     {
         CountriesCollectorHandler,
         AttackHandler,
-        RefereeHandler
+        RefereeHandler,
+        BotsHandler,
     }
 }
