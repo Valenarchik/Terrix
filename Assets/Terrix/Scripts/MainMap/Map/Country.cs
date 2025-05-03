@@ -83,22 +83,29 @@ namespace Terrix.Map
 
         public void CollectIncome()
         {
+            // var gameData = gameDataProvider.Get();
+            // var cellsStats = gameData.CellsStats;
+            //
+            // var sum = 0f;
+            // foreach (var (cellType, count) in cellsByTypeCount)
+            // {
+            //     sum += cellsStats[cellType].Income * count;
+            // }
+
+            Population += GetIncome();
+        }
+
+        public float GetIncome()
+        {
             var gameData = gameDataProvider.Get();
             var cellsStats = gameData.CellsStats;
-
             var sum = 0f;
             foreach (var (cellType, count) in cellsByTypeCount)
             {
                 sum += cellsStats[cellType].Income * count;
             }
 
-            Population += sum;
-        }
-        //TODO переписать
-        public void SetPopulation_(float population, int cellsCount)
-        {
-            TotalCellsCount = cellsCount;
-            Population = population;
+            return sum;
         }
 
         public void Add(IEnumerable<Hex> added)

@@ -12,6 +12,7 @@ namespace Terrix.Networking
     public class Lobby : NetworkBehaviour
     {
         public int Id { get; private set; }
+        public bool IsCustom { get; private set; }
         public Scene Scene { get; private set; }
         // public List<NetworkObject> Players { get; private set; }
         public List<NetworkConnection> Players { get; private set; }
@@ -60,6 +61,7 @@ namespace Terrix.Networking
             if (LobbyManager.Instance.ServerSettingsQueue.TryDequeue(out var serverSettings))
             {
                 Id = GeCustomFreeId();
+                IsCustom = true;
                 PlayersMaxCount = serverSettings.PlayersCount;
                 PlayersAndBotsMaxCount = serverSettings.BotsCount + serverSettings.PlayersCount;
                 AddCustomLobbyToLobbyManager();
@@ -67,7 +69,6 @@ namespace Terrix.Networking
             else
             {
                 Id = GetDefaultFreeId();
-
                 PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
                 PlayersAndBotsMaxCount = LobbyManager.Instance.PlayersAndBotsMaxCount;
                 AddDefaultLobbyToLobbyManager();
@@ -131,7 +132,7 @@ namespace Terrix.Networking
         protected virtual void AddPlayer_ToServer(NetworkConnection newPlayer)
         {
             Players.Add(newPlayer);
-            SetInfo_ToTarget(newPlayer, Id, PlayersMaxCount);
+            SetInfo_ToTarget(newPlayer, Id, PlayersMaxCount, IsCustom);
             UpdatePlayers_ToObserver(Players);
             UpdateStateName_ToObserver(LobbyStateMachine.CurrentState.LobbyStateType);
             if (Players.Count == PlayersMaxCount)
@@ -159,9 +160,10 @@ namespace Terrix.Networking
         }
 
         [TargetRpc]
-        protected void SetInfo_ToTarget(NetworkConnection connection, int id, int playersMaxCount)
+        protected void SetInfo_ToTarget(NetworkConnection connection, int id, int playersMaxCount, bool isCustom)
         {
             Id = id;
+            IsCustom = isCustom;
             PlayersMaxCount = playersMaxCount;
             OnStartInfoSet?.Invoke();
         }

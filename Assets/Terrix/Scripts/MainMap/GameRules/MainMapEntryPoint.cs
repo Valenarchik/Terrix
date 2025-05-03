@@ -5,16 +5,16 @@ using FishNet.Connection;
 using FishNet.Object;
 using Terrix.Controllers;
 using System.Linq;
-using FishNet.Transporting;
-using MoreLinq.Extensions;
 using Terrix.DTO;
 using Terrix.Entities;
+using Terrix.MainMap.AI;
 using Terrix.Map;
 using Terrix.Network.DTO;
 using Terrix.Networking;
 using Terrix.Settings;
 using Terrix.Visual;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 namespace Terrix.Game.GameRules
@@ -35,7 +35,8 @@ namespace Terrix.Game.GameRules
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
         [SerializeField] private CountryController countryController;
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
-        [SerializeField] private LeaderboardUI leaderboardUI;
+        [SerializeField] private GameUI gameUI;
+        // [SerializeField] private LeaderboardUI leaderboardUI;
         [SerializeField] private LobbyUI lobbyUI;
 
 
@@ -44,7 +45,7 @@ namespace Terrix.Game.GameRules
         private IGameRefereeFactory gameRefereeFactory;
 
         private IGame game;
-        private HexMap map;
+        public HexMap Map { get; private set; }
         private ICountriesCollector countriesCollector;
         private IGameReferee referee;
         private AttackInvoker attackInvoker;
@@ -138,7 +139,7 @@ namespace Terrix.Game.GameRules
 
             // game = new Game();
             Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings,
-                new NetworkSerialization.PlayersCountryMapData(players, map));
+                new NetworkSerialization.PlayersCountryMapData(players, Map));
 
             phaseManager.NextPhase();
             ChangePhase();
@@ -181,7 +182,7 @@ namespace Terrix.Game.GameRules
             playersFactory = new PlayersFactory(gameDataProvider);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
             mapGenerator.Initialize(gameDataProvider, players);
-            map = mapGenerator.GenerateMap(serverSettings.MapSettings);
+            Map = mapGenerator.GenerateMap(serverSettings.MapSettings);
             attackInvoker = new AttackInvoker();
             game = new Game();
             gameRefereeFactory = new GameRefereeFactory(serverSettings.GameModeSettings, players, game);
@@ -190,8 +191,8 @@ namespace Terrix.Game.GameRules
 
             allCountriesHandler.Initialize_OnServer(players);
 
-            attackMassageEncoder = new AttackMassageEncoder(players, map);
-            commandsExecutor.Initialize(map, phaseManager, players, gameDataProvider, attackMassageEncoder,
+            attackMassageEncoder = new AttackMassageEncoder(players, Map);
+            commandsExecutor.Initialize(Map, phaseManager, players, gameDataProvider, attackMassageEncoder,
                 attackInvoker);
             botsManager = new BotsManager(attackInvoker, gameDataProvider, players);
         }
@@ -230,7 +231,7 @@ namespace Terrix.Game.GameRules
             serverSettings.CountryDrawerSettings.Zones[id].BorderColor = color;
             serverSettings.CountryDrawerSettings.Zones[id].PlayerName = playerName;
 
-            Initialize_OnClient_ToTarget(connection, map, id);
+            Initialize_OnClient_ToTarget(connection, Map, id);
         }
 
 
@@ -238,7 +239,7 @@ namespace Terrix.Game.GameRules
         private void Initialize_OnClient_ToTarget(NetworkConnection connection, HexMap map, int id)
         {
             clientSettings = new ClientSettings(id);
-            this.map = map;
+            this.Map = map;
             mapRenderer.RenderMap(map);
             gameDataProvider = new GameDataProvider();
 
@@ -257,7 +258,8 @@ namespace Terrix.Game.GameRules
         {
             var iPlayersProvider = playersCountryMapData.IPlayersProvider;
             players = iPlayersProvider;
-            map = playersCountryMapData.HexMap;
+            Map = playersCountryMapData.HexMap;
+            var player = players.Find(clientSettings.LocalPlayerId);
             var playerColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].Color;
             var borderColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].BorderColor;
             // if (playerColor != null)
@@ -268,10 +270,10 @@ namespace Terrix.Game.GameRules
             countriesDrawerSettings.DragZone.Color = playerColor;
             countriesDrawerSettings.DragZone.BorderColor = borderColor;
             countriesDrawerSettings.DragZone.PlayerName = "";
-            allCountriesHandler.Initialize_OnClient(players, map);
+            allCountriesHandler.Initialize_OnClient(players, Map);
             InitializeCountryController_OnClient();
             InitializeAllCountriesDrawer_OnClient(countriesDrawerSettings);
-            leaderboardUI.Initialize(players);
+            gameUI.Initialize(players, player);
         }
 
         private void PlayerOnGameEnd_OnServer(int id, bool win)
@@ -287,7 +289,7 @@ namespace Terrix.Game.GameRules
                 players.Find(id).Win();
                 if (clientSettings.LocalPlayerId == id)
                 {
-                    lobbyUI.WinGame();
+                    gameUI.WinGame();
                 }
             }
             else
@@ -295,7 +297,7 @@ namespace Terrix.Game.GameRules
                 players.Find(id).Lose();
                 if (clientSettings.LocalPlayerId == id)
                 {
-                    lobbyUI.LoseGame();
+                    gameUI.LoseGame();
                 }
             }
         }
@@ -307,7 +309,7 @@ namespace Terrix.Game.GameRules
 
         private void InitializeCountryController_OnClient()
         {
-            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, game, players, map,
+            countryController.Initialize(clientSettings.LocalPlayerId, phaseManager, game, players, Map,
                 gameDataProvider);
         }
 

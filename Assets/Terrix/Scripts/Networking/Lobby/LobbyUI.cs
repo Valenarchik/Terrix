@@ -13,9 +13,7 @@ namespace Terrix.Networking
         // [SerializeField] private TextMeshProUGUI timerText;
         [SerializeField] private TextMeshProUGUI idText;
         [SerializeField] private Lobby lobby;
-        [SerializeField] private Button exitButton;
-        [SerializeField] private GameObject winPanel;
-        [SerializeField] private GameObject losePanel;
+        // [SerializeField] private Button exitButton;
         private string stateString;
 
         private void Start()
@@ -40,6 +38,10 @@ namespace Terrix.Networking
         public void SetLobbyId()
         {
             idText.text = $"Lobby id: {lobby.Id}";
+            if (!lobby.IsCustom)
+            {
+                idText.gameObject.SetActive(false);
+            }
         }
 
         private void LobbyOnTimerChanged(float time)
@@ -62,8 +64,9 @@ namespace Terrix.Networking
                     stateString = "До начала игры осталось ";
                     break;
                 case LobbyStateType.BeforeStarting:
-                    exitButton.gameObject.SetActive(false);
+                    // exitButton.gameObject.SetActive(false);
                     playersCountText.gameObject.SetActive(false);
+                    idText.gameObject.SetActive(false);
                     stateString = "Игра начинается через ";
                     break;
                 case LobbyStateType.Starting:
@@ -71,6 +74,7 @@ namespace Terrix.Networking
                     break;
                 case LobbyStateType.Playing:
                     lobbyStateAndTimeText.gameObject.SetActive(false);
+                    gameObject.SetActive(false);
                     stateString = "Игра идёт";
                     break;
                 case LobbyStateType.Ended:
@@ -87,18 +91,6 @@ namespace Terrix.Networking
         {
             playersCountText.text =
                 $"Число игроков в комнате: {lobby.PlayersCurrentCount.ToString()}/ {lobby.PlayersMaxCount.ToString()}";
-        }
-
-        public void WinGame()
-        {
-            winPanel.SetActive(true);
-            exitButton.gameObject.SetActive(true);
-        }
-
-        public void LoseGame()
-        {
-            losePanel.SetActive(true);
-            exitButton.gameObject.SetActive(true);
         }
     }
 }

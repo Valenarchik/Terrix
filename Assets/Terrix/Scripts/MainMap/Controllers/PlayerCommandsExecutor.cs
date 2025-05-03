@@ -220,35 +220,6 @@ namespace Terrix.Controllers
             }
         }
 
-        // public void StartBotsCoroutine()
-        // {
-        //     StartCoroutine()
-        // }
-        private void BotsLogic()
-        {
-            var bots = playerProvider.GetAll().Where(player => player.PlayerType is PlayerType.Bot);
-            foreach (var bot in bots)
-            {
-                var outerBorder = bot.Country.GetOuterBorder();
-                var neighbours = outerBorder.SelectMany(hex => hex.GetNeighbours())
-                    .Except(bot.Country.GetInnerBorder());
-                if (neighbours.Any(hex => hex.PlayerId is not null))
-                {
-                    //Атаковать игрока
-                }
-                else
-                {
-                    var randomHex = outerBorder.RandomElement();
-                    var randomTarget = randomHex.GetNeighbours().Except(outerBorder)
-                        .Except(bot.Country.GetInnerBorder()).RandomElement();
-                    var hexes = StretchBorders(randomHex, randomTarget, bot.Country, out var attackTarget,
-                        out var attackPoints);
-                    attackInvoker.AddAttack(new Attack(new Guid(), bot, playerProvider.Find(attackTarget.Value), attackPoints,
-                        hexes.ToHashSet()));
-                }
-            }
-        }
-
         public Hex[] StretchBorders(
             Hex startHex,
             Hex endHex,

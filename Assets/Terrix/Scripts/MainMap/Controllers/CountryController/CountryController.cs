@@ -99,7 +99,7 @@ namespace Terrix.Controllers
             stateMachine?.CurrentState.Update();
         }
 
-        private void OnGameReady()
+        private void OnGameStart()
         {
             phaseManager.PhaseChanged += OnPhaseChanged;
             ActualizePhase(phaseManager.CurrentPhase);

@@ -7,8 +7,8 @@ using UnityEngine.UI;
 
 public class MainMenuManager : NetworkBehaviour
 {
-    [SerializeField] private TMP_InputField lobbyInput;
-    [SerializeField] private TextMeshProUGUI errorMessage;
+    // [SerializeField] private TMP_InputField lobbyInput;
+    // [SerializeField] private TextMeshProUGUI errorMessage;
     [SerializeField] private Image colorPreviewImage;
     [SerializeField] private TMP_InputField playerInput;
     [SerializeField] private CustomLobbySettingsUI customLobbySettingsUI;

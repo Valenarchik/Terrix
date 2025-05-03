@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using Terrix.DTO;
+using Terrix.Networking;
+using UnityEngine;
 
 namespace Terrix.Map
 {
@@ -40,7 +43,7 @@ namespace Terrix.Map
             hex = null;
             return false;
         }
-        
+
         public bool HasHex(Vector3Int pos)
         {
             return pos.x >= 0 && pos.y >= 0 && pos.z >= 0 && pos.x < Size.x && pos.y < Size.y && pos.z < Size.z;
@@ -53,7 +56,7 @@ namespace Terrix.Map
         }
 
         public HexMap(Hex[,,] hexes)
-        { 
+        {
             Hexes = hexes;
             Size = new Vector3Int(hexes.GetLength(0), hexes.GetLength(1), hexes.GetLength(2));
             foreach (var hex in hexes)
@@ -61,5 +64,7 @@ namespace Terrix.Map
                 hex.HexMap = this;
             }
         }
+
+        public int GetNonWaterHexesCount() => Hexes.ToArray().Count(hex => hex.HexType is not HexType.See);
     }
 }

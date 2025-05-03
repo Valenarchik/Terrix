@@ -41,16 +41,6 @@ namespace Terrix.Visual
             // playerInfoHolder.gameObject.SetActive(true);
         }
 
-        public void SetInfoHolderActive(bool value = true)
-        {
-            playerInfoHolder.gameObject.SetActive(value);
-        }
-
-        // public void InitializeDragZone([NotNull] Settings settings)
-        // {
-        //     Initialize(settings);
-        //     playerInfoHolder.gameObject.SetActive(false);
-        // }
 
         public void UpdateZone([NotNull] Country.UpdateCellsData data, float? score)
         {
@@ -67,17 +57,30 @@ namespace Terrix.Visual
 
             var changeData = GenerateData(data);
             zoneTilemap.SetTiles(changeData, true);
-            zoneTilemap.CompressBounds();
-            var cellBounds = zoneTilemap.cellBounds;
             if (score is null || playerId == -1)
             {
                 return;
             }
 
+            UpdateInfoHolder();
+        }
+
+        private void UpdateInfoHolder()
+        {
+            zoneTilemap.CompressBounds();
+            var cellBounds = zoneTilemap.cellBounds;
             playerInfoHolder.gameObject.SetActive(true);
             playerInfoHolder.position = new Vector3(cellBounds.center.y * grid.cellSize.y * 0.75f,
                 cellBounds.center.x * grid.cellSize.x);
             playerInfoHolder.sizeDelta = new Vector2(cellBounds.size.x, cellBounds.size.y);
+            // zoneTilemap.CompressBounds();
+            // var cellBounds = zoneTilemap.cellBounds;
+            // playerInfoHolder.gameObject.SetActive(true);
+            // playerInfoHolder.position = new Vector3(cellBounds.center.y * grid.cellSize.y * 0.75f,
+            //     cellBounds.center.x * grid.cellSize.x);
+            // var fontSize = (cellBounds.size.x + cellBounds.size.y) * 2f;
+            // playerNameText.fontSize = fontSize;
+            // playerScoreText.fontSize = fontSize;
         }
 
         public void UpdateScore(float score)

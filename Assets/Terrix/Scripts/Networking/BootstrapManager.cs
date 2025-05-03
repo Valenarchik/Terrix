@@ -8,10 +8,10 @@ public class BootstrapManager : MonoBehaviour
 
     private void Start()
     {
-        // if (networkManager.ClientManager.StartConnection())
-        // {
+        if (networkManager.ClientManager.StartConnection())
+        {
             GoToMenu();
-        // }
+        }
     }
 
     private void GoToMenu()

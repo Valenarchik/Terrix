@@ -7,6 +7,7 @@ using Terrix.Map;
 using Terrix.Network.DTO;
 using Terrix.Networking;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Terrix.Visual
 {
@@ -15,7 +16,8 @@ namespace Terrix.Visual
     {
         [SerializeField] private AllCountriesDrawer allCountriesDrawer;
         [SerializeField] private TickGenerator tickGenerator;
-        [SerializeField] private LeaderboardUI leaderboardUI;
+        [SerializeField] private GameUI gameUI;
+        // [SerializeField] private LeaderboardUI leaderboardUI;
 
 
         private IPlayersProvider players;
@@ -49,20 +51,20 @@ namespace Terrix.Visual
             }
 
             allCountriesDrawer.UpdateScore_OnClient(simplifiedCountries);
-            leaderboardUI.UpdateInfo();
+            gameUI.UpdateInfo();
         }
-        [ObserversRpc]
-        private void UpdatePlayersState(
-            SimplifiedCountry[] simplifiedCountries)
-        {
-            foreach (var simplifiedCountry in simplifiedCountries)
-            {
-                players.Find(simplifiedCountry.PlayerId).Country.Population = simplifiedCountry.Population;
-            }
-
-            allCountriesDrawer.UpdateScore_OnClient(simplifiedCountries);
-            leaderboardUI.UpdateInfo();
-        }
+        // [ObserversRpc]
+        // private void UpdatePlayersState(
+        //     SimplifiedCountry[] simplifiedCountries)
+        // {
+        //     foreach (var simplifiedCountry in simplifiedCountries)
+        //     {
+        //         players.Find(simplifiedCountry.PlayerId).Country.Population = simplifiedCountry.Population;
+        //     }
+        //
+        //     allCountriesDrawer.UpdateScore_OnClient(simplifiedCountries);
+        //     leaderboardUI.UpdateInfo();
+        // }
 
         public void Initialize_OnServer([NotNull] IPlayersProvider players)
         {

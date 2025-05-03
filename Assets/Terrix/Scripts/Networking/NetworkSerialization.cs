@@ -429,12 +429,13 @@ namespace Terrix.Networking
             writer.Write(value.Target);
             writer.Write(value.Points);
             writer.Write(value.Territory);
+            writer.WriteBoolean(value.IsGlobalAttack);
         }
 
         public static AttackMessage ReadAttackMessage(this Reader reader)
         {
             return new AttackMessage(reader.Read<Guid>(), reader.ReadInt32(), reader.Read<int?>(), reader.Read<float>(),
-                reader.Read<Vector3Int[]>());
+                reader.Read<Vector3Int[]>(), reader.ReadBoolean());
         }
 
         public static void WriteSimplifiedCountry(this Writer writer, SimplifiedCountry value)
@@ -491,7 +492,7 @@ namespace Terrix.Networking
 
         public static LobbySettings ReadLobbySettings(this Reader reader)
         {
-            return new LobbySettings(reader.ReadInt32(), reader.ReadInt32() );
+            return new LobbySettings(reader.ReadInt32(), reader.ReadInt32());
         }
     }
 }
