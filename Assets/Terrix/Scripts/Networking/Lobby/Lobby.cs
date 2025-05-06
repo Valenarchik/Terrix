@@ -112,13 +112,6 @@ namespace Terrix.Networking
             {
                 case RemoteConnectionState.Stopped:
                     RemovePlayerFromList_OnServer(conn);
-                    // Players.Remove(conn);
-                    // if (Players.Count == 0)
-                    // {
-                    //     LobbyManager.Instance.RemoveDefaultLobby(Id);
-                    // }
-                    //
-                    // UpdatePlayers_ToObserver(Players);
                     break;
                 case RemoteConnectionState.Started:
                     break;
@@ -144,19 +137,11 @@ namespace Terrix.Networking
         [ServerRpc(RequireOwnership = false)]
         void RemovePlayer_ToServer(NetworkConnection player)
         {
-            // Players.Remove(player);
             var sud = new SceneUnloadData(new[] { Scenes.GameScene });
             SceneManager.UnloadConnectionScenes(player, sud);
             var sld = new SceneLoadData(new[] { Scenes.MenuScene });
             SceneManager.LoadConnectionScenes(player, sld);
             RemovePlayerFromList_OnServer(player);
-            //
-            // if (Players.Count == 0)
-            // {
-            //     LobbyManager.Instance.RemoveDefaultLobby(Id);
-            // }
-            //
-            // UpdatePlayers_ToObserver(Players);
         }
 
         [TargetRpc]
@@ -183,38 +168,38 @@ namespace Terrix.Networking
 
         public bool IsAvailableForJoin() => LobbyStateMachine.CurrentState == LobbyStateMachine.LobbySearchingState;
 
-        public void EndGame()
-        {
-            EndGame_ToServer();
-        }
+        // public void EndGame()
+        // {
+        //     EndGame_ToServer();
+        // }
 
-        [ServerRpc(RequireOwnership = false)]
-        void EndGame_ToServer()
-        {
-            LobbyStateMachine.ChangeState(LobbyStateMachine.LobbyEndedState);
-            EndGame_ToObserver();
-        }
+        // [ServerRpc(RequireOwnership = false)]
+        // void EndGame_ToServer()
+        // {
+        //     LobbyStateMachine.ChangeState(LobbyStateMachine.LobbyEndedState);
+        //     // EndGame_ToObserver();
+        // }
 
-        [ObserversRpc]
-        void EndGame_ToObserver()
-        {
-            // endGameButton.gameObject.SetActive(false);
-            // leaveLobbyButton.gameObject.SetActive(true);
-        }
+        // [ObserversRpc]
+        // void EndGame_ToObserver()
+        // {
+        //     // endGameButton.gameObject.SetActive(false);
+        //     // leaveLobbyButton.gameObject.SetActive(true);
+        // }
 
 
-        public void LeaveLobby()
-        {
-            Unsubscribe_ToServer();
-            RemovePlayer_ToServer(NetworkManager.ClientManager.Connection);
-            UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(Scenes.GameScene);
-        }
+        // public void LeaveLobby()
+        // {
+        //     Unsubscribe_ToServer();
+        //     RemovePlayer_ToServer(NetworkManager.ClientManager.Connection);
+        //     UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(Scenes.GameScene);
+        // }
 
-        [ServerRpc(RequireOwnership = false)]
-        void Unsubscribe_ToServer()
-        {
-            NetworkManager.ServerManager.OnRemoteConnectionState -= ServerManagerOnRemoteConnectionState_OnServer;
-        }
+        // [ServerRpc(RequireOwnership = false)]
+        // void Unsubscribe_ToServer()
+        // {
+        //     NetworkManager.ServerManager.OnRemoteConnectionState -= ServerManagerOnRemoteConnectionState_OnServer;
+        // }
 
         public void RemoveThisPlayer_OnClient()
         {

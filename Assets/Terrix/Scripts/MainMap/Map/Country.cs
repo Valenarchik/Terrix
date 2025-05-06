@@ -16,8 +16,8 @@ namespace Terrix.Map
 
         private readonly Dictionary<HexType, int> cellsByTypeCount;
 
-        private readonly HashSet<Hex> cellsSet = new ();
-        
+        private readonly HashSet<Hex> cellsSet = new();
+
         private bool innerBorderUpdated;
         private readonly HashSet<Hex> innerBorder = new();
 
@@ -54,9 +54,11 @@ namespace Terrix.Map
                 .OfType<HexType>()
                 .ToDictionary(type => type, _ => 0);
 
-            Population = gameDataProvider.Get().StartCountryPopulation;
+            // Population = gameDataProvider.Get().StartCountryPopulation;
+            population = gameDataProvider.Get().StartCountryPopulation;
             DensePopulation = 0;
             MaxCellsCount = 0;
+            Debug.Log(Population);
         }
 
         //TODO возможно ошибка
@@ -100,9 +102,14 @@ namespace Terrix.Map
             var gameData = gameDataProvider.Get();
             var cellsStats = gameData.CellsStats;
             var sum = 0f;
+            var minModifier = DensePopulation / gameDataProvider.Get().MaxDensePopulation * 10;
+            var maxModifier = DensePopulation / gameDataProvider.Get().MaxDensePopulation / 2;
+            var modifier = 0f;
+            modifier = Mathf.Clamp(modifier, minModifier, maxModifier);
             foreach (var (cellType, count) in cellsByTypeCount)
             {
-                sum += cellsStats[cellType].Income * count;
+                sum += cellsStats[cellType].Income * modifier * count;
+                // sum += cellsStats[cellType].Income * count;
             }
 
             return sum;
@@ -236,7 +243,7 @@ namespace Terrix.Map
         {
             var gameData = gameDataProvider.Get();
             population = Mathf.Clamp(population, 0, TotalCellsCount * gameData.MaxDensePopulation);
-                
+
             if (TotalCellsCount != 0)
             {
                 DensePopulation = Population / TotalCellsCount;
@@ -246,7 +253,7 @@ namespace Terrix.Map
                 DensePopulation = 0;
             }
         }
-        
+
         public IEnumerator<Hex> GetEnumerator()
         {
             return cellsSet.GetEnumerator();
@@ -281,7 +288,6 @@ namespace Terrix.Map
             }
         }
 
-        
 
         public enum UpdateCellMode
         {

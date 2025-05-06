@@ -97,6 +97,10 @@ namespace Terrix.Controllers
         private void Update()
         {
             stateMachine?.CurrentState.Update();
+            if (country != null)
+            {
+                Debug.Log(country.Population);
+            }
         }
 
         private void OnGameStart()
@@ -140,10 +144,9 @@ namespace Terrix.Controllers
 
         private async void TryChooseInitCountryPosition(Vector3Int pos)
         {
-            // клиент проводит проверку
             if (await commandsExecutor.CanChooseInitialCountryPosition_OnClient(playerId, pos))
             {
-                commandsExecutor.ChooseInitialCountryPosition(playerId, pos);
+                commandsExecutor.ChooseInitialCountryPosition_ToServer(playerId, pos);
             }
         }
 
@@ -175,7 +178,8 @@ namespace Terrix.Controllers
             countriesDrawer.UpdateDragZone(data, country.Population);
         }
 
-        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget, out float attackPoints)
+        private Hex[] StretchBorders(Vector3Int startPos, Vector3Int endPos, out int? attackTarget,
+            out float attackPoints)
         {
             return borderStretcher.StretchBorders(startPos,
                 endPos,
@@ -200,7 +204,7 @@ namespace Terrix.Controllers
                 Points = points,
                 Territory = territory.ToHashSet()
             }.Build();
-            
+
             commandsExecutor.ExecuteAttack(attack);
         }
     }

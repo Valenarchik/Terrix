@@ -36,7 +36,7 @@ namespace Terrix.Visual
 
         private void TickGenerator_OnUpdated()
         {
-            UpdateCountriesPopulation_ToObserver(players.GetAll().Select(player => player.Country)
+            UpdateCountriesPopulation_ToObserver(countries
                 .Select(country => new SimplifiedCountry(country.PlayerId, country.Population, country.TotalCellsCount))
                 .ToArray());
         }
@@ -70,7 +70,14 @@ namespace Terrix.Visual
         {
             this.players = players ?? throw new ArgumentNullException(nameof(players));
             this.countries = players.GetAll().Select(player => player.Country).ToArray();
-
+            foreach (var player in this.players.GetAll())
+            {
+                Debug.Log($"{player.PlayerName} {player.Country.Population}");
+            }
+            foreach (var country in countries)
+            {
+                Debug.Log($"{country.Population}");
+            }
 
             initialize = true;
 

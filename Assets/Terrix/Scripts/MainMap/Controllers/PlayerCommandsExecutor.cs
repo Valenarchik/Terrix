@@ -31,7 +31,7 @@ namespace Terrix.Controllers
 
         private bool initialized;
 
-        private TaskCompletionSource<bool> tcs;
+        private TaskCompletionSource<bool> canChoosePositionTcs;
 
         public void Initialize(HexMap map,
             IPhaseManager phaseManager,
@@ -53,9 +53,9 @@ namespace Terrix.Controllers
 
         public async Task<bool> CanChooseInitialCountryPosition_OnClient(int playerId, Vector3Int pos)
         {
-            tcs = new TaskCompletionSource<bool>();
+            canChoosePositionTcs = new TaskCompletionSource<bool>();
             CanChooseInitialCountryPosition_ToServer(ClientManager.Connection, playerId, pos);
-            var result = await tcs.Task;
+            var result = await canChoosePositionTcs.Task;
             return result;
         }
 
@@ -94,9 +94,9 @@ namespace Terrix.Controllers
         }
 
         [TargetRpc]
-        public void CanChooseInitialCountryPosition_ToTarget(NetworkConnection connection, bool result)
+        private void CanChooseInitialCountryPosition_ToTarget(NetworkConnection connection, bool result)
         {
-            tcs.SetResult(result);
+            canChoosePositionTcs.SetResult(result);
         }
 
         // на сервере и на клиенте
@@ -105,8 +105,6 @@ namespace Terrix.Controllers
         public void CanChooseInitialCountryPosition_ToServer(NetworkConnection connection, int playerId, Vector3Int pos)
         {
             ValidateInitialization();
-
-            var gameData = gameDataProvider.Get();
 
             var result = PlayerCheck() && PhaseCheck() && MapCheck();
             CanChooseInitialCountryPosition_ToTarget(connection, result);
@@ -139,7 +137,7 @@ namespace Terrix.Controllers
 
         // только на сервере
         [ServerRpc(RequireOwnership = false)]
-        public void ChooseInitialCountryPosition(int playerId, Vector3Int pos)
+        public void ChooseInitialCountryPosition_ToServer(int playerId, Vector3Int pos)
         {
             ValidateInitialization();
 

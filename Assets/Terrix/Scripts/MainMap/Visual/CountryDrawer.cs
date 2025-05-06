@@ -22,6 +22,15 @@ namespace Terrix.Visual
 
         private Material zoneMaterial;
 
+        private void Update()
+        {
+            //По сути костыль
+            if (Math.Abs(playerNameText.fontSize - playerScoreText.fontSize) > 0.1)
+            {
+                playerNameText.fontSize = playerScoreText.fontSize;
+            }
+        }
+
         public void Initialize([NotNull] Settings settings)
         {
             if (settings == null)
@@ -38,7 +47,17 @@ namespace Terrix.Visual
             tilemapRenderer.sharedMaterial = zoneMaterial;
             tilemapRenderer.sortingOrder = settings.SortingOrder;
             playerNameText.text = settings.PlayerName;
-            // playerInfoHolder.gameObject.SetActive(true);
+            var countryColor = settings.ZoneMaterial.GetColor(Shader.PropertyToID("_BaseColor"));
+            if (countryColor.grayscale >= 0.5f)
+            {
+                playerNameText.color = Color.black;
+                playerScoreText.color = Color.black;
+            }
+            else
+            {
+                playerNameText.color = Color.white;
+                playerScoreText.color = Color.white;
+            }
         }
 
 
@@ -73,14 +92,8 @@ namespace Terrix.Visual
             playerInfoHolder.position = new Vector3(cellBounds.center.y * grid.cellSize.y * 0.75f,
                 cellBounds.center.x * grid.cellSize.x);
             playerInfoHolder.sizeDelta = new Vector2(cellBounds.size.x, cellBounds.size.y);
-            // zoneTilemap.CompressBounds();
-            // var cellBounds = zoneTilemap.cellBounds;
-            // playerInfoHolder.gameObject.SetActive(true);
-            // playerInfoHolder.position = new Vector3(cellBounds.center.y * grid.cellSize.y * 0.75f,
-            //     cellBounds.center.x * grid.cellSize.x);
-            // var fontSize = (cellBounds.size.x + cellBounds.size.y) * 2f;
-            // playerNameText.fontSize = fontSize;
-            // playerScoreText.fontSize = fontSize;
+            playerNameText.fontSize = playerScoreText.fontSize;
+            Debug.Log($"{playerNameText.text}, {playerNameText.fontSize}, {playerScoreText.fontSize}");
         }
 
         public void UpdateScore(float score)

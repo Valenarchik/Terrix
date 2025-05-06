@@ -16,9 +16,9 @@ namespace Terrix.Networking
         private IPlayersProvider playersProvider;
         private int defaultLeaderboardLength = 10;
         private int currentLeaderboardLength;
-        private float horizontalBgiCompressedWidth = 720;
-        private float horizontalBgiExpandedWidth = 1100;
-        private float verticalOffset = 100;
+        private float horizontalBgiCompressedWidth = 530;
+        private float horizontalBgiExpandedWidth = 820;
+        private float verticalOffset = 40;
         private RectTransform rectTransform;
         private bool needSetRectTransform;
 
@@ -89,20 +89,28 @@ namespace Terrix.Networking
         {
             titles.Expand();
             rectTransform.sizeDelta = new Vector2(horizontalBgiExpandedWidth, rectTransform.sizeDelta.y);
-            for (var i = 0; i < currentLeaderboardLength; i++)
+            foreach (var playerInfoUI in playersInfos.Values)
             {
-                currentPlayersInfos[i].Expand();
+                playerInfoUI.Expand();
             }
+            // for (var i = 0; i < currentLeaderboardLength; i++)
+            // {
+            //     currentPlayersInfos[i].Expand();
+            // }
         }
 
         public void Compress()
         {
             titles.Compress();
             rectTransform.sizeDelta = new Vector2(horizontalBgiCompressedWidth, rectTransform.sizeDelta.y);
-            for (var i = 0; i < currentLeaderboardLength; i++)
+            foreach (var playerInfoUI in playersInfos.Values)
             {
-                currentPlayersInfos[i].Compress();
+                playerInfoUI.Compress();
             }
+            // for (var i = 0; i < currentLeaderboardLength; i++)
+            // {
+            //     currentPlayersInfos[i].Compress();
+            // }
         }
     }
 }

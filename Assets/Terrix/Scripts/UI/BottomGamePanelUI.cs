@@ -17,6 +17,7 @@ namespace Terrix
         [SerializeField] private TextMeshProUGUI forestHexesCountText;
         [SerializeField] private TextMeshProUGUI hillHexesCountText;
         [SerializeField] private TextMeshProUGUI mountainHexesCountText;
+        [SerializeField] private TextMeshProUGUI playerNameText;
         private Player player;
 
         // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -30,12 +31,14 @@ namespace Terrix
         private void SetStartInfo()
         {
             populationGainText.text = $"+0";
+            populationGainText.text = $"+0";
             densePopulationText.text = $"0";
             farmlandHexesCountText.text = $"x0";
             grasslandHexesCountText.text = $"x0";
             hillHexesCountText.text = $"x0";
             forestHexesCountText.text = $"x0";
             mountainHexesCountText.text = $"x0";
+            playerNameText.text = player.PlayerName;
         }
 
         public void UpdateInfo()

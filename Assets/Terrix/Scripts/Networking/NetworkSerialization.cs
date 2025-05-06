@@ -26,12 +26,6 @@ namespace Terrix.Networking
             var hexes = reader.Read<Hex[]>();
             var size = reader.ReadVector3Int();
             var matrix = hexes.ToMatrix(size.x, size.y, size.z);
-            // var hexMap = new HexMap(matrix);
-            // foreach (var hex in hexMap.Hexes)
-            // {
-            //     hex.HexMap = hexMap;
-            // }
-
             return new HexMap(matrix);
         }
 

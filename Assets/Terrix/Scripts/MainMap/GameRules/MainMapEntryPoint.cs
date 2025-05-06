@@ -85,20 +85,6 @@ namespace Terrix.Game.GameRules
             playersIds.Remove(conn);
         }
 
-        // protected void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
-        //     RemoteConnectionStateArgs args)
-        // {
-        //     switch (args.ConnectionState)
-        //     {
-        //         case RemoteConnectionState.Stopped:
-        //             playersIds.Remove(conn);
-        //             break;
-        //         case RemoteConnectionState.Started:
-        //             break;
-        //         default:
-        //             throw new ArgumentOutOfRangeException();
-        //     }
-        // }
 
         private void LobbyStateMachineOnStateChanged(LobbyState state)
         {
@@ -138,6 +124,11 @@ namespace Terrix.Game.GameRules
             Player.OnGameEnd += PlayerOnGameEnd_OnServer;
 
             // game = new Game();
+            foreach (var player in players.GetAll())
+            {
+                Debug.Log($"{player.PlayerName} {player.Country.Population}");
+            }
+
             Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings,
                 new NetworkSerialization.PlayersCountryMapData(players, Map));
 
@@ -256,24 +247,23 @@ namespace Terrix.Game.GameRules
         private void Initialize_InitialPhase_ToObserver(AllCountriesDrawer.Settings countriesDrawerSettings,
             NetworkSerialization.PlayersCountryMapData playersCountryMapData)
         {
-            var iPlayersProvider = playersCountryMapData.IPlayersProvider;
-            players = iPlayersProvider;
+            players = playersCountryMapData.IPlayersProvider;
             Map = playersCountryMapData.HexMap;
             var player = players.Find(clientSettings.LocalPlayerId);
-            var playerColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].Color;
-            var borderColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].BorderColor;
-            // if (playerColor != null)
-            // {
-            //     playerColor = new Color(playerColor.Value.r, playerColor.Value.g, playerColor.Value.b, 0.4f);
-            // }
-
-            countriesDrawerSettings.DragZone.Color = playerColor;
-            countriesDrawerSettings.DragZone.BorderColor = borderColor;
-            countriesDrawerSettings.DragZone.PlayerName = "";
+            SetDragZoneInfo_OnClient(countriesDrawerSettings);
             allCountriesHandler.Initialize_OnClient(players, Map);
             InitializeCountryController_OnClient();
             InitializeAllCountriesDrawer_OnClient(countriesDrawerSettings);
             gameUI.Initialize(players, player);
+        }
+
+        private void SetDragZoneInfo_OnClient(AllCountriesDrawer.Settings countriesDrawerSettings)
+        {
+            var playerColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].Color;
+            var borderColor = countriesDrawerSettings.Zones[clientSettings.LocalPlayerId].BorderColor;
+            countriesDrawerSettings.DragZone.Color = playerColor;
+            countriesDrawerSettings.DragZone.BorderColor = borderColor;
+            countriesDrawerSettings.DragZone.PlayerName = "";
         }
 
         private void PlayerOnGameEnd_OnServer(int id, bool win)
