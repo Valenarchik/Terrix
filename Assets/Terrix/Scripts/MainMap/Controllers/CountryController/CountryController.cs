@@ -79,6 +79,11 @@ namespace Terrix.Controllers
         {
             stateMachine.CurrentState.OnDragBorders(context);
         }
+        
+        public void OnFastAttack(InputAction.CallbackContext context)
+        {
+            stateMachine?.CurrentState.OnFastAttack(context);
+        }
 
         private void Start()
         {
@@ -202,6 +207,27 @@ namespace Terrix.Controllers
             }.Build();
             
             commandsExecutor.ExecuteAttack(attack);
+        }
+        
+        private void StartFastAttack(int? targetId, float percent)
+        {
+            var target = targetId.HasValue ? players.Find(targetId.Value) : null;
+            
+            var attack = new AttackBuilder
+            {
+                Owner = player,
+                Target = target,
+                Points = GetPercentOfPopulation(percent),
+                IsGlobalAttack = true
+            }.Build();
+            
+            commandsExecutor.ExecuteAttack(attack);
+        }
+
+        private float GetPercentOfPopulation(float percent)
+        {
+            percent = Math.Clamp(percent, 0f, 1f);
+            return country.Population * percent;
         }
     }
 }

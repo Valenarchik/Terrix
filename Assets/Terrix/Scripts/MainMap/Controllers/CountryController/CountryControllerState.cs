@@ -17,6 +17,8 @@ namespace Terrix.Controllers
 
             public virtual void OnDragBorders(InputAction.CallbackContext context) { }
             
+            public virtual void OnFastAttack(InputAction.CallbackContext context) { }
+            
             public virtual void OnChooseCountryPosition(InputAction.CallbackContext context) { }
             
             public virtual void OnPoint(InputAction.CallbackContext context) { }

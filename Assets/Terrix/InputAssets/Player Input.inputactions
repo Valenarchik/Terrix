@@ -51,6 +51,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "FastAttack",
+                    "type": "Button",
+                    "id": "0be9bf25-b8ce-4c83-a9b0-50bd24949296",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "MultiTap",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Point",
                     "type": "Value",
                     "id": "88c21b48-36b3-4f6f-9cbb-f577c6412730",
@@ -333,6 +342,17 @@
                     "processors": "",
                     "groups": ";Mouse and keyboard",
                     "action": "Drag Country Borders",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5d64ed93-91b6-4f2f-9bc9-c0648efbeab3",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Mouse and keyboard",
+                    "action": "FastAttack",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
