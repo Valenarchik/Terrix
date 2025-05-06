@@ -26,6 +26,9 @@ namespace Terrix.Controllers
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
         [SerializeField] private AllCountriesDrawer countriesDrawer;
         [SerializeField] private BorderStretcher borderStretcher;
+        
+        [Header("Input")]
+        [SerializeField] private float fastAttackPopulationPercent = 0.2f;
 
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
@@ -209,7 +212,7 @@ namespace Terrix.Controllers
             commandsExecutor.ExecuteAttack(attack);
         }
         
-        private void StartFastAttack(int? targetId, float percent)
+        private void StartFastAttack(int? targetId)
         {
             var target = targetId.HasValue ? players.Find(targetId.Value) : null;
             
@@ -217,7 +220,7 @@ namespace Terrix.Controllers
             {
                 Owner = player,
                 Target = target,
-                Points = GetPercentOfPopulation(percent),
+                Points = GetPercentOfPopulation(fastAttackPopulationPercent),
                 IsGlobalAttack = true
             }.Build();
             

@@ -87,7 +87,7 @@ namespace Terrix.Controllers
                 var cellPosition = GetCellPosition();
                 if (CountryController.map.TryGetHex(cellPosition, out var hex))
                 {
-                    CountryController.StartFastAttack(hex.PlayerId, 0.2f);
+                    CountryController.StartFastAttack(hex.PlayerId);
                 }
             }
 

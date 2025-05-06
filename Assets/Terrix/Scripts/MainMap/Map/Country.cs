@@ -42,6 +42,7 @@ namespace Terrix.Map
         public int MaxCellsCount { get; set; }
         public IEnumerable<Hex> Cells => cellsSet;
         public Player Owner { get; private set; }
+        public Modifiers CustomModifiers { get; set; }
         public event Action<UpdateCellsData> OnCellsUpdate;
         
         public Country([NotNull] IGameDataProvider gameDataProvider, [NotNull] Player owner)
@@ -74,6 +75,8 @@ namespace Terrix.Map
                 sum += cellsStats[cellType].Income * count;
             }
 
+            sum *= GetModifiers().IncomeMultiplier;
+            
             Population += sum;
         }
 
@@ -224,6 +227,11 @@ namespace Terrix.Map
                 DensePopulation = 0;
             }
         }
+
+        public Modifiers GetModifiers()
+        {
+            return CustomModifiers ?? Modifiers.Default;
+        }
         
         public IEnumerator<Hex> GetEnumerator()
         {
@@ -263,6 +271,13 @@ namespace Terrix.Map
         {
             Add,
             Remove
+        }
+
+        public class Modifiers
+        {
+            public static readonly Modifiers Default = new();
+
+            public float IncomeMultiplier { get; set; } = 1;
         }
     }
 }
