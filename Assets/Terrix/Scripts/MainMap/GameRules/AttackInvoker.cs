@@ -60,10 +60,26 @@ namespace Terrix.Game.GameRules
                 FinishAttack(attackState.Attack);
                 return;
             }
-            
-            var totalCost = intersection.Sum(h => h.GetCost());
 
-            if (totalCost > attackState.CurrentPoints)
+            var temp = new HashSet<Hex>();
+            float totalCost = 0;
+            foreach (var hex in intersection)
+            {
+                var hexCost = hex.GetCost();
+                totalCost += hexCost;
+                
+                if (totalCost > attackState.CurrentPoints)
+                {
+                    totalCost -= hexCost;
+                    break;
+                }
+
+                temp.Add(hex);
+            }
+
+            intersection = temp;
+
+            if (intersection.Count == 0)
             {
                 FinishAttack(attackState.Attack);
                 return;
