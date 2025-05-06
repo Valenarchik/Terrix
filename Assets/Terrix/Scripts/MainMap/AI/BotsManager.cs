@@ -43,7 +43,7 @@ namespace Terrix.MainMap.AI
 
             var botId = attack.Target.ID;
             
-            if (bots.ContainsKey(botId) && attack.Target.PlayerType == PlayerType.Player)
+            if (bots.ContainsKey(botId))
             {
                 bots[botId].PriorityTarget = attack.Owner;
             }

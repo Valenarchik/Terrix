@@ -29,13 +29,19 @@ namespace Terrix.Entities
                 if (i < playersCount.Players)
                 {
                     players[i] = new Player(i, PlayerType.Player);
+                    players[i].Country = new Country(gameDataProvider, players[i]);
                 }
                 else
                 {
                     players[i] = new Bot(i, PlayerType.Bot);
+                    players[i].Country = new Country(gameDataProvider, players[i])
+                    {
+                        CustomModifiers = new Country.Modifiers
+                        {
+                            IncomeMultiplier = gameDataProvider.Get().BotSettings.incomeMultiplier
+                        }
+                    };
                 }
-
-                players[i].Country = new Country(gameDataProvider, players[i]);
             }
 
             return players;

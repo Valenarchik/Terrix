@@ -27,6 +27,10 @@ namespace Terrix.Controllers
         [SerializeField] private PlayerCommandsExecutor commandsExecutor;
         [SerializeField] private AllCountriesDrawer countriesDrawer;
         [SerializeField] private BorderStretcher borderStretcher;
+        
+        [Header("Input")]
+        [SerializeField, Range(0f, 1f)] private float fastAttackPopulationPercent = 0.2f;
+        [SerializeField] private float attackBuffer = 0.01f;
 
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
@@ -80,6 +84,11 @@ namespace Terrix.Controllers
         public void OnDragBorders(InputAction.CallbackContext context)
         {
             stateMachine?.CurrentState.OnDragBorders(context);
+        }
+        
+        public void OnFastAttack(InputAction.CallbackContext context)
+        {
+            stateMachine?.CurrentState.OnFastAttack(context);
         }
 
         public override void OnStartClient()
@@ -201,11 +210,32 @@ namespace Terrix.Controllers
             {
                 Owner = player,
                 Target = target,
-                Points = points,
+                Points = Mathf.Clamp(points * (1 + attackBuffer), 0, country.Population),
                 Territory = territory.ToHashSet()
             }.Build();
 
             commandsExecutor.ExecuteAttack(attack);
+        }
+        
+        private void StartFastAttack(int? targetId)
+        {
+            var target = targetId.HasValue ? players.Find(targetId.Value) : null;
+            
+            var attack = new AttackBuilder
+            {
+                Owner = player,
+                Target = target,
+                Points = GetPercentOfPopulation(fastAttackPopulationPercent),
+                IsGlobalAttack = true
+            }.Build();
+            
+            commandsExecutor.ExecuteAttack(attack);
+        }
+
+        private float GetPercentOfPopulation(float percent)
+        {
+            percent = Math.Clamp(percent, 0f, 1f);
+            return country.Population * percent;
         }
     }
 }

@@ -22,16 +22,6 @@ namespace Terrix.Map
             set => this[pos.x, pos.y, pos.z] = value;
         }
 
-        public Hex FindHex(Vector3Int pos)
-        {
-            if (HasHex(pos))
-            {
-                return this[pos];
-            }
-
-            return null;
-        }
-
         public bool TryGetHex(Vector3Int pos, out Hex hex)
         {
             if (HasHex(pos))
@@ -43,7 +33,17 @@ namespace Terrix.Map
             hex = null;
             return false;
         }
+        
+        public Hex FindHex(Vector3Int pos)
+        {
+            if (HasHex(pos))
+            {
+                return this[pos];
+            }
 
+            return null;
+        }
+        
         public bool HasHex(Vector3Int pos)
         {
             return pos.x >= 0 && pos.y >= 0 && pos.z >= 0 && pos.x < Size.x && pos.y < Size.y && pos.z < Size.z;

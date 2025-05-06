@@ -65,12 +65,29 @@ namespace Terrix.Controllers
             {
                 pointPosition = context.ReadValue<Vector2>();
             }
+            
+            public override void OnFastAttack(InputAction.CallbackContext context)
+            {
+                if (context.phase == InputActionPhase.Performed)
+                {
+                    FastAttack();
+                }
+            }
 
             public override void Update()
             {
                 if (drag)
                 {
                     Drag();
+                }
+            }
+            
+            private void FastAttack()
+            {
+                var cellPosition = GetCellPosition();
+                if (CountryController.map.TryGetHex(cellPosition, out var hex))
+                {
+                    CountryController.StartFastAttack(hex.PlayerId);
                 }
             }
 
