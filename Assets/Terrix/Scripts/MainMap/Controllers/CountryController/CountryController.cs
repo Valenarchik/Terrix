@@ -28,7 +28,8 @@ namespace Terrix.Controllers
         [SerializeField] private BorderStretcher borderStretcher;
         
         [Header("Input")]
-        [SerializeField] private float fastAttackPopulationPercent = 0.2f;
+        [SerializeField, Range(0f, 1f)] private float fastAttackPopulationPercent = 0.2f;
+        [SerializeField] private float attackBuffer = 0.01f;
 
         [Header("Debug")]
         [SerializeField, ReadOnlyInspector] private GamePhaseType currentPhase;
@@ -205,7 +206,7 @@ namespace Terrix.Controllers
             {
                 Owner = player,
                 Target = target,
-                Points = points,
+                Points = Mathf.Clamp(points * (1 + attackBuffer), 0, country.Population),
                 Territory = territory.ToHashSet()
             }.Build();
             
