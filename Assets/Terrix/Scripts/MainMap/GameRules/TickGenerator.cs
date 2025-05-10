@@ -17,7 +17,10 @@ namespace Terrix.Game.GameRules
             {
                 StartCoroutine(Loop(tuple));
             }
+
+            StartCoroutine(FixedLoop(0.1f));
         }
+
 
         public void StopLoop()
         {
@@ -29,7 +32,8 @@ namespace Terrix.Game.GameRules
             while (true)
             {
                 tickHandlerTuple.Handler.HandleTick();
-                OnUpdated?.Invoke();
+                Debug.Log("Tick");
+                // OnUpdated?.Invoke();
                 if (tickHandlerTuple.Settings.EveryUpdate)
                 {
                     yield return null;
@@ -42,6 +46,14 @@ namespace Terrix.Game.GameRules
                 { 
                     yield return new WaitForSeconds((float)tickHandlerTuple.Settings.TickDelta.TotalSeconds);
                 }
+            }
+        }
+        private IEnumerator FixedLoop(float time)
+        {
+            while (true)
+            {
+                OnUpdated?.Invoke();
+                yield return new WaitForSeconds(time);
             }
         }
         

@@ -93,7 +93,6 @@ namespace Terrix.Visual
                 cellBounds.center.x * grid.cellSize.x);
             playerInfoHolder.sizeDelta = new Vector2(cellBounds.size.x, cellBounds.size.y);
             playerNameText.fontSize = playerScoreText.fontSize;
-            Debug.Log($"{playerNameText.text}, {playerNameText.fontSize}, {playerScoreText.fontSize}");
         }
 
         public void UpdateScore(float score)

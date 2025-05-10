@@ -10,10 +10,10 @@ namespace Terrix.DTO
         
         public PlayersAndBots(int players, int bots)
         {
-            if (players <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(players));
-            }
+            // if (players <= 0)
+            // {
+                // throw new ArgumentOutOfRangeException(nameof(players));
+            // }
 
             if (bots < 0)
             {

@@ -17,12 +17,12 @@ namespace Terrix.Map
 
         private readonly Dictionary<HexType, int> cellsByTypeCount;
 
-        private readonly HashSet<Hex> cellsSet = new ();
+        private readonly HashSet<Hex> cellsSet = new();
         private readonly HashSet<Hex> innerBorder = new();
         private readonly HashSet<Hex> outerBorder = new();
-        
+
         private readonly HashSet<Hex> updatedCells = new();
-        
+
         private float population;
 
         public int PlayerId => Owner.ID;
@@ -41,7 +41,7 @@ namespace Terrix.Map
         public float DensePopulation { get; private set; }
         public int MaxCellsCount { get; set; }
         public IEnumerable<Hex> Cells => cellsSet;
-        public Player Owner { get; private set; }
+        public Player Owner { get; set; }
         public Modifiers CustomModifiers { get; set; }
         public event Action<UpdateCellsData> OnCellsUpdate;
 
@@ -58,7 +58,6 @@ namespace Terrix.Map
             population = gameDataProvider.Get().StartCountryPopulation;
             DensePopulation = 0;
             MaxCellsCount = 0;
-            Debug.Log(Population);
         }
 
         //TODO возможно ошибка
@@ -85,15 +84,6 @@ namespace Terrix.Map
 
         public void CollectIncome()
         {
-            // var gameData = gameDataProvider.Get();
-            // var cellsStats = gameData.CellsStats;
-            //
-            // var sum = 0f;
-            // foreach (var (cellType, count) in cellsByTypeCount)
-            // {
-            //     sum += cellsStats[cellType].Income * count;
-            // }
-
             Population += GetIncome();
         }
 
@@ -102,16 +92,17 @@ namespace Terrix.Map
             var gameData = gameDataProvider.Get();
             var cellsStats = gameData.CellsStats;
             var sum = 0f;
-            var minModifier = DensePopulation / gameDataProvider.Get().MaxDensePopulation * 10;
-            var maxModifier = DensePopulation / gameDataProvider.Get().MaxDensePopulation / 2;
-            var modifier = 0f;
-            modifier = Mathf.Clamp(modifier, minModifier, maxModifier);
+            var modifier = DensePopulation / gameDataProvider.Get().MaxDensePopulation * 10;
+            if (modifier > 0.5f)
+            {
+                modifier = 0.5f + Mathf.Sqrt(modifier - 0.5f);
+            }
             foreach (var (cellType, count) in cellsByTypeCount)
             {
                 sum += cellsStats[cellType].Income * modifier * count;
                 // sum += cellsStats[cellType].Income * count;
             }
-            // sum *= GetModifiers().IncomeMultiplier;
+            sum *= GetModifiers().IncomeMultiplier;
             return sum;
         }
 
@@ -179,7 +170,7 @@ namespace Terrix.Map
                             cellsByTypeCount[cell.HexType]--;
                             TotalCellsCount--;
                             cell.PlayerId = null;
-                            
+
                             updatedCells.Add(cell);
                             cell.GetNeighbours().ForEach(h => updatedCells.Add(h));
                         }
@@ -193,6 +184,7 @@ namespace Terrix.Map
             AssignPopulation();
             OnCellsUpdate?.Invoke(data);
         }
+
         //TODO убрать
         // public HashSet<Hex> GetInnerBorder()
         // {
@@ -243,12 +235,12 @@ namespace Terrix.Map
             if (updatedCells.Count == 0)
             {
                 return;
-            } 
-            
+            }
+
             updatedCells.ForEach(ApplyUpdatedCell);
             updatedCells.Clear();
         }
-        
+
         private void ApplyUpdatedCell(Hex cell)
         {
             if (cell.PlayerId == PlayerId && cell.GetNeighbours().Any(h => h.PlayerId != PlayerId))
@@ -300,7 +292,7 @@ namespace Terrix.Map
         {
             return CustomModifiers ?? Modifiers.Default;
         }
-        
+
         public IEnumerator<Hex> GetEnumerator()
         {
             return cellsSet.GetEnumerator();

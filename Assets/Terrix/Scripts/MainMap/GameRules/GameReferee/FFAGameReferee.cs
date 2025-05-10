@@ -27,7 +27,6 @@ namespace Terrix.Game.GameRules
             var players = playersProvider.GetAll().ToArray();
             var losePlayersCount = playersProvider.GetAll().Count(p => p.IsLose);
             var totalLosePlayersCount = losePlayersCount + newLosePlayers.Length;
-            Debug.Log($"old: {losePlayersCount}; new: {newLosePlayers.Length}; total: {totalLosePlayersCount};");
             Player winner;
             if (totalLosePlayersCount == players.Length)
             {

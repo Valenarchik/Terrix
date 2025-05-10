@@ -3,6 +3,7 @@ using System.Linq;
 using FishNet.Object;
 using Terrix.Game.GameRules;
 using Terrix.Networking;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Random = UnityEngine.Random;
@@ -18,6 +19,7 @@ public class LobbyManager : NetworkBehaviour
     // private Dictionary<int, CustomLobby> customLobbies = new();
     public Queue<LobbySettings> ServerSettingsQueue { get; private set; } = new();
     public static LobbyManager Instance { get; private set; }
+    [SerializeField] private TextMeshProUGUI lobbiesCountText;
 
     private void Awake() => Instance = this;
 
@@ -49,28 +51,53 @@ public class LobbyManager : NetworkBehaviour
     }
 
     // private void UpdateCustomLobbies_ToObserver(Dictionary<int, CustomLobby> newLobbies)
-    private void UpdateCustomLobbies_ToObserver(Dictionary<int, Lobby> newLobbies)
+    [ObserversRpc]
+    private void UpdateCustomLobbiesCount_ToObserver(int count)
     {
-        customLobbies = newLobbies;
+        lobbiesCountText.text = $"Количество лобби на сервере: {count.ToString()}";
     }
 
-    public void AddDefaultLobby(int id, Lobby lobby)
+    // public void AddDefaultLobby(int id, Lobby lobby)
+    // {
+    //     defaultLobbies.Add(id, lobby);
+    //     UpdateDefaultLobbies_ToObserver(defaultLobbies);
+    // }
+    //
+    // // public void AddCustomLobby(int id, CustomLobby lobby)
+    // public void AddCustomLobby(int id, Lobby lobby)
+    // {
+    //     customLobbies.Add(id, lobby);
+    //     UpdateCustomLobbiesCount_ToObserver(customLobbies.Count);
+    // }
+
+    public void AddLobby(int id, Lobby lobby)
     {
-        defaultLobbies.Add(id, lobby);
-        UpdateDefaultLobbies_ToObserver(defaultLobbies);
+        if (lobby.IsCustom)
+        {
+            customLobbies.Add(id, lobby);
+        }
+        else
+        {
+            defaultLobbies.Add(id, lobby);
+        }
+
+        UpdateCustomLobbiesCount_ToObserver(customLobbies.Count);
     }
 
-    // public void AddCustomLobby(int id, CustomLobby lobby)
-    public void AddCustomLobby(int id, Lobby lobby)
-    {
-        customLobbies.Add(id, lobby);
-        UpdateCustomLobbies_ToObserver(customLobbies);
-    }
 
-    public void RemoveDefaultLobby(int id)
+    public void RemoveLobby(int id)
     {
-        defaultLobbies.Remove(id);
-        UpdateDefaultLobbies_ToObserver(defaultLobbies);
+        if (TryGetCustomLobbyById(id, out var _))
+        {
+            customLobbies.Remove(id);
+            UpdateCustomLobbiesCount_ToObserver(customLobbies.Count);
+        }
+        else
+        {
+            defaultLobbies.Remove(id);
+            UpdateDefaultLobbies_ToObserver(defaultLobbies);
+        }
+        // UpdateDefaultLobbies_ToObserver(defaultLobbies);
     }
 
     public int GetDefaultFreeId()
@@ -128,6 +155,19 @@ public class LobbyManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void UpdateCustomLobbies_ToServer()
     {
-        UpdateCustomLobbies_ToObserver(customLobbies);
+        UpdateCustomLobbiesCount_ToObserver(customLobbies.Count);
     }
+    // [ServerRpc(RequireOwnership = false)]
+
+    // private void CreateOrJoinDefaultLobby_ToServer(NetworkConnection player)
+    // {
+    //     if (LobbyManager.Instance.TryGetAvailableLobby(out var availableLobby))
+    //     {
+    //         JoinGame(player, availableLobby.Scene);
+    //     }
+    //     else
+    //     {
+    //         CreateNewGame_OnServer(player, Terrix.Networking.Scenes.GameScene);
+    //     }
+    // }
 }

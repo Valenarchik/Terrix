@@ -64,15 +64,19 @@ namespace Terrix.Networking
                 IsCustom = true;
                 PlayersMaxCount = serverSettings.PlayersCount;
                 PlayersAndBotsMaxCount = serverSettings.BotsCount + serverSettings.PlayersCount;
-                AddCustomLobbyToLobbyManager();
+                Debug.Log("Custom");
+                
+                // AddCustomLobbyToLobbyManager();
             }
             else
             {
                 Id = GetDefaultFreeId();
                 PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
                 PlayersAndBotsMaxCount = LobbyManager.Instance.PlayersAndBotsMaxCount;
-                AddDefaultLobbyToLobbyManager();
+                Debug.Log("Default");
+                // AddDefaultLobbyToLobbyManager();
             }
+            LobbyManager.Instance.AddLobby(Id, this);
 
             LobbyStateMachine = CreateStateMachine();
             LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
@@ -83,8 +87,8 @@ namespace Terrix.Networking
         protected virtual int GeCustomFreeId() => LobbyManager.Instance.GetCustomFreeId();
 
         protected virtual LobbyStateMachine CreateStateMachine() => new LobbyStateMachine();
-        protected virtual void AddDefaultLobbyToLobbyManager() => LobbyManager.Instance.AddDefaultLobby(Id, this);
-        protected virtual void AddCustomLobbyToLobbyManager() => LobbyManager.Instance.AddCustomLobby(Id, this);
+        // protected virtual void AddDefaultLobbyToLobbyManager() => LobbyManager.Instance.AddDefaultLobby(Id, this);
+        // protected virtual void AddCustomLobbyToLobbyManager() => LobbyManager.Instance.AddCustomLobby(Id, this);
 
         public override void OnStartClient()
         {
@@ -211,7 +215,7 @@ namespace Terrix.Networking
             Players.Remove(player);
             if (Players.Count == 0)
             {
-                LobbyManager.Instance.RemoveDefaultLobby(Id);
+                LobbyManager.Instance.RemoveLobby(Id);
             }
 
             UpdatePlayers_ToObserver(Players);

@@ -121,13 +121,8 @@ namespace Terrix.Game.GameRules
                 serverSettings.CountryDrawerSettings.Zones[bot.ID].PlayerName = bot.PlayerName;
             }
 
-            Player.OnGameEnd += PlayerOnGameEnd_OnServer;
+            // Player.OnGameEnd += PlayerOnGameEnd_OnServer;
 
-            // game = new Game();
-            foreach (var player in players.GetAll())
-            {
-                Debug.Log($"{player.PlayerName} {player.Country.Population}");
-            }
 
             Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings,
                 new NetworkSerialization.PlayersCountryMapData(players, Map));
@@ -172,6 +167,11 @@ namespace Terrix.Game.GameRules
             phaseManager = new PhaseManager();
             playersFactory = new PlayersFactory(gameDataProvider);
             players = new PlayersProvider(playersFactory.CreatePlayers(serverSettings.PlayersCount));
+            foreach (var player in players.GetAll())
+            {
+                player.OnGameEnd += PlayerOnGameEnd_OnServer;
+            }
+
             mapGenerator.Initialize(gameDataProvider, players);
             Map = mapGenerator.GenerateMap(serverSettings.MapSettings);
             attackInvoker = new AttackInvoker();
@@ -266,9 +266,10 @@ namespace Terrix.Game.GameRules
             countriesDrawerSettings.DragZone.PlayerName = "";
         }
 
-        private void PlayerOnGameEnd_OnServer(int id, bool win)
+        // private void PlayerOnGameEnd_OnServer(int lobbyId, int playerId, bool win)
+        private void PlayerOnGameEnd_OnServer(int playerId, bool win)
         {
-            PlayerOnGameEnd_ToTarget(id, win);
+            PlayerOnGameEnd_ToTarget(playerId, win);
         }
 
         [ObserversRpc]

@@ -106,10 +106,6 @@ namespace Terrix.Controllers
         private void Update()
         {
             stateMachine?.CurrentState.Update();
-            if (country != null)
-            {
-                Debug.Log(country.Population);
-            }
         }
 
         private void OnGameStart()

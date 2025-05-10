@@ -18,7 +18,8 @@ namespace Terrix.Entities
         public bool IsLose => PlayerState == PlayerState.Lose;
         public bool IsWin => PlayerState == PlayerState.Win;
         public DateTime LoseTime { get; private set; }
-        public static event Action<int, bool> OnGameEnd;
+        // public static event Action<int, bool> OnGameEnd;
+        public event Action<int, bool> OnGameEnd;
 
         [NotNull] public Country Country
         {
