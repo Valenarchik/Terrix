@@ -1,18 +1,16 @@
-﻿using System;
-using FishNet.Connection;
-using FishNet.Managing.Scened;
+﻿using FishNet.Connection;
 using FishNet.Managing.Timing;
 using FishNet.Object;
-using Terrix.Networking;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.Profiling;
 
 public class BootstrapNetworkManager : NetworkBehaviour
 {
     public static BootstrapNetworkManager Instance { get; private set; }
     [SerializeField] private TextMeshProUGUI pingText;
     [SerializeField] private TextMeshProUGUI ramText;
+    [SerializeField] private TextMeshProUGUI cpuText;
     [SerializeField] private TextMeshProUGUI connectionsCountText;
     private TimeManager timeManager;
 
@@ -20,119 +18,18 @@ public class BootstrapNetworkManager : NetworkBehaviour
 
     private void Update()
     {
-        var ping = NetworkManager.TimeManager.RoundTripTime;
+        var ping = NetworkManager.TimeManager.RoundTripTime / 2;
         var text = $"Ping: {ping}";
         pingText.text = text;
-        var usedRam = System.GC.GetTotalMemory(false) / 1024 / 1024;
-        ramText.text = $"Used RAM: {usedRam}";
+        // var usedRam = System.GC.GetTotalMemory(false) / 1024 / 1024;
+        // ramText.text = $"Used RAM: {usedRam}";
+        // Resources.UnloadUnusedAssets();
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void CreateOrJoinDefaultLobby_ToServer(NetworkConnection player)
-    {
-        if (LobbyManager.Instance.TryGetAvailableLobby(out var availableLobby))
-        {
-            JoinGame(player, availableLobby.Scene);
-        }
-        else
-        {
-            CreateNewGame_OnServer(player, Terrix.Networking.Scenes.GameScene);
-        }
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    private void CreateFakeLobby_ToServer(int botsCount)
-    {
-        LobbyManager.Instance.ServerSettingsQueue.Enqueue(new LobbySettings(0, botsCount));
-        CreateFakeGame_OnServer(Scenes.GameScene);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    private void CreateCustomLobby_ToServer(NetworkConnection player, LobbySettings lobbySettings)
-    {
-        LobbyManager.Instance.ServerSettingsQueue.Enqueue(lobbySettings);
-        CreateNewGame_OnServer(player, Scenes.GameScene);
-    }
-
-    public void CreateOrJoinDefaultLobby_OnClient()
-    {
-        var player = NetworkManager.ClientManager.Connection; //иногда ошибка
-        CloseScenes(new[] { Scenes.MenuScene });
-        CreateOrJoinDefaultLobby_ToServer(player);
-    }
-
-    public void CreateFakeLobby_OnClient(int botsCount)
-    {
-        CreateFakeLobby_ToServer(botsCount);
-    }
-
-    public void CreateCustomLobby_OnClient(LobbySettings lobbySettings)
-    {
-        var player = NetworkManager.ClientManager.Connection;
-        CreateCustomLobby_ToServer(player, lobbySettings);
-        CloseScenes(new[] { Scenes.MenuScene });
-    }
-
-    public void TryJoinCustomLobby(int id)
-    {
-        var player = NetworkManager.ClientManager.Connection;
-        TryJoinGame_ToServer(player, id);
-        CloseScenes(new[] { Scenes.MenuScene });
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    private void TryJoinGame_ToServer(NetworkConnection player, int id)
-    {
-        // Scene scene;
-        if (LobbyManager.Instance.TryGetCustomLobbyById(id, out var scene))
-        {
-            JoinGame(player, scene);
-        }
-        // return true;
-    }
-
-    private void CloseScenes(string[] scenesToClose)
-    {
-        foreach (var sceneName in scenesToClose)
-        {
-            UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(sceneName);
-        }
-    }
-
-
-    private void CreateNewGame_OnServer(NetworkConnection player, string sceneName)
-    {
-        var sceneLookupData = new SceneLookupData(sceneName);
-        var sld = new SceneLoadData(sceneLookupData);
-        sld.Params.ServerParams = new object[] { LobbyManager.Instance.GetLastId() + 1 };
-        sld.Options.AllowStacking = true;
-        SceneManager.LoadConnectionScenes(player, sld);
-    }
-
-    private void CreateFakeGame_OnServer(string sceneName)
-    {
-        var sceneLookupData = new SceneLookupData(sceneName);
-        var sld = new SceneLoadData(sceneLookupData);
-        sld.Params.ServerParams = new object[] { LobbyManager.Instance.GetLastId() + 1 };
-        sld.Options.AllowStacking = true;
-        SceneManager.LoadConnectionScenes(sld);
-    }
-
-    private void JoinGame(NetworkConnection player, Scene scene)
-    {
-        var sceneLookupData = new SceneLookupData(scene);
-        Debug.Log(scene.name);
-        SceneLoadData sld = new SceneLoadData(sceneLookupData)
-        {
-            ReplaceScenes = ReplaceOption.None,
-        };
-        SceneManager.LoadConnectionScenes(player, sld);
-    }
 
     public override void OnStartClient()
     {
-        NetworkManager.
-        StartCoroutine(MeasurePing());
+        // StartCoroutine(MeasurePing());
     }
 
     public override void OnStartServer()
@@ -156,7 +53,13 @@ public class BootstrapNetworkManager : NetworkBehaviour
     {
         while (true)
         {
-            UpdateConnectionCount_ToObserver(NetworkManager.ServerManager.Clients.Count);
+            // Resources.UnloadUnusedAssets();
+            //
+            // UpdateConnectionCount_ToObserver(NetworkManager.ServerManager.Clients.Count);
+            // var usedRam = SystemInfo.systemMemorySize / 1024;
+            var usedRam = System.GC.GetTotalMemory(false) / 1024 / 1024;
+            var cpu = Profiler.GetTotalAllocatedMemoryLong() / 1024f / 1024f;
+            UpdateRAMInfo_ToObserver(usedRam, cpu);
             yield return new WaitForSeconds(1f);
         }
     }
@@ -182,5 +85,12 @@ public class BootstrapNetworkManager : NetworkBehaviour
     private void UpdateConnectionCount_ToObserver(int count)
     {
         connectionsCountText.text = $"Connections count: {count}";
+    }
+
+    [ObserversRpc]
+    private void UpdateRAMInfo_ToObserver(long ram, float cpu)
+    {
+        ramText.text = $"Used RAM: {ram}";
+        cpuText.text = $"Used CPU: {cpu}";
     }
 }

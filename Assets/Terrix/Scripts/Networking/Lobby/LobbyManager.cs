@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using FishNet.Connection;
+using FishNet.Managing.Scened;
 using FishNet.Object;
 using Terrix.Game.GameRules;
 using Terrix.Networking;
@@ -22,6 +25,8 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI lobbiesCountText;
 
     private void Awake() => Instance = this;
+    private TaskCompletionSource<bool> canJoinCustomLobbyTcs;
+
 
     public bool TryGetAvailableLobby(out Lobby availableLobby)
     {
@@ -157,17 +162,112 @@ public class LobbyManager : NetworkBehaviour
     {
         UpdateCustomLobbiesCount_ToObserver(customLobbies.Count);
     }
-    // [ServerRpc(RequireOwnership = false)]
+    public void CreateOrJoinDefaultLobby_OnClient()
+    {
+        var player = NetworkManager.ClientManager.Connection; //иногда ошибка
+        CloseScenes(new[] { Scenes.MenuScene });
+        CreateOrJoinDefaultLobby_ToServer(player);
+    }
+    [ServerRpc(RequireOwnership = false)]
 
-    // private void CreateOrJoinDefaultLobby_ToServer(NetworkConnection player)
-    // {
-    //     if (LobbyManager.Instance.TryGetAvailableLobby(out var availableLobby))
-    //     {
-    //         JoinGame(player, availableLobby.Scene);
-    //     }
-    //     else
-    //     {
-    //         CreateNewGame_OnServer(player, Terrix.Networking.Scenes.GameScene);
-    //     }
-    // }
+    private void CreateOrJoinDefaultLobby_ToServer(NetworkConnection player)
+    {
+        if (TryGetAvailableLobby(out var availableLobby))
+        {
+            JoinLobby(player, availableLobby.Scene);
+        }
+        else
+        {
+            CreateNewLobby(player, Scenes.GameScene);
+        }
+    }
+    public void CreateCustomLobby_OnClient(LobbySettings lobbySettings)
+    {
+        var player = NetworkManager.ClientManager.Connection;
+        CreateCustomLobby_ToServer(player, lobbySettings);
+        CloseScenes(new[] { Scenes.MenuScene });
+    }
+    [ServerRpc(RequireOwnership = false)]
+    private void CreateCustomLobby_ToServer(NetworkConnection player, LobbySettings lobbySettings)
+    {
+        ServerSettingsQueue.Enqueue(lobbySettings);
+        CreateNewLobby(player, Scenes.GameScene);
+    }
+    private void JoinLobby(NetworkConnection player, Scene scene)
+    {
+        var sceneLookupData = new SceneLookupData(scene);
+        var sld = new SceneLoadData(sceneLookupData)
+        {
+            ReplaceScenes = ReplaceOption.None,
+        };
+        SceneManager.LoadConnectionScenes(player, sld);
+    }
+    private void CreateNewLobby(NetworkConnection player, string sceneName)
+    {
+        var sceneLookupData = new SceneLookupData(sceneName);
+        var sld = new SceneLoadData(sceneLookupData);
+        // sld.Params.ServerParams = new object[] {GetLastId() + 1 };
+        sld.Options.AllowStacking = true;
+        SceneManager.LoadConnectionScenes(player, sld);
+    }
+    public void CloseScenes(string[] scenesToClose)
+    {
+        foreach (var sceneName in scenesToClose)
+        {
+            UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(sceneName);
+        }
+    }
+    public async void TryJoinCustomLobby_OnClient(int id)
+    {
+        var player = NetworkManager.ClientManager.Connection;
+        canJoinCustomLobbyTcs = new TaskCompletionSource<bool>();
+
+        TryJoinCustomLobby_ToServer(player, id);
+        var result = await canJoinCustomLobbyTcs.Task;
+
+        if (result)
+        {
+            CloseScenes(new[] { Scenes.MenuScene });
+        }
+        else
+        {
+            MainMenuManager.Instance.ShowCustomLobbyErrorText("Лобби с таким ID отсутствует");
+        }
+    }
+    [ServerRpc(RequireOwnership = false)]
+    private void TryJoinCustomLobby_ToServer(NetworkConnection connection, int id)
+    {
+        if (TryGetCustomLobbyById(id, out var scene))
+        {
+            TryJoinLobby_ToTarget(connection, true);
+            JoinLobby(connection, scene);
+        }
+        else
+        {
+            TryJoinLobby_ToTarget(connection, false);
+        }
+    }
+    [TargetRpc]
+    private void TryJoinLobby_ToTarget(NetworkConnection connection, bool result)
+    {
+        canJoinCustomLobbyTcs.SetResult(result);
+    }
+    public void CreateFakeLobby_OnClient(int botsCount)
+    {
+        CreateFakeLobby_ToServer(botsCount);
+    }
+    [ServerRpc(RequireOwnership = false)]
+    private void CreateFakeLobby_ToServer(int botsCount)
+    {
+        ServerSettingsQueue.Enqueue(new LobbySettings(0, botsCount));
+        CreateFakeGame_OnServer(Scenes.GameScene);
+    }
+    private void CreateFakeGame_OnServer(string sceneName)
+    {
+        var sceneLookupData = new SceneLookupData(sceneName);
+        var sld = new SceneLoadData(sceneLookupData);
+        sld.Params.ServerParams = new object[] {GetLastId() + 1 };
+        sld.Options.AllowStacking = true;
+        SceneManager.LoadConnectionScenes(sld);
+    }
 }

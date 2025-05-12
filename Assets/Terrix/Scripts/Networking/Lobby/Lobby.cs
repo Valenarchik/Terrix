@@ -60,7 +60,7 @@ namespace Terrix.Networking
             Players = new List<NetworkConnection>();
             if (LobbyManager.Instance.ServerSettingsQueue.TryDequeue(out var serverSettings))
             {
-                Id = GeCustomFreeId();
+                Id = LobbyManager.Instance.GetCustomFreeId();
                 IsCustom = true;
                 PlayersMaxCount = serverSettings.PlayersCount;
                 PlayersAndBotsMaxCount = serverSettings.BotsCount + serverSettings.PlayersCount;
@@ -70,7 +70,7 @@ namespace Terrix.Networking
             }
             else
             {
-                Id = GetDefaultFreeId();
+                Id = LobbyManager.Instance.GetDefaultFreeId();
                 PlayersMaxCount = LobbyManager.Instance.PlayersMaxCount;
                 PlayersAndBotsMaxCount = LobbyManager.Instance.PlayersAndBotsMaxCount;
                 Debug.Log("Default");
@@ -82,9 +82,6 @@ namespace Terrix.Networking
             LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged_OnServer;
             // AddLobbyToLobbyManager();
         }
-
-        protected virtual int GetDefaultFreeId() => LobbyManager.Instance.GetDefaultFreeId();
-        protected virtual int GeCustomFreeId() => LobbyManager.Instance.GetCustomFreeId();
 
         protected virtual LobbyStateMachine CreateStateMachine() => new LobbyStateMachine();
         // protected virtual void AddDefaultLobbyToLobbyManager() => LobbyManager.Instance.AddDefaultLobby(Id, this);
@@ -98,18 +95,18 @@ namespace Terrix.Networking
             AddPlayer_ToServer(player);
         }
 
-        protected void LobbyStateMachineOnStateChanged_OnServer(LobbyState state)
+        private void LobbyStateMachineOnStateChanged_OnServer(LobbyState state)
         {
             UpdateStateName_ToObserver(state.LobbyStateType);
         }
 
         [ObserversRpc]
-        protected void UpdateStateName_ToObserver(LobbyStateType lobbyStateType)
+        private void UpdateStateName_ToObserver(LobbyStateType lobbyStateType)
         {
             OnStateChanged?.Invoke(lobbyStateType);
         }
 
-        protected void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
+        private void ServerManagerOnRemoteConnectionState_OnServer(NetworkConnection conn,
             RemoteConnectionStateArgs args)
         {
             switch (args.ConnectionState)
@@ -126,7 +123,7 @@ namespace Terrix.Networking
 
 
         [ServerRpc(RequireOwnership = false)]
-        protected virtual void AddPlayer_ToServer(NetworkConnection newPlayer)
+        private void AddPlayer_ToServer(NetworkConnection newPlayer)
         {
             Players.Add(newPlayer);
             SetInfo_ToTarget(newPlayer, Id, PlayersMaxCount, IsCustom);
@@ -139,7 +136,7 @@ namespace Terrix.Networking
         }
 
         [ServerRpc(RequireOwnership = false)]
-        void RemovePlayer_ToServer(NetworkConnection player)
+        private void RemovePlayer_ToServer(NetworkConnection player)
         {
             var sud = new SceneUnloadData(new[] { Scenes.GameScene });
             SceneManager.UnloadConnectionScenes(player, sud);
@@ -149,7 +146,7 @@ namespace Terrix.Networking
         }
 
         [TargetRpc]
-        protected void SetInfo_ToTarget(NetworkConnection connection, int id, int playersMaxCount, bool isCustom)
+        private void SetInfo_ToTarget(NetworkConnection connection, int id, int playersMaxCount, bool isCustom)
         {
             Id = id;
             IsCustom = isCustom;
@@ -158,52 +155,19 @@ namespace Terrix.Networking
         }
 
         [ObserversRpc]
-        protected void UpdatePlayers_ToObserver(List<NetworkConnection> players)
+        private void UpdatePlayers_ToObserver(List<NetworkConnection> players)
         {
             Players = players;
             OnPlayersChanged?.Invoke();
         }
 
         [ObserversRpc]
-        protected void UpdateTimer_ToObserver(float timerTime)
+        private void UpdateTimer_ToObserver(float timerTime)
         {
             OnTimerChanged?.Invoke(timerTime);
         }
 
         public bool IsAvailableForJoin() => LobbyStateMachine.CurrentState == LobbyStateMachine.LobbySearchingState;
-
-        // public void EndGame()
-        // {
-        //     EndGame_ToServer();
-        // }
-
-        // [ServerRpc(RequireOwnership = false)]
-        // void EndGame_ToServer()
-        // {
-        //     LobbyStateMachine.ChangeState(LobbyStateMachine.LobbyEndedState);
-        //     // EndGame_ToObserver();
-        // }
-
-        // [ObserversRpc]
-        // void EndGame_ToObserver()
-        // {
-        //     // endGameButton.gameObject.SetActive(false);
-        //     // leaveLobbyButton.gameObject.SetActive(true);
-        // }
-
-
-        // public void LeaveLobby()
-        // {
-        //     Unsubscribe_ToServer();
-        //     RemovePlayer_ToServer(NetworkManager.ClientManager.Connection);
-        //     UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(Scenes.GameScene);
-        // }
-
-        // [ServerRpc(RequireOwnership = false)]
-        // void Unsubscribe_ToServer()
-        // {
-        //     NetworkManager.ServerManager.OnRemoteConnectionState -= ServerManagerOnRemoteConnectionState_OnServer;
-        // }
 
         public void RemoveThisPlayer_OnClient()
         {

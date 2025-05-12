@@ -9,6 +9,7 @@ namespace Terrix.Networking
     {
         [SerializeField] private TMP_InputField inputField;
 
-        public int GetInputID() => Convert.ToInt32(inputField.text);
+        // public int GetInputID() => Convert.ToInt32(inputField.text);
+        public string GetInput() => inputField.text;
     }
 }

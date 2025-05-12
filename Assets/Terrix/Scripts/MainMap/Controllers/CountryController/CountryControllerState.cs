@@ -1,5 +1,4 @@
-﻿using Terrix.Game.GameRules;
-using UnityEngine.InputSystem;
+﻿using UnityEngine.InputSystem;
 
 namespace Terrix.Controllers
 {

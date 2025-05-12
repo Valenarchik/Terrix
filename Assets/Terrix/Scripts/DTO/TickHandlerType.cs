@@ -6,5 +6,6 @@
         AttackHandler,
         RefereeHandler,
         BotsHandler,
+        ObserverUpdateInfoHandler
     }
 }

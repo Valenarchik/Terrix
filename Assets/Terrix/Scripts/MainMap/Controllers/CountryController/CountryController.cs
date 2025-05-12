@@ -210,7 +210,7 @@ namespace Terrix.Controllers
                 Territory = territory.ToHashSet()
             }.Build();
 
-            commandsExecutor.ExecuteAttack(attack);
+            commandsExecutor.ExecuteAttack_OnClient(attack);
         }
         
         private void StartFastAttack(int? targetId)
@@ -225,7 +225,7 @@ namespace Terrix.Controllers
                 IsGlobalAttack = true
             }.Build();
             
-            commandsExecutor.ExecuteAttack(attack);
+            commandsExecutor.ExecuteAttack_OnClient(attack);
         }
 
         private float GetPercentOfPopulation(float percent)

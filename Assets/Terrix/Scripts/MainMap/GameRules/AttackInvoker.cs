@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Terrix.Map;
+using UnityEngine;
 
 namespace Terrix.Game.GameRules
 {
@@ -53,6 +54,7 @@ namespace Terrix.Game.GameRules
 
         private void AttackTick(AttackState attackState)
         {
+            Debug.Log("Attack Tick");
             var intersection = GetIntersection(attackState);
 
             if (intersection.Count == 0)

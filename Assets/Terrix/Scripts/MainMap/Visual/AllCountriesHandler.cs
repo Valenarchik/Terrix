@@ -29,22 +29,28 @@ namespace Terrix.Visual
         private bool handle;
 
 
-        public override void OnStartServer()
-        {
-            tickGenerator.OnUpdated += TickGenerator_OnUpdated;
-        }
+        // public override void OnStartServer()
+        // {
+        //     tickGenerator.OnUpdated += TickGenerator_OnUpdated;
+        // }
 
-        private void TickGenerator_OnUpdated()
+        // private void TickGenerator_OnUpdated()
+        // {
+        //     Debug.Log("Fixed tick");
+        //     UpdateCountriesPopulation_ToObserver(countries
+        //         .Select(country => new SimplifiedCountry(country.PlayerId, country.Population, country.TotalCellsCount))
+        //         .ToArray());
+        // }
+        public void UpdateCountriesPopulation_OnServer()
         {
-            Debug.Log("Fixed tick");
             UpdateCountriesPopulation_ToObserver(countries
-                .Select(country => new SimplifiedCountry(country.PlayerId, country.Population, country.TotalCellsCount))
-                .ToArray());
+            .Select(country => new CountryPopulation(country.PlayerId, country.Population))
+            .ToArray());
         }
 
         [ObserversRpc]
         private void UpdateCountriesPopulation_ToObserver(
-            SimplifiedCountry[] simplifiedCountries)
+            CountryPopulation[] simplifiedCountries)
         {
             foreach (var simplifiedCountry in simplifiedCountries)
             {
@@ -54,18 +60,6 @@ namespace Terrix.Visual
             allCountriesDrawer.UpdateScore_OnClient(simplifiedCountries);
             gameUI.UpdateInfo();
         }
-        // [ObserversRpc]
-        // private void UpdatePlayersState(
-        //     SimplifiedCountry[] simplifiedCountries)
-        // {
-        //     foreach (var simplifiedCountry in simplifiedCountries)
-        //     {
-        //         players.Find(simplifiedCountry.PlayerId).Country.Population = simplifiedCountry.Population;
-        //     }
-        //
-        //     allCountriesDrawer.UpdateScore_OnClient(simplifiedCountries);
-        //     leaderboardUI.UpdateInfo();
-        // }
 
         public void Initialize_OnServer([NotNull] IPlayersProvider players)
         {
@@ -73,7 +67,6 @@ namespace Terrix.Visual
             this.countries = players.GetAll().Select(player => player.Country).ToArray();
 
             initialize = true;
-
             SubscribeCountryEvents();
         }
 
@@ -93,8 +86,6 @@ namespace Terrix.Visual
         private void CountryOnCellsUpdate(Country.UpdateCellsData data)
         {
             UpdateCountries_ToObserver(data);
-            allCountriesDrawer.UpdateZone_ToObserver(data,
-                countries.First(country => country.PlayerId == data.PlayerId).Population);
         }
 
         [ObserversRpc]
@@ -107,7 +98,8 @@ namespace Terrix.Visual
                 hex.HexMap = hexMap;
             }
 
-            players.Find(data.PlayerId).Country.UpdateCells(data);
+            players.Find(data.PlayerId).Country.UpdateCells_OnClient(data);
+            allCountriesDrawer.UpdateZone(data, 1);
         }
 
 

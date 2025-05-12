@@ -14,7 +14,6 @@ using Terrix.Networking;
 using Terrix.Settings;
 using Terrix.Visual;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 namespace Terrix.Game.GameRules
@@ -61,11 +60,8 @@ namespace Terrix.Game.GameRules
         public override void OnStartServer()
         {
             base.OnStartServer();
-            // NetworkManager.ServerManager.OnRemoteConnectionState += ServerManagerOnRemoteConnectionState_OnServer;
-            var gameMode = GameModeType.FFA;
             var playersAndBots = new PlayersAndBots(lobby.PlayersMaxCount,
                 lobby.PlayersAndBotsMaxCount - lobby.PlayersMaxCount);
-            // 0); // без ботов
             var countriesDrawerSettings = new AllCountriesDrawer.Settings(
                 Enumerable.Range(0, lobby.PlayersAndBotsMaxCount).Select(i => new ZoneData(i)).ToArray(),
                 new ZoneData(AllCountriesDrawer.DRAG_ZONE_ID));
@@ -75,7 +71,7 @@ namespace Terrix.Game.GameRules
                 playersAndBots,
                 countriesDrawerSettings
             );
-            Initialize_OnServer(serverSettings);
+            Initialize_OnServer();
             lobby.LobbyStateMachine.OnStateChanged += LobbyStateMachineOnStateChanged;
             lobby.OnPlayerExit += LobbyOnPlayerExit;
         }
@@ -110,7 +106,6 @@ namespace Terrix.Game.GameRules
 
         private IEnumerator GamePipeline()
         {
-            //TODO тут инициализация происходит и для сервака и дял клиента
             foreach (var bot in players.GetAll().Where(player => player.PlayerType is PlayerType.Bot))
             {
                 bot.PlayerName = $"Bot {bot.ID}";
@@ -127,31 +122,69 @@ namespace Terrix.Game.GameRules
             Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings,
                 new NetworkSerialization.PlayersCountryMapData(players, Map));
 
-            phaseManager.NextPhase();
-            ChangePhase();
+            ChangePhase_OnServer();
 
             var gameData = gameDataProvider.Get();
             BotsChooseRandomPositions();
             yield return new WaitForSeconds((float)gameData.TimeForChooseFirstCountryPosition.TotalSeconds);
             NotInitializedPlayersChooseRandomPositions();
-            phaseManager.NextPhase();
-            ChangePhase();
+            ChangePhase_OnServer();
 
             botsManager.AddBots(players.GetAll().OfType<Bot>());
+            var observerPopulationInfoUpdater = new ObserverPopulationInfoUpdater(allCountriesHandler);
             tickGenerator.InitializeLoop(new TickGenerator.TickHandlerTuple[]
             {
                 new(countriesCollector, gameData.TickHandlers[TickHandlerType.CountriesCollectorHandler]),
                 new(attackInvoker, gameData.TickHandlers[TickHandlerType.AttackHandler]),
                 new(referee, gameData.TickHandlers[TickHandlerType.RefereeHandler]),
-                new(botsManager, gameData.TickHandlers[TickHandlerType.BotsHandler])
+                new(botsManager, gameData.TickHandlers[TickHandlerType.BotsHandler]),
+                new (observerPopulationInfoUpdater, gameData.TickHandlers[TickHandlerType.ObserverUpdateInfoHandler])
+                
             });
             // Ждем пока игра не закончится
             yield return new WaitWhile(() => !game.GameOver);
             Debug.Log("Game over");
-            phaseManager.NextPhase();
-            ChangePhase();
+            ChangePhase_OnServer();
 
             tickGenerator.StopLoop();
+        }
+
+        // private void InitialInitialPhase_OnServer()
+        // {
+        //     foreach (var bot in players.GetAll().Where(player => player.PlayerType is PlayerType.Bot))
+        //     {
+        //         bot.PlayerName = $"Bot {bot.ID}";
+        //         bot.PlayerColor = new Color(Random.Range(0, 1f),
+        //             Random.Range(0, 1f), Random.Range(0, 1f), 1f);
+        //         serverSettings.CountryDrawerSettings.Zones[bot.ID].Color = bot.PlayerColor;
+        //         serverSettings.CountryDrawerSettings.Zones[bot.ID].BorderColor = bot.PlayerColor;
+        //         serverSettings.CountryDrawerSettings.Zones[bot.ID].PlayerName = bot.PlayerName;
+        //     }
+        //     Initialize_InitialPhase_ToObserver(serverSettings.CountryDrawerSettings,
+        //         new NetworkSerialization.PlayersCountryMapData(players, Map));
+        //     BotsChooseRandomPositions();
+        // }
+        // private void InitialWarPhase_OnServer()
+        // {
+        //     var gameData = gameDataProvider.Get();
+        //
+        //     NotInitializedPlayersChooseRandomPositions();
+        //     ChangePhase_OnServer();
+        //
+        //     botsManager.AddBots(players.GetAll().OfType<Bot>());
+        //     tickGenerator.InitializeLoop(new TickGenerator.TickHandlerTuple[]
+        //     {
+        //         new(countriesCollector, gameData.TickHandlers[TickHandlerType.CountriesCollectorHandler]),
+        //         new(attackInvoker, gameData.TickHandlers[TickHandlerType.AttackHandler]),
+        //         new(referee, gameData.TickHandlers[TickHandlerType.RefereeHandler]),
+        //         new(botsManager, gameData.TickHandlers[TickHandlerType.BotsHandler]),
+        //     });
+        // }
+
+        private void ChangePhase_OnServer()
+        {
+            phaseManager.NextPhase();
+            ChangePhase();
         }
 
 
@@ -161,7 +194,7 @@ namespace Terrix.Game.GameRules
             phaseManager.NextPhase();
         }
 
-        private void Initialize_OnServer(ServerSettings settings)
+        private void Initialize_OnServer()
         {
             gameDataProvider = new GameDataProvider();
             phaseManager = new PhaseManager();

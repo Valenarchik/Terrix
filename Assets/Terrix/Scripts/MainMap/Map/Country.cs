@@ -97,11 +97,13 @@ namespace Terrix.Map
             {
                 modifier = 0.5f + Mathf.Sqrt(modifier - 0.5f);
             }
+
             foreach (var (cellType, count) in cellsByTypeCount)
             {
                 sum += cellsStats[cellType].Income * modifier * count;
                 // sum += cellsStats[cellType].Income * count;
             }
+
             sum *= GetModifiers().IncomeMultiplier;
             return sum;
         }
@@ -137,10 +139,10 @@ namespace Terrix.Map
 
             var data = new UpdateCellsData(PlayerId, changeData.ToArray());
 
-            UpdateCells(data);
+            UpdateCells_OnServer(data);
         }
 
-        public void UpdateCells([NotNull] UpdateCellsData data)
+        public void UpdateCells_OnServer([NotNull] UpdateCellsData data)
         {
             ValidateUpdateCellsData(data);
 
@@ -185,39 +187,44 @@ namespace Terrix.Map
             OnCellsUpdate?.Invoke(data);
         }
 
-        //TODO убрать
-        // public HashSet<Hex> GetInnerBorder()
-        // {
-        //     if (innerBorderUpdated)
-        //     {
-        //         innerBorder.Clear();
-        //         foreach (var cell in cellsSet)
-        //         {
-        //             if (cell.GetNeighbours().Any(neighbor => !Contains(neighbor)))
-        //             {
-        //                 innerBorder.Add(cell);
-        //             }
-        //         }
-        //     }
-        //
-        //     return innerBorder.ToHashSet();
-        // }
-        //
-        // public HashSet<Hex> GetOuterBorder()
-        // {
-        //     if (outerBorderUpdated)
-        //     {
-        //         outerBorder.Clear();
-        //         foreach (var hex in GetInnerBorder().SelectMany(hex => hex.GetNeighbours()))
-        //         {
-        //             outerBorder.Add(hex);
-        //         }
-        //     
-        //         outerBorder.ExceptWith(cellsSet);
-        //     }
-        //
-        //     return outerBorder.ToHashSet();
-        // }
+        public void UpdateCells_OnClient([NotNull] UpdateCellsData data)
+        {
+            foreach (var updateData in data.ChangeData)
+            {
+                var cell = updateData.Hex;
+                switch (updateData.Mode)
+                {
+                    case UpdateCellMode.Add:
+                    {
+                        if (cellsSet.Add(cell))
+                        {
+                            cellsByTypeCount[cell.HexType]++;
+                            TotalCellsCount++;
+                            cell.PlayerId = PlayerId;
+                            updatedCells.Add(cell);
+                            cell.GetNeighbours().ForEach(h => updatedCells.Add(h));
+                        }
+
+                        break;
+                    }
+                    case UpdateCellMode.Remove:
+                    {
+                        if (cellsSet.Remove(cell))
+                        {
+                            cellsByTypeCount[cell.HexType]--;
+                            TotalCellsCount--;
+                            cell.PlayerId = null;
+                            updatedCells.Add(cell);
+                            cell.GetNeighbours().ForEach(h => updatedCells.Add(h));
+                        }
+
+                        break;
+                    }
+                }
+            }
+            MaxCellsCount = Mathf.Max(TotalCellsCount, MaxCellsCount);
+        }
+
         public IReadOnlyCollection<Hex> GetInnerBorder()
         {
             TryApplyUpdates();
@@ -269,7 +276,8 @@ namespace Terrix.Map
 
             if (data.PlayerId != PlayerId)
             {
-                throw new InvalidOperationException($"{nameof(Country)}.{nameof(UpdateCells)} | Не верно указан id!");
+                throw new InvalidOperationException(
+                    $"{nameof(Country)}.{nameof(UpdateCells_OnServer)} | Не верно указан id!");
             }
         }
 

@@ -53,8 +53,12 @@ namespace Terrix.Visual
                 settings.Zones.Length, ""));
         }
 
-        [ObserversRpc]
-        public void UpdateZone_ToObserver(Country.UpdateCellsData updateData, float score)
+        // [ObserversRpc]
+        // public void UpdateZone_ToObserver(Country.UpdateCellsData updateData, float score)
+        // {
+        //     drawersByIds[updateData.PlayerId].UpdateZone(updateData, score);
+        // }
+        public void UpdateZone(Country.UpdateCellsData updateData, float score)
         {
             drawersByIds[updateData.PlayerId].UpdateZone(updateData, score);
         }
@@ -65,7 +69,7 @@ namespace Terrix.Visual
             dragZoneDrawer.UpdateZone(updateData, score);
         }
 
-        public void UpdateScore_OnClient(SimplifiedCountry[] simplifiedCountries)
+        public void UpdateScore_OnClient(CountryPopulation[] simplifiedCountries)
         {
             foreach (var simplifiedCountry in simplifiedCountries)
             {

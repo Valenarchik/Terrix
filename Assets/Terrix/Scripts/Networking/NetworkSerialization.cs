@@ -432,28 +432,27 @@ namespace Terrix.Networking
                 reader.Read<Vector3Int[]>(), reader.ReadBoolean());
         }
 
-        public static void WriteSimplifiedCountry(this Writer writer, SimplifiedCountry value)
+        public static void WriteSimplifiedCountry(this Writer writer, CountryPopulation value)
         {
             writer.WriteInt32(value.PlayerId);
             writer.Write(value.Population);
-            writer.WriteInt32(value.CellsCount);
         }
 
-        public static SimplifiedCountry ReadSimplifiedCountry(this Reader reader)
+        public static CountryPopulation ReadSimplifiedCountry(this Reader reader)
         {
-            return new SimplifiedCountry(reader.ReadInt32(), reader.Read<float>(), reader.ReadInt32());
+            return new CountryPopulation(reader.ReadInt32(), reader.Read<float>());
         }
 
-        public static void WriteSimplifiedHex(this Writer writer, SimplifiedHex value)
-        {
-            writer.WriteVector3Int(value.Position);
-            writer.Write(value.PlayerId);
-        }
-
-        public static SimplifiedHex ReadSimplifiedHex(this Reader reader)
-        {
-            return new SimplifiedHex(reader.ReadVector3Int(), reader.Read<int?>());
-        }
+        // public static void WriteSimplifiedHex(this Writer writer, SimplifiedHex value)
+        // {
+        //     writer.WriteVector3Int(value.Position);
+        //     writer.Write(value.PlayerId);
+        // }
+        //
+        // public static SimplifiedHex ReadSimplifiedHex(this Reader reader)
+        // {
+        //     return new SimplifiedHex(reader.ReadVector3Int(), reader.Read<int?>());
+        // }
 
         public static void WriteUpdateSimplifiedCellsData(this Writer writer, UpdateSimplifiedCellsData value)
         {

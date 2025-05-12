@@ -15,29 +15,45 @@ public class MainMenuManager : NetworkBehaviour
     [SerializeField] private EnterCustomLobbyUI enterCustomLobbyUI;
     [SerializeField] private TMP_InputField botsCountInputField;
     [SerializeField] private TMP_InputField lobbiesCountInputField;
+    [SerializeField] private TextMeshProUGUI customLobbyErrorText;
+
+    public static MainMenuManager Instance { get; private set; }
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     public void CreateCustomLobby()
     {
         PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
-        BootstrapNetworkManager.Instance.CreateCustomLobby_OnClient(customLobbySettingsUI.GetLobbySettings());
+        LobbyManager.Instance.CreateCustomLobby_OnClient(customLobbySettingsUI.GetLobbySettings());
     }
 
     public void JoinCustomLobby()
     {
-        var inputID = enterCustomLobbyUI.GetInputID();
-        if (inputID == 0)
+        var input = enterCustomLobbyUI.GetInput();
+        if (!int.TryParse(input, out var id) || id is < 100000 or > 999999)
         {
+            ShowCustomLobbyErrorText("Используйте 6-значное число");
             return;
         }
 
         PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
-        BootstrapNetworkManager.Instance.TryJoinCustomLobby(inputID);
+        LobbyManager.Instance.TryJoinCustomLobby_OnClient(id);
     }
 
     public void StartDefaultGame()
     {
         PlayerDataHolder.SetData(colorPreviewImage.color, playerInput.text);
-        BootstrapNetworkManager.Instance.CreateOrJoinDefaultLobby_OnClient();
+        LobbyManager.Instance.CreateOrJoinDefaultLobby_OnClient();
+        // BootstrapNetworkManager.Instance.CreateOrJoinDefaultLobby_OnClient();
+    }
+
+    public void ShowCustomLobbyErrorText(string text)
+    {
+        customLobbyErrorText.text = text;
+        customLobbyErrorText.gameObject.SetActive(true);
     }
 
     public void StartFakeGame()
@@ -46,7 +62,7 @@ public class MainMenuManager : NetworkBehaviour
         var lobbiesCount = Convert.ToInt32(lobbiesCountInputField.text);
         for (int i = 0; i < lobbiesCount; i++)
         {
-            BootstrapNetworkManager.Instance.CreateFakeLobby_OnClient(botsCount);
+            LobbyManager.Instance.CreateFakeLobby_OnClient(botsCount);
         }
         // BootstrapNetworkManager.Instance.CreateFakeLobby_OnClient();
     }
